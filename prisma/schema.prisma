@@ -1,0 +1,25 @@
+// Prisma schema — connects to Supabase PostgreSQL
+// Run: npx prisma db push after setting DATABASE_URL in .env.local
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../lib/generated/prisma"
+}
+
+// In Prisma v7, connection URLs are defined in prisma.config.ts (not here)
+datasource db {
+  provider = "postgresql"
+}
+
+// Extends Supabase auth.users with app-level data.
+// id = auth.users.id (UUID). Row is created after a user signs up.
+model User {
+  id         String   @id           
+  email      String   @unique
+  name       String?
+  avatar_url String?
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@map("users")
+}
