@@ -38,10 +38,10 @@ export default async function SettingsPage() {
       </div>
 
       {/* 2-column grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
 
         {/* Left — Profile */}
-        <Card>
+        <Card className="h-full">
           <CardHeader>
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-xl bg-mint/15 flex items-center justify-center shrink-0">

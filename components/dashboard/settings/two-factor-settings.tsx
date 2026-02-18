@@ -148,7 +148,7 @@ export function TwoFactorSettings() {
   const isEnabled = verifiedFactors.length > 0;
 
   return (
-    <Card>
+    <Card className="h-full">
       <CardHeader>
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-center gap-3">

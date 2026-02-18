@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Zap } from "lucide-react";
+import { LayoutDashboard, TrendingUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface NavItem {
@@ -23,9 +23,9 @@ export function Sidebar() {
       {/* Logo */}
       <div className="flex items-center gap-3 px-5 py-5 border-b">
         <div className="w-8 h-8 bg-mint rounded-xl flex items-center justify-center shrink-0 shadow-[0_2px_12px_rgba(128,237,153,0.35)]">
-          <Zap className="w-4 h-4 text-ink" strokeWidth={2.5} />
+          <TrendingUp className="w-4 h-4 text-ink" strokeWidth={2.5} />
         </div>
-        <span className="font-semibold text-ink text-sm tracking-tight">AppTemplate</span>
+        <span className="font-semibold text-ink text-sm tracking-tight">PerformAI</span>
       </div>
 
       {/* Navigation */}

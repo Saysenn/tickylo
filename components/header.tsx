@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Zap } from "lucide-react";
+import { TrendingUp } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 
@@ -12,9 +12,9 @@ export default async function Header() {
       <div className="max-w-5xl mx-auto px-4 py-3.5 flex justify-between items-center">
         <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 bg-mint rounded-xl flex items-center justify-center shadow-[0_2px_10px_rgba(128,237,153,0.30)]">
-            <Zap className="w-4 h-4 text-ink" strokeWidth={2.5} />
+            <TrendingUp className="w-4 h-4 text-ink" strokeWidth={2.5} />
           </div>
-          <span className="font-semibold text-ink text-sm tracking-tight">AppTemplate</span>
+          <span className="font-semibold text-ink text-sm tracking-tight">PerformAI</span>
         </div>
 
         <div className="flex items-center gap-2">

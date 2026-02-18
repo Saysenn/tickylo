@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ShieldCheck, RefreshCw, Database } from "lucide-react";
+import { BarChart2, Users, BrainCircuit } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -8,19 +8,19 @@ import Header from "@/components/header";
 
 const features = [
   {
-    icon: ShieldCheck,
-    title: "Auth out of the box",
-    description: "Email/password, Google OAuth, Email OTP, and TOTP 2FA — all powered by Supabase.",
+    icon: BarChart2,
+    title: "Performance Tracking",
+    description: "Set goals, track KPIs, and conduct structured performance reviews — all in one place.",
   },
   {
-    icon: Database,
-    title: "Supabase + Prisma",
-    description: "Supabase handles auth and PostgreSQL. Prisma gives you a type-safe ORM on top.",
+    icon: Users,
+    title: "Employee Management",
+    description: "Centralized employee profiles, departments, roles, and org hierarchy made simple.",
   },
   {
-    icon: RefreshCw,
-    title: "Modern stack",
-    description: "Next.js App Router, Redux Toolkit, TanStack Query, shadcn/ui, and Tailwind v4.",
+    icon: BrainCircuit,
+    title: "AI-Powered Insights",
+    description: "Get intelligent recommendations and performance predictions powered by AI.",
   },
 ];
 
@@ -42,17 +42,17 @@ export default async function HomePage() {
         {/* Hero */}
         <section className="relative z-10 max-w-4xl mx-auto px-4 pt-24 pb-20 text-center">
           <Badge className="mb-6 bg-mint/15 text-ink-2 hover:bg-mint/15 border-0 rounded-full px-4 py-1.5 text-xs font-medium">
-            Next.js 16 · Supabase · shadcn/ui
+            AI-Powered · Employee Management · Performance Tracking
           </Badge>
 
           <h1 className="text-5xl sm:text-6xl font-bold text-ink tracking-tight leading-tight mb-6">
-            Auth template,{" "}
-            <span className="text-ink-2">ready to ship</span>
+            Track performance,{" "}
+            <span className="text-ink-2">powered by AI</span>
           </h1>
 
           <p className="text-lg text-ink-3 max-w-xl mx-auto mb-10 leading-relaxed">
-            A production-ready authentication template with Supabase Auth, Prisma ORM,
-            and a clean CRM-ready dashboard. Fork it and start building.
+            Track time and performance in one platform. PerformAI helps teams
+            set goals, measure progress, and unlock AI-driven insights — all in one place.
           </p>
 
           <div className="flex items-center justify-center gap-3 flex-wrap">

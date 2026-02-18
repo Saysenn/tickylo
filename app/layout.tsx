@@ -14,10 +14,10 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "AppTemplate",
-    template: "%s | AppTemplate",
+    default: "PerformAI",
+    template: "%s | PerformAI",
   },
-  description: "Production-ready auth template with Next.js & Supabase",
+  description: "AI-Powered Employee Performance Tracking System",
 };
 
 export default function RootLayout({
