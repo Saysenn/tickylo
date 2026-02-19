@@ -5,6 +5,8 @@ import {
 	AUTH_ROUTES,
 	MFA_ROUTE,
 } from "@/configs/auth.config";
+import { checkRoutePermission } from "@/lib/middlewares/rbac.middleware";
+import { DEFAULT_ROLE, type Role } from "@/configs/rbac.config";
 
 export async function AuthMiddleware(request: NextRequest) {
 	const { supabase, supabaseResponse } = createMiddlewareClient(request);
@@ -55,6 +57,11 @@ export async function AuthMiddleware(request: NextRequest) {
 	) {
 		return NextResponse.redirect(new URL("/dashboard", request.url));
 	}
+
+	// RBAC — reads role from JWT, zero DB calls
+	const role = (user.app_metadata?.role ?? DEFAULT_ROLE) as Role;
+	const rbacResponse = checkRoutePermission(pathname, role, request);
+	if (rbacResponse) return rbacResponse;
 
 	return supabaseResponse;
 }

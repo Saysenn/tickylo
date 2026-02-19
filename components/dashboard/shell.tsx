@@ -15,7 +15,7 @@ export function DashboardShell({ user, children }: DashboardShellProps) {
 
   return (
     <div className="flex min-h-screen bg-background">
-      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} role={user.role} />
 
       {/* Mobile backdrop */}
       {sidebarOpen && (

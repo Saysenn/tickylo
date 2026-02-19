@@ -21,6 +21,7 @@ export default async function ProtectedLayout({
     name: user.user_metadata?.full_name ?? null,
     avatar_url: user.user_metadata?.avatar_url ?? null,
     twoFactorEnabled: false,
+    role: (user.app_metadata?.role ?? "employee") as UserProfile["role"],
   };
 
   return (

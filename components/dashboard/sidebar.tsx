@@ -13,11 +13,13 @@ import {
 	Settings,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import type { Role } from "@/configs/rbac.config";
 
 interface NavItem {
 	label: string;
 	href: string;
 	icon: React.ElementType;
+	roles?: Role[]; // if set, only these roles see this item
 }
 
 interface NavGroup {
@@ -28,6 +30,7 @@ interface NavGroup {
 interface SidebarProps {
 	isOpen?: boolean;
 	onClose?: () => void;
+	role: Role;
 }
 
 const navGroups: NavGroup[] = [
@@ -35,13 +38,13 @@ const navGroups: NavGroup[] = [
 		title: "Overview",
 		items: [
 			{ label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-			{ label: "Reports", href: "/dashboard/reports", icon: BarChart2 },
+			{ label: "Reports", href: "/dashboard/reports", icon: BarChart2, roles: ["admin"] },
 		],
 	},
 	{
 		title: "Management",
 		items: [
-			{ label: "Employees", href: "/dashboard/employees", icon: Users },
+			{ label: "Employees", href: "/dashboard/employees", icon: Users, roles: ["admin"] },
 			{ label: "Performance", href: "/dashboard/performance", icon: TrendingUp },
 		],
 	},
@@ -59,8 +62,10 @@ const bottomItems: NavItem[] = [
 	{ label: "Settings", href: "/settings", icon: Settings },
 ];
 
-export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
+export function Sidebar({ isOpen = false, onClose, role }: SidebarProps) {
 	const pathname = usePathname();
+
+	const canSee = (item: NavItem) => !item.roles || item.roles.includes(role);
 
 	const NavLink = ({ label, href, icon: Icon }: NavItem) => {
 		const isActive =
@@ -100,23 +105,27 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
 
 			{/* Navigation */}
 			<nav className="flex-1 px-3 py-4 space-y-5 overflow-y-auto">
-				{navGroups.map(({ title, items }) => (
-					<div key={title}>
-						<p className="px-3 mb-1.5 text-[10px] font-semibold tracking-widest uppercase text-ink-3/60">
-							{title}
-						</p>
-						<div className="space-y-0.5">
-							{items.map((item) => (
-								<NavLink key={item.href} {...item} />
-							))}
+				{navGroups.map(({ title, items }) => {
+					const visible = items.filter(canSee);
+					if (visible.length === 0) return null;
+					return (
+						<div key={title}>
+							<p className="px-3 mb-1.5 text-[10px] font-semibold tracking-widest uppercase text-ink-3/60">
+								{title}
+							</p>
+							<div className="space-y-0.5">
+								{visible.map((item) => (
+									<NavLink key={item.href} {...item} />
+								))}
+							</div>
 						</div>
-					</div>
-				))}
+					);
+				})}
 			</nav>
 
 			{/* Bottom — Settings */}
 			<div className="px-3 py-3 border-t space-y-0.5">
-				{bottomItems.map((item) => (
+				{bottomItems.filter(canSee).map((item) => (
 					<NavLink key={item.href} {...item} />
 				))}
 				<div className="px-3 pt-2">
