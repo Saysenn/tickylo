@@ -10,9 +10,13 @@ export function checkRoutePermission(
 	role: Role,
 	request: NextRequest,
 ): NextResponse | null {
-	const allowedRoles = Object.entries(ROUTE_PERMISSIONS).find(([route]) =>
+	// const allowedRoles = Object.entries(ROUTE_PERMISSIONS).find(([route]) =>
+	// 	pathname.startsWith(route),
+	// )?.[1];
+	const matchedRole = Object.keys(ROUTE_PERMISSIONS).find((route) =>
 		pathname.startsWith(route),
-	)?.[1];
+	);
+	const allowedRoles = matchedRole ? ROUTE_PERMISSIONS[matchedRole] : undefined;
 
 	if (allowedRoles && !allowedRoles.includes(role)) {
 		return NextResponse.redirect(new URL(UNAUTHORIZED_REDIRECT, request.url));
