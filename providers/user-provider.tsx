@@ -11,21 +11,21 @@ import type { UserProfile } from "@/types";
  * have access to the authenticated user.
  */
 export default function UserProvider({
-  user,
-  children,
+	user,
+	children,
 }: {
-  user: UserProfile;
-  children: ReactNode;
+	user: UserProfile;
+	children: ReactNode;
 }) {
-  const dispatch = useAppDispatch();
-  const hydrated = useRef(false);
+	const dispatch = useAppDispatch();
+	const hydrated = useRef(false);
 
-  useEffect(() => {
-    if (!hydrated.current) {
-      dispatch(setUser(user));
-      hydrated.current = true;
-    }
-  }, [dispatch, user]);
+	useEffect(() => {
+		if (!hydrated.current) {
+			dispatch(setUser(user));
+			hydrated.current = true;
+		}
+	}, [dispatch, user]);
 
-  return <>{children}</>;
+	return <>{children}</>;
 }

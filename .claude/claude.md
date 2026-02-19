@@ -45,6 +45,21 @@
 5. **Document Results**: Add review section to `tasks/todo.md`
 6. **Capture Lessons**: Update `tasks/lessons.md` after corrections
 
+# Project Services & Conventions
+
+## HTTP Requests — Always use existing services
+- **NEVER** import `axios` directly in components or pages for HTTP calls
+- **ALWAYS** use `axiosService` from `@/services/axios` for all API requests
+  - Base URL is `/api` — so call `axiosService.post("/auth/register")` not `axiosService.post("/api/auth/register")`
+  - For error type-checking only, `isAxiosError` from `axios` is acceptable (it's a utility, not an HTTP call)
+- For domain-specific calls, prefer `APIService` from `@/services/api` when it covers the endpoint
+- Before adding any new import for HTTP/fetching, check `services/` first
+
+## Patterns to follow
+- Check `services/`, `hooks/`, `lib/`, `configs/` before creating new utilities — it likely exists
+- Follow existing file naming conventions (kebab-case for files, PascalCase for components)
+- Read the file before editing it
+
 # Core Principles
 
 - **Simplicity First**: Make every change as simple as possible. Impact minimal code.

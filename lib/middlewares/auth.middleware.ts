@@ -10,10 +10,19 @@ export async function AuthMiddleware(request: NextRequest) {
 	const { supabase, supabaseResponse } = createMiddlewareClient(request);
 	const { pathname } = request.nextUrl;
 
-	// Refresh session on every request
-	const {
-		data: { user },
-	} = await supabase.auth.getUser();
+	// Refresh session on every request — catch stale/invalid refresh token errors
+	let user = null;
+	try {
+		const { data } = await supabase.auth.getUser();
+		user = data.user;
+	} catch {
+		// Invalid refresh token: clear session and redirect to login
+		const response = NextResponse.redirect(new URL("/login", request.url));
+		request.cookies.getAll().forEach(({ name }) => {
+			if (name.startsWith("sb-")) response.cookies.delete(name);
+		});
+		return response;
+	}
 
 	if (!user) {
 		// Unauthenticated: block protected routes and MFA page

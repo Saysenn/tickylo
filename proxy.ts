@@ -1,6 +1,6 @@
 import { AuthMiddleware } from "@/lib/middlewares/auth.middleware";
 
-export const middleware = AuthMiddleware;
+export const proxy = AuthMiddleware;
 
 export const config = {
   matcher: [
