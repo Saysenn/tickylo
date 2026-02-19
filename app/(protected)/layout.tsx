@@ -1,7 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { Sidebar } from "@/components/dashboard/sidebar";
-import { Header } from "@/components/dashboard/header";
+import { DashboardShell } from "@/components/dashboard/shell";
 import AppProvider from "@/providers/app-provider";
 import UserProvider from "@/providers/user-provider";
 import type { UserProfile } from "@/types";
@@ -27,15 +26,9 @@ export default async function ProtectedLayout({
   return (
     <AppProvider>
       <UserProvider user={userProfile}>
-        <div className="flex min-h-screen bg-background">
-          <Sidebar />
-          <div className="flex flex-col flex-1 min-w-0">
-            <Header user={userProfile} />
-            <main className="flex-1 p-5 md:p-7">
-              {children}
-            </main>
-          </div>
-        </div>
+        <DashboardShell user={userProfile}>
+          {children}
+        </DashboardShell>
       </UserProvider>
     </AppProvider>
   );

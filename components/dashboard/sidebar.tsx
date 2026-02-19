@@ -2,61 +2,146 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, TrendingUp } from "lucide-react";
+import {
+	LayoutDashboard,
+	TrendingUp,
+	Users,
+	Clock,
+	ClipboardList,
+	Inbox,
+	BarChart2,
+	Settings,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface NavItem {
-  label: string;
-  href: string;
-  icon: React.ElementType;
+	label: string;
+	href: string;
+	icon: React.ElementType;
 }
 
-const navItems: NavItem[] = [
-  { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+interface NavGroup {
+	title: string;
+	items: NavItem[];
+}
+
+interface SidebarProps {
+	isOpen?: boolean;
+	onClose?: () => void;
+}
+
+const navGroups: NavGroup[] = [
+	{
+		title: "Overview",
+		items: [
+			{ label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+			{ label: "Reports", href: "/dashboard/reports", icon: BarChart2 },
+		],
+	},
+	{
+		title: "Management",
+		items: [
+			{ label: "Employees", href: "/dashboard/employees", icon: Users },
+			{ label: "Performance", href: "/dashboard/performance", icon: TrendingUp },
+		],
+	},
+	{
+		title: "Work",
+		items: [
+			{ label: "Time Tracker", href: "/dashboard/time-tracker", icon: Clock },
+			{ label: "Tasks", href: "/dashboard/tasks", icon: ClipboardList },
+			{ label: "Requests", href: "/dashboard/requests", icon: Inbox },
+		],
+	},
 ];
 
-export function Sidebar() {
-  const pathname = usePathname();
+const bottomItems: NavItem[] = [
+	{ label: "Settings", href: "/settings", icon: Settings },
+];
 
-  return (
-    <aside className="w-56 shrink-0 hidden md:flex flex-col glass border-r min-h-screen">
-      {/* Logo */}
-      <div className="flex items-center gap-3 px-5 py-5 border-b">
-        <div className="w-8 h-8 bg-mint rounded-xl flex items-center justify-center shrink-0 shadow-[0_2px_12px_rgba(128,237,153,0.35)]">
-          <TrendingUp className="w-4 h-4 text-ink" strokeWidth={2.5} />
-        </div>
-        <span className="font-semibold text-ink text-sm tracking-tight">PerformAI</span>
-      </div>
+export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
+	const pathname = usePathname();
 
-      {/* Navigation */}
-      <nav className="flex-1 px-3 py-4 space-y-0.5">
-        {navItems.map(({ label, href, icon: Icon }) => {
-          const isActive = pathname === href || (href !== "/dashboard" && pathname.startsWith(href));
-          return (
-            <Link
-              key={href}
-              href={href}
-              className={cn(
-                "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150",
-                isActive
-                  ? "bg-mint/15 text-ink border-l-2 border-mint pl-[10px]"
-                  : "text-ink-3 hover:bg-mint/8 hover:text-ink-2 border-l-2 border-transparent pl-[10px]"
-              )}
-            >
-              <Icon
-                className={cn("w-4 h-4 shrink-0", isActive ? "text-ink-2" : "text-ink-3")}
-                strokeWidth={isActive ? 2.2 : 1.8}
-              />
-              {label}
-            </Link>
-          );
-        })}
-      </nav>
+	const NavLink = ({ label, href, icon: Icon }: NavItem) => {
+		const isActive =
+			pathname === href ||
+			(href !== "/dashboard" && pathname.startsWith(href));
+		return (
+			<Link
+				href={href}
+				onClick={onClose}
+				className={cn(
+					"flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150",
+					isActive
+						? "bg-mint/15 text-ink border-l-2 border-mint pl-[10px]"
+						: "text-ink-3 hover:bg-mint/8 hover:text-ink-2 border-l-2 border-transparent pl-[10px]",
+				)}
+			>
+				<Icon
+					className={cn("w-4 h-4 shrink-0", isActive ? "text-ink-2" : "text-ink-3")}
+					strokeWidth={isActive ? 2.2 : 1.8}
+				/>
+				{label}
+			</Link>
+		);
+	};
 
-      {/* Footer */}
-      <div className="px-5 py-4 border-t">
-        <p className="text-[11px] text-ink-3 font-medium tracking-wide">v1.0.0</p>
-      </div>
-    </aside>
-  );
+	const sidebarContent = (
+		<>
+			{/* Logo */}
+			<div className="flex items-center gap-3 px-5 py-5 border-b">
+				<div className="w-8 h-8 bg-mint rounded-xl flex items-center justify-center shrink-0 shadow-[0_2px_12px_rgba(128,237,153,0.35)]">
+					<TrendingUp className="w-4 h-4 text-ink" strokeWidth={2.5} />
+				</div>
+				<span className="font-semibold text-ink text-sm tracking-tight">
+					PerformAI
+				</span>
+			</div>
+
+			{/* Navigation */}
+			<nav className="flex-1 px-3 py-4 space-y-5 overflow-y-auto">
+				{navGroups.map(({ title, items }) => (
+					<div key={title}>
+						<p className="px-3 mb-1.5 text-[10px] font-semibold tracking-widest uppercase text-ink-3/60">
+							{title}
+						</p>
+						<div className="space-y-0.5">
+							{items.map((item) => (
+								<NavLink key={item.href} {...item} />
+							))}
+						</div>
+					</div>
+				))}
+			</nav>
+
+			{/* Bottom — Settings */}
+			<div className="px-3 py-3 border-t space-y-0.5">
+				{bottomItems.map((item) => (
+					<NavLink key={item.href} {...item} />
+				))}
+				<div className="px-3 pt-2">
+					<p className="text-[11px] text-ink-3/50 font-medium tracking-wide">v1.0.0</p>
+				</div>
+			</div>
+		</>
+	);
+
+	return (
+		<>
+			{/* Desktop sidebar — always visible */}
+			<aside className="w-56 shrink-0 hidden md:flex flex-col glass border-r min-h-screen">
+				{sidebarContent}
+			</aside>
+
+			{/* Mobile sidebar — slide in overlay */}
+			<aside
+				className={cn(
+					"fixed inset-y-0 left-0 z-50 w-64 flex flex-col glass border-r transition-transform duration-300 ease-in-out md:hidden",
+					isOpen ? "translate-x-0" : "-translate-x-full",
+				)}
+			>
+				{sidebarContent}
+			</aside>
+		</>
+	);
 }
