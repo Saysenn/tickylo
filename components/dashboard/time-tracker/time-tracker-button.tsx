@@ -7,14 +7,7 @@ import APIService from "@/services/api";
 import { Button } from "@/components/ui/button";
 import { TimeOutDialog } from "./time-out-dialog";
 import type { TimeEntry } from "./types";
-
-function formatDuration(ms: number): string {
-	const totalSeconds = Math.floor(ms / 1000);
-	const h = Math.floor(totalSeconds / 3600);
-	const m = Math.floor((totalSeconds % 3600) / 60);
-	const s = totalSeconds % 60;
-	return [h, m, s].map((v) => String(v).padStart(2, "0")).join(":");
-}
+import { formatDuration } from "@/utils/format";
 
 export function TimeTrackerButton() {
 	const queryClient = useQueryClient();

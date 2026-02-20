@@ -36,3 +36,22 @@ export function formatTime(dateStr: string): string {
 		minute: "2-digit",
 	});
 }
+
+/**
+ * Formats milliseconds into a human-readable time string (HH:MM:SS).
+ * @param ms - The number of milliseconds to format.
+ * @returns The formatted time string.
+ */
+export function formatDuration(ms: number): string {
+	const totalSeconds = Math.floor(ms / 1000);
+	const h = Math.floor(totalSeconds / 3600);
+	const m = Math.floor((totalSeconds % 3600) / 60);
+	const s = totalSeconds % 60;
+
+	const hours = h.toString().padStart(2, "0");
+	const minutes = m.toString().padStart(2, "0");
+	const seconds = s.toString().padStart(2, "0");
+
+	return `${hours}:${minutes}:${seconds}`;
+	// return [h, m, s].map((v) => String(v).padStart(2, "0")).join(":");
+}
