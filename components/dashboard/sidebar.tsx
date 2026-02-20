@@ -85,8 +85,6 @@ const navGroups: NavGroup[] = [
 export function Sidebar({ isOpen = false, onClose, role }: SidebarProps) {
 	const pathname = usePathname();
 
-	const canSee = (item: NavItem) => !item.roles || item.roles.includes(role);
-
 	const NavLink = ({ label, href, icon: Icon }: NavItem) => {
 		const isActive =
 			pathname === href || (href !== "/dashboard" && pathname.startsWith(href));
@@ -128,8 +126,13 @@ export function Sidebar({ isOpen = false, onClose, role }: SidebarProps) {
 			{/* Navigation */}
 			<nav className="flex-1 px-3 py-4 space-y-5 overflow-y-auto">
 				{navGroups.map(({ title, items }) => {
-					const visible = items.filter(canSee);
+					/** get visible items based on user role */
+					const visible = items.filter(
+						(item: NavItem) => !item.roles || item.roles.includes(role),
+					);
+					/** if there is no roles defined, means it is visible to all */
 					if (visible.length === 0) return null;
+					/** If roles are defined, only show items that include the current user's role */
 					return (
 						<div key={title}>
 							<p className="px-3 mb-1.5 text-[10px] font-semibold tracking-widest uppercase text-ink-3/60 w-fit">
