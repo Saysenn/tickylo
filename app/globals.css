@@ -1,4 +1,9 @@
 @import "tailwindcss";
+@import "./animations.css";
+
+* {
+  user-select: none;
+}
 
 /* ─── shadcn/ui HSL variables — mint-themed ──────────────────────────── */
 @layer base {

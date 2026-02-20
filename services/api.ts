@@ -1,6 +1,6 @@
 import axiosService from "./axios";
 
-const V1 = "/api/v1";
+const V1 = "/v1";
 
 /**
  * Typed API client. All requests go through the Axios singleton
@@ -23,6 +23,18 @@ class APIService {
   // ---------------------------------------------------------------------------
   public users = {
     me: () => axiosService.get(`${V1}/users/me`),
+  };
+
+  // ---------------------------------------------------------------------------
+  // Employees
+  // ---------------------------------------------------------------------------
+  public employees = {
+    list: (page = 1, limit = 10) => axiosService.get(`${V1}/employees`, { page, limit }),
+    create: (data: { name: string; email: string; password: string; role: string }) =>
+      axiosService.post(`${V1}/employees`, data),
+    update: (id: string, data: { name?: string; role?: string }) =>
+      axiosService.put(`${V1}/employees/${id}`, data),
+    remove: (id: string) => axiosService.delete(`${V1}/employees/${id}`),
   };
 
   // ---------------------------------------------------------------------------

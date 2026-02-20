@@ -47,16 +47,34 @@
 
 # Project Services & Conventions
 
-## HTTP Requests — Always use existing services
-- **NEVER** import `axios` directly in components or pages for HTTP calls
-- **ALWAYS** use `axiosService` from `@/services/axios` for all API requests
-  - Base URL is `/api` — so call `axiosService.post("/auth/register")` not `axiosService.post("/api/auth/register")`
-  - For error type-checking only, `isAxiosError` from `axios` is acceptable (it's a utility, not an HTTP call)
-- For domain-specific calls, prefer `APIService` from `@/services/api` when it covers the endpoint
-- Before adding any new import for HTTP/fetching, check `services/` first
+## Pre-built Folders — Check these before creating anything new
+
+| Folder | Purpose |
+|---|---|
+| `services/axios.ts` | Singleton HTTP client — reusable `get`, `post`, `put`, `delete` with auto 401 redirect |
+| `services/api.ts` | **All API URLs live here**, grouped by domain. Add new endpoints here, never hardcode URLs in components |
+| `utils/` | Generic reusable helpers (date/string formatting, etc.) — if it's not component-specific, it goes here |
+| `lib/utils.ts` | Tailwind class merging ONLY (`cn`) — not for general utilities |
+| `configs/` | App-wide constants (RBAC rules, auth routes, etc.) |
+| `hooks/` | Custom React hooks — check here before writing a new one |
+
+## HTTP Requests — Layer order: api.ts → axios.ts → React Query
+- **NEVER** import `axios` directly in components
+- **ALL API URLs** must be defined in `services/api.ts` — never hardcode in components
+- `axios.ts` baseURL is `/api` — so paths in `api.ts` start with `/v1/...` (not `/api/v1/...`), and direct axiosService calls use `/auth/...` (not `/api/auth/...`)
+- **Import React Query directly** from `@tanstack/react-query` — no wrapper:
+  - `useQuery({ queryKey, queryFn: () => APIService.x.list() })` — for GET
+  - `useMutation({ mutationFn: (data) => APIService.x.create(data), onSuccess })` — for mutations
+  - `useQueryClient` — import from `@tanstack/react-query` directly
+  - `isAxiosError` from `axios` is acceptable for error type-checking only
+
+## Utility Functions
+- Generic helpers (formatters, string/date utils) → `utils/` folder
+- `lib/utils.ts` is for `cn` (Tailwind) only
+- Never write a reusable utility inline inside a component
 
 ## Patterns to follow
-- Check `services/`, `hooks/`, `lib/`, `configs/` before creating new utilities — it likely exists
+- Check `services/`, `hooks/`, `lib/`, `configs/`, `utils/` before creating anything — it likely exists
 - Follow existing file naming conventions (kebab-case for files, PascalCase for components)
 - Read the file before editing it
 

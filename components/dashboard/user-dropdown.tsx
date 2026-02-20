@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { getInitials } from "@/utils/format";
 import type { UserProfile } from "@/types";
 
 interface UserDropdownProps {
@@ -23,9 +24,7 @@ interface UserDropdownProps {
 export function UserDropdown({ user }: UserDropdownProps) {
   const router = useRouter();
 
-  const initials = user.name
-    ? user.name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()
-    : user.email[0].toUpperCase();
+  const initials = getInitials(user.name, user.email);
 
   const handleSignOut = async () => {
     const supabase = createClient();

@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { User } from "lucide-react";
+import { getInitials } from "@/utils/format";
 import {
   Card,
   CardContent,
@@ -25,9 +26,7 @@ export default async function SettingsPage() {
   if (!user) redirect("/login");
 
   const name = user.user_metadata?.full_name ?? null;
-  const initials = name
-    ? name.split(" ").map((n: string) => n[0]).join("").slice(0, 2).toUpperCase()
-    : user.email?.[0]?.toUpperCase() ?? "U";
+  const initials = getInitials(name, user.email ?? "");
 
   return (
     <div className="max-w-5xl space-y-6">
