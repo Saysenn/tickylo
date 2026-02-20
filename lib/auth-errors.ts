@@ -21,6 +21,18 @@ const SIGNUP_ERRORS: Record<string, string> = {
   "too many requests":             "Too many attempts. Please wait a moment and try again.",
 };
 
+const FORGOT_ERRORS: Record<string, string> = {
+  "user not found":         "No account found with this email address.",
+  "for security purposes":  "You can only request a reset once every 60 seconds.",
+  "too many requests":      "Too many attempts. Please wait a moment and try again.",
+};
+
+const RESET_ERRORS: Record<string, string> = {
+  "weak password":          "Password is too weak. Use at least 8 characters with mixed case, numbers, and symbols.",
+  "same password":          "New password must be different from your current password.",
+  "token has expired":      "Reset link has expired. Please request a new one.",
+};
+
 const OTP_ERRORS: Record<string, string> = {
   "user not found":                "No account found with this email address.",
   "for security purposes":         "You can only request a code once every 60 seconds.",
@@ -42,6 +54,8 @@ export const authError = {
   signup:   (msg: string) => mapError(msg, SIGNUP_ERRORS, "Registration failed. Please try again."),
   otp:      (msg: string) => mapError(msg, OTP_ERRORS,    "Failed to send code. Please try again."),
   otpVerify:(msg: string) => mapError(msg, OTP_ERRORS,    "Invalid or expired code. Please try again."),
-  mfa:      (_msg: string) => "Invalid code. Please try again.",
-  google:   (_msg: string) => "Google sign-in failed. Please try again.",
+  mfa:           (_msg: string) => "Invalid code. Please try again.",
+  google:        (_msg: string) => "Google sign-in failed. Please try again.",
+  forgotPassword:(msg: string)  => mapError(msg, FORGOT_ERRORS, "Failed to send reset email. Please try again."),
+  resetPassword: (msg: string)  => mapError(msg, RESET_ERRORS,  "Failed to reset password. Please try again."),
 };

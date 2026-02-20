@@ -60,9 +60,31 @@ export const registerSchema = z
 		path: ["confirmPassword"],
 	});
 
+/**
+ * Forgot password form validation
+ */
+export const forgotPasswordSchema = z.object({
+	email: emailField,
+});
+
+/**
+ * Reset password form validation
+ */
+export const resetPasswordSchema = z
+	.object({
+		password: passwordField,
+		confirmPassword: z.string(),
+	})
+	.refine((data) => data.password === data.confirmPassword, {
+		message: "Passwords don't match",
+		path: ["confirmPassword"],
+	});
+
 // ============================================
 // TYPE EXPORTS
 // ============================================
 
-export type LoginInput = z.infer<typeof loginSchema>;
-export type RegisterInput = z.infer<typeof registerSchema>;
+export type LoginInput          = z.infer<typeof loginSchema>;
+export type RegisterInput       = z.infer<typeof registerSchema>;
+export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
+export type ResetPasswordInput  = z.infer<typeof resetPasswordSchema>;

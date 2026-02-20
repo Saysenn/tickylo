@@ -260,6 +260,7 @@ export function EmployeesTable() {
 						totalPages={totalPages}
 						onPrev={() => goToPage(Math.max(1, page - 1))}
 						onNext={() => goToPage(Math.min(totalPages, page + 1))}
+						onGoTo={goToPage}
 					/>
 				</div>
 			)}
