@@ -75,14 +75,12 @@ const navGroups: NavGroup[] = [
 				label: "Time Tracker",
 				href: "/dashboard/time-tracker",
 				icon: AlarmClock,
-				roles: ["employee"],
 			},
 			{ label: "Tasks", href: "/dashboard/tasks", icon: ClipboardList },
 			{ label: "Requests", href: "/dashboard/requests", icon: Inbox },
 		],
 	},
 ];
-
 
 export function Sidebar({ isOpen = false, onClose, role }: SidebarProps) {
 	const pathname = usePathname();
