@@ -53,10 +53,12 @@ export async function POST(request: NextRequest) {
 					id: data.user.id,
 					email,
 					name,
+					role,
 				},
 				update: {
 					email,
 					name,
+					role,
 				},
 			});
 		} catch (error) {
