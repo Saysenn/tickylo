@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ROLES, DEFAULT_ROLE } from "@/configs/rbac.config";
+import { prisma } from "@/lib/prisma";
 
 /** Safe-redirect: only allow relative paths that start with `/` and have no protocol. */
 function safeRedirect(next: string | null): string {
@@ -46,6 +47,31 @@ export async function GET(request: Request) {
 				await admin.auth.admin.updateUserById(user.id, {
 					app_metadata: { role },
 				});
+
+				/** create public user. ( replication of auth user ) */
+				/** create public user full ATOMICITY */
+				console.log("user: ", user);
+				try {
+					await prisma.user.upsert({
+						where: { id: user.id },
+						create: {
+							id: user.id,
+							email: user.email!,
+							name: user.user_metadata?.full_name ?? "Unknown",
+						},
+						update: {
+							email: user.email!,
+							name: user.user_metadata?.full_name ?? "Unknown",
+						},
+					});
+				} catch (error) {
+					await admin.auth.admin.deleteUser(user.id);
+					console.error("[register] Failed to create public user:", error);
+					return NextResponse.json(
+						{ error: "Failed to create user. Please try again." },
+						{ status: 500 },
+					);
+				}
 			} catch (err) {
 				console.error("[callback] Role provisioning failed:", err);
 			}

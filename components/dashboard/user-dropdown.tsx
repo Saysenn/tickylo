@@ -64,7 +64,7 @@ export function UserDropdown({ user }: UserDropdownProps) {
         <DropdownMenuSeparator />
 
         <DropdownMenuItem asChild className="cursor-pointer rounded-lg">
-          <Link href="/settings">
+          <Link href="/dashboard/settings">
             <Settings className="size-4" />
             Settings
           </Link>

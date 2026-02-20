@@ -7,10 +7,10 @@ import {
 	TrendingUp,
 	Users,
 	Clock,
+	AlarmClock,
 	ClipboardList,
 	Inbox,
 	BarChart2,
-	Settings,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Role } from "@/configs/rbac.config";
@@ -38,29 +38,51 @@ const navGroups: NavGroup[] = [
 		title: "Overview",
 		items: [
 			{ label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-			{ label: "Reports", href: "/dashboard/reports", icon: BarChart2, roles: ["admin"] },
+			{
+				label: "Reports",
+				href: "/dashboard/reports",
+				icon: BarChart2,
+				roles: ["admin"],
+			},
 		],
 	},
 	{
 		title: "Management",
 		items: [
-			{ label: "Employees", href: "/dashboard/employees", icon: Users, roles: ["admin"] },
-			{ label: "Performance", href: "/dashboard/performance", icon: TrendingUp },
+			{
+				label: "Employees",
+				href: "/dashboard/employees",
+				icon: Users,
+				roles: ["admin"],
+			},
+			{
+				label: "Performance",
+				href: "/dashboard/performance",
+				icon: TrendingUp,
+				roles: ["admin"],
+			},
+			{
+				label: "Time Manager",
+				href: "/dashboard/time-manager",
+				icon: Clock,
+			},
 		],
 	},
 	{
 		title: "Work",
 		items: [
-			{ label: "Time Tracker", href: "/dashboard/time-tracker", icon: Clock },
+			{
+				label: "Time Tracker",
+				href: "/dashboard/time-tracker",
+				icon: AlarmClock,
+				roles: ["employee"],
+			},
 			{ label: "Tasks", href: "/dashboard/tasks", icon: ClipboardList },
 			{ label: "Requests", href: "/dashboard/requests", icon: Inbox },
 		],
 	},
 ];
 
-const bottomItems: NavItem[] = [
-	{ label: "Settings", href: "/settings", icon: Settings },
-];
 
 export function Sidebar({ isOpen = false, onClose, role }: SidebarProps) {
 	const pathname = usePathname();
@@ -69,8 +91,7 @@ export function Sidebar({ isOpen = false, onClose, role }: SidebarProps) {
 
 	const NavLink = ({ label, href, icon: Icon }: NavItem) => {
 		const isActive =
-			pathname === href ||
-			(href !== "/dashboard" && pathname.startsWith(href));
+			pathname === href || (href !== "/dashboard" && pathname.startsWith(href));
 		return (
 			<Link
 				href={href}
@@ -83,7 +104,10 @@ export function Sidebar({ isOpen = false, onClose, role }: SidebarProps) {
 				)}
 			>
 				<Icon
-					className={cn("w-4 h-4 shrink-0", isActive ? "text-ink-2" : "text-ink-3")}
+					className={cn(
+						"w-4 h-4 shrink-0",
+						isActive ? "text-ink-2" : "text-ink-3",
+					)}
 					strokeWidth={isActive ? 2.2 : 1.8}
 				/>
 				{label}
@@ -110,7 +134,7 @@ export function Sidebar({ isOpen = false, onClose, role }: SidebarProps) {
 					if (visible.length === 0) return null;
 					return (
 						<div key={title}>
-							<p className="px-3 mb-1.5 text-[10px] font-semibold tracking-widest uppercase text-ink-3/60">
+							<p className="px-3 mb-1.5 text-[10px] font-semibold tracking-widest uppercase text-ink-3/60 w-fit">
 								{title}
 							</p>
 							<div className="space-y-0.5">
@@ -123,13 +147,12 @@ export function Sidebar({ isOpen = false, onClose, role }: SidebarProps) {
 				})}
 			</nav>
 
-			{/* Bottom — Settings */}
-			<div className="px-3 py-3 border-t space-y-0.5">
-				{bottomItems.filter(canSee).map((item) => (
-					<NavLink key={item.href} {...item} />
-				))}
-				<div className="px-3 pt-2">
-					<p className="text-[11px] text-ink-3/50 font-medium tracking-wide">v1.0.0</p>
+			{/* Bottom */}
+			<div className="px-3 py-3 border-t">
+				<div className="px-3 pt-1">
+					<p className="text-[11px] text-ink-3/50 font-medium tracking-wide">
+						v1.0.0
+					</p>
 				</div>
 			</div>
 		</>

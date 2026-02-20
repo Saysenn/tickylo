@@ -13,8 +13,7 @@ import { UserPlus, Pencil, Trash2, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getInitials, formatDate } from "@/utils/format";
 import type { Employee } from "./types";
-
-const PAGE_SIZE = 1;
+import { ROWS_PER_PAGE } from "@/configs/pagination.config";
 
 interface EmployeePage {
 	data: Employee[];
@@ -37,7 +36,7 @@ export function EmployeesTable() {
 		isError,
 	} = useQuery<EmployeePage>({
 		queryKey: ["employees", page],
-		queryFn: () => APIService.employees.list(page, PAGE_SIZE),
+		queryFn: () => APIService.employees.list(page, ROWS_PER_PAGE),
 	});
 
 	const invalidateAll = () =>

@@ -5,7 +5,6 @@ import Link from "next/link";
 import { Mail, Lock, User } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { authError } from "@/lib/auth-errors";
-import axiosService from "@/services/axios";
 import { isAxiosError } from "axios";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,6 +19,7 @@ import {
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { registerSchema, type RegisterInput } from "@/lib/validations/auth";
+import api from "@/services/api";
 
 export function RegisterForm() {
 	const [isLoading, setIsLoading] = useState(false);
@@ -61,7 +61,8 @@ export function RegisterForm() {
 		}
 
 		try {
-			await axiosService.post("/auth/register", validated.data);
+			/** includes saving public user */
+			await api.auth.register(validated.data);
 		} catch (err) {
 			if (isAxiosError(err)) {
 				setError(authError.signup(err.response?.data?.error ?? ""));
@@ -83,7 +84,7 @@ export function RegisterForm() {
 		const supabase = createClient();
 		const { error } = await supabase.auth.signInWithOAuth({
 			provider: "google",
-			options: { redirectTo: `${window.location.origin}/api/auth/callback` },
+			options: { redirectTo: api.auth.callback() },
 		});
 		if (error) {
 			setError("Failed to sign up with Google.");

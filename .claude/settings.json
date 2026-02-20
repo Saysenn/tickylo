@@ -2,7 +2,13 @@
   "permissions": {
     "allow": [
       "Bash(npx tsc:*)",
-      "Bash(python3:*)"
+      "Bash(python3:*)",
+      "Bash(head:*)",
+      "Bash(npx prisma db push:*)",
+      "Bash(npx dotenv -e .env.local -- prisma db push:*)"
+    ],
+    "additionalDirectories": [
+      "/Users/sayon/Documents/GitHub/performai/app/api/v1/time/[id]"
     ]
   }
 }

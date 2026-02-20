@@ -1,7 +1,13 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { UserDropdown } from "./user-dropdown";
 import type { UserProfile } from "@/types";
+
+const TimeTrackerButton = dynamic(
+  () => import("./time-tracker/time-tracker-button").then((m) => ({ default: m.TimeTrackerButton })),
+  { ssr: false }
+);
 
 interface HeaderProps {
   user: UserProfile;
@@ -50,7 +56,10 @@ export function Header({ user, title, onMenuClick, sidebarOpen = false }: Header
         )}
       </div>
 
-      <UserDropdown user={user} />
+      <div className="flex items-center gap-2">
+        <TimeTrackerButton />
+        <UserDropdown user={user} />
+      </div>
     </header>
   );
 }

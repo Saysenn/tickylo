@@ -18,7 +18,25 @@ model User {
   email      String   @unique
   name       String?
   avatar_url String?
+  // role       String?
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
   @@map("users")
+
+  TimeEntries TimeEntry[]
 }
+
+model TimeEntry {
+  id         String   @id @default(cuid())
+  user_id    String
+  start_time DateTime
+  end_time   DateTime?
+  title      String?
+  description String?
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+  @@map("time_entries")
+  
+  user User @relation(fields: [user_id], references: [id])
+}
+

@@ -3,6 +3,7 @@ import { registerSchema } from "@/lib/validations/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { authError } from "@/lib/auth-errors";
 import { ROLES, DEFAULT_ROLE } from "@/configs/rbac.config";
+import { prisma } from "@/lib/prisma";
 
 export async function POST(request: NextRequest) {
 	try {
@@ -23,9 +24,11 @@ export async function POST(request: NextRequest) {
 		const { data: usersData } = await admin.auth.admin.listUsers({
 			perPage: 1,
 		});
+
 		const role =
 			(usersData?.users?.length ?? 1) === 0 ? ROLES.ADMIN : DEFAULT_ROLE;
 
+		/** create auth user */
 		const { data, error: createError } = await admin.auth.admin.createUser({
 			email,
 			password,
@@ -38,6 +41,30 @@ export async function POST(request: NextRequest) {
 			return NextResponse.json(
 				{ error: authError.signup(createError?.message ?? "") },
 				{ status: 400 },
+			);
+		}
+
+		/** create public user. ( replication of auth user ) */
+		/** create public user full ATOMICITY */
+		try {
+			await prisma.user.upsert({
+				where: { id: data.user.id },
+				create: {
+					id: data.user.id,
+					email,
+					name,
+				},
+				update: {
+					email,
+					name,
+				},
+			});
+		} catch (error) {
+			await admin.auth.admin.deleteUser(data.user.id);
+			console.error("[register] Failed to create public user:", error);
+			return NextResponse.json(
+				{ error: "Failed to create user. Please try again." },
+				{ status: 500 },
 			);
 		}
 
