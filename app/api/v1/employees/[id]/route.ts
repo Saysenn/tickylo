@@ -1,24 +1,14 @@
 import { NextRequest } from "next/server";
-import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ok, errorResponse } from "@/lib/response";
-import { ROLES, type Role } from "@/configs/rbac.config";
+import { ROLES } from "@/configs/rbac.config";
 import { z } from "zod";
+import { requireAdmin } from "@/lib/auth/require-admin";
 
 const updateEmployeeSchema = z.object({
 	name: z.string().min(2).max(100).optional(),
 	role: z.enum([ROLES.ADMIN, ROLES.EMPLOYEE]).optional(),
 });
-
-async function requireAdmin() {
-	const supabase = await createClient();
-	const {
-		data: { user },
-	} = await supabase.auth.getUser();
-	if (!user) return null;
-	if ((user.app_metadata?.role as Role) !== ROLES.ADMIN) return null;
-	return user;
-}
 
 // PATCH /api/v1/employees/[id] — update name and/or role
 export async function PATCH(

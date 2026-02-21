@@ -1,15 +1,7 @@
 import { NextRequest } from "next/server";
-import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
 import { ok, errorResponse } from "@/lib/response";
-
-async function requireUser() {
-	const supabase = await createClient();
-	const {
-		data: { user },
-	} = await supabase.auth.getUser();
-	return user ?? null;
-}
+import { requireUser } from "@/lib/auth/require-user";
 
 // GET /api/v1/time?page=1&limit=10 — paginated list of completed entries
 export async function GET(request: NextRequest) {

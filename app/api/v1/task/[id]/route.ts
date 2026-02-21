@@ -1,8 +1,8 @@
-import { createClient } from "@/lib/supabase/server";
 import { NextRequest } from "next/server";
 import { errorResponse, ok } from "@/lib/response";
 import { prisma } from "@/lib/prisma";
 import z from "zod";
+import { requireUser } from "@/lib/auth/require-user";
 
 /**
  * PATCH AND DELETE TASKS ENDPOINTS
@@ -16,14 +16,6 @@ const updateTaskSchema = z.object({
 	due_date: z.date().optional(),
 	completed_at: z.date().optional(),
 });
-
-async function requireUser() {
-	const supabase = await createClient();
-	const {
-		data: { user },
-	} = await supabase.auth.getUser();
-	return user ?? null;
-}
 
 export async function PATCH(
 	request: NextRequest,

@@ -1,23 +1,19 @@
-import { createClient } from "@/lib/supabase/server";
 import { errorResponse, ok } from "@/lib/response";
 import { prisma } from "@/lib/prisma";
+import { requireUser } from "@/lib/auth/require-user";
+import { NextRequest } from "next/server";
 
-async function requireUser() {
-	const supabase = await createClient();
-	const {
-		data: { user },
-	} = await supabase.auth.getUser();
-	return user ?? null;
-}
-
-export async function PATCH({ params }: { params: { id: string } }) {
+export async function PATCH(
+	request: NextRequest,
+	{ params }: { params: Promise<{ id: string }> },
+) {
 	try {
 		// get current user
 		const user = await requireUser();
 		if (!user) return errorResponse("Unauthorized", 401);
 
 		// get id from params
-		const { id } = params;
+		const { id } = await params;
 		// check if task really exist
 		const task = await prisma.task.findUnique({ where: { id } });
 		if (!task) return errorResponse("Task not found", 404);
