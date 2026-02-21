@@ -3,6 +3,7 @@ import { errorResponse, ok } from "@/lib/response";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { requireUser } from "@/lib/auth/require-user";
+import { requireAdmin } from "@/lib/auth/require-admin";
 
 /**
  * Department Schema
@@ -55,8 +56,8 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
 	try {
-		const user = await requireUser();
-		if (!user) return errorResponse("Unauthorized", 401);
+		const caller = await requireAdmin();
+		if (!caller) return errorResponse("Forbidden", 403);
 
 		const body = await request.json();
 
