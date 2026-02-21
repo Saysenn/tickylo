@@ -11,7 +11,7 @@ import { EmployeeDeleteDialog } from "./employee-delete-dialog";
 import { Pagination } from "@/components/ui/pagination";
 import { UserPlus, Pencil, Trash2, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { getInitials, formatDate } from "@/utils/format";
+import { formatInitials, formatDate } from "@/utils/format";
 import type { Employee } from "./types";
 import { ROWS_PER_PAGE } from "@/configs/pagination.config";
 
@@ -173,7 +173,7 @@ export function EmployeesTable() {
 												<Avatar className="w-8 h-8 shrink-0">
 													<AvatarImage src={employee.avatar_url ?? undefined} />
 													<AvatarFallback className="text-xs bg-mint/15 text-ink-2">
-														{getInitials(employee.name, employee.email)}
+														{formatInitials(employee.name, employee.email)}
 													</AvatarFallback>
 												</Avatar>
 												<div className="min-w-0">

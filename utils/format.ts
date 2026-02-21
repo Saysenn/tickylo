@@ -1,7 +1,7 @@
 /**
  * Returns up to 2 uppercase initials from a name, or the first letter of email as fallback.
  */
-export function getInitials(name: string | null, email: string): string {
+export function formatInitials(name: string | null, email: string): string {
 	if (name)
 		return name
 			.split(" ")
