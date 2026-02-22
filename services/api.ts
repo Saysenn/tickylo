@@ -31,9 +31,9 @@ class APIService {
 	public auth = {
 		register: (data: any) =>
 			axiosService.post(`/auth/${apiVersion}/register`, data),
-		callback: () => `${window.location.origin}/api/auth/callback`,
+		callback: () => `${window.location.origin}/api/${apiVersion}/auth/callback`,
 		resetPassword: () =>
-			`${window.location.origin}/api/auth/callback?next=/reset-password`,
+			`${window.location.origin}/api/${apiVersion}/auth/callback?next=/reset-password`,
 	};
 
 	// ---------------------------------------------------------------------------

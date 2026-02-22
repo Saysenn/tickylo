@@ -134,7 +134,10 @@ export function LoginForm() {
 		const supabase = createClient();
 		const { error } = await supabase.auth.signInWithOAuth({
 			provider: "google",
-			options: { redirectTo: APIService.auth.callback() },
+			options: {
+				redirectTo: APIService.auth.callback(),
+				queryParams: { prompt: "select_account" },
+			},
 		});
 		if (error) {
 			setError(authError.google(error.message));
