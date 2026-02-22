@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { registerSchema, type RegisterInput } from "@/lib/validations/auth";
-import api from "@/services/api";
+import APIService from "@/services/api";
 
 export function RegisterForm() {
 	const [isLoading, setIsLoading] = useState(false);
@@ -62,7 +62,7 @@ export function RegisterForm() {
 
 		try {
 			/** includes saving public user */
-			await api.auth.register(validated.data);
+			await APIService.auth.register(validated.data);
 		} catch (err) {
 			if (isAxiosError(err)) {
 				setError(authError.signup(err.response?.data?.error ?? ""));
@@ -84,7 +84,7 @@ export function RegisterForm() {
 		const supabase = createClient();
 		const { error } = await supabase.auth.signInWithOAuth({
 			provider: "google",
-			options: { redirectTo: api.auth.callback() },
+			options: { redirectTo: APIService.auth.callback() },
 		});
 		if (error) {
 			setError("Failed to sign up with Google.");
