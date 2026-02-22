@@ -72,7 +72,7 @@ export async function PATCH(
 				},
 			});
 			// notify
-			return updatedLeave;
+			return ok({ leave: updatedLeave, meta: updatedMeta });
 		});
 
 		return ok(result);
