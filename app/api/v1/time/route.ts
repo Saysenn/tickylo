@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { ok, errorResponse } from "@/lib/response";
+import { prisma } from "@/lib/infra/prisma";
+import { ok, errorResponse } from "@/lib/utils/response";
 import { requireUser } from "@/lib/auth/require-user";
 
 // GET /api/v1/time?page=1&limit=10 — paginated list of completed entries

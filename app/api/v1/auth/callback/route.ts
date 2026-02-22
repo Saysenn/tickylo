@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ROLES, DEFAULT_ROLE } from "@/configs/rbac.config";
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/lib/infra/prisma";
 
 /** Safe-redirect: only allow relative paths that start with `/` and have no protocol. */
 function safeRedirect(next: string | null): string {

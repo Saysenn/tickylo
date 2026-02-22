@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { registerSchema } from "@/lib/validations/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { authError } from "@/lib/auth-errors";
+import { authError } from "@/lib/auth/auth-errors";
 import { ROLES, DEFAULT_ROLE } from "@/configs/rbac.config";
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/lib/infra/prisma";
 
 export async function POST(request: NextRequest) {
 	try {

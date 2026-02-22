@@ -1,8 +1,8 @@
 import { requireUser } from "@/lib/auth/require-user";
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/lib/infra/prisma";
 import z from "zod";
 import { NextRequest } from "next/server";
-import { errorResponse, ok } from "@/lib/response";
+import { errorResponse, ok } from "@/lib/utils/response";
 
 const leaveSchema = z.object({
 	startDate: z.coerce.date(),

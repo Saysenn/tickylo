@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
-import { prisma } from "@/lib/prisma";
-import { ok, errorResponse } from "@/lib/response";
+import { prisma } from "@/lib/infra/prisma";
+import { ok, errorResponse } from "@/lib/utils/response";
 
 // GET /api/v1/time/active — returns the current user's open time entry or null
 export async function GET() {

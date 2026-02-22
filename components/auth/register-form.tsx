@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { Mail, Lock, User } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import { authError } from "@/lib/auth-errors";
+import { authError } from "@/lib/auth/auth-errors";
 import { isAxiosError } from "axios";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { registerSchema, type RegisterInput } from "@/lib/validations/auth";
-import APIService from "@/services/api";
+import APIService from "@/lib/infra/api";
 
 export function RegisterForm() {
 	const [isLoading, setIsLoading] = useState(false);

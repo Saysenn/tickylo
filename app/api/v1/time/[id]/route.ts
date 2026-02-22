@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { prisma } from "@/lib/prisma";
-import { ok, errorResponse } from "@/lib/response";
+import { prisma } from "@/lib/infra/prisma";
+import { ok, errorResponse } from "@/lib/utils/response";
 import { z } from "zod";
 
 const stopSchema = z.object({

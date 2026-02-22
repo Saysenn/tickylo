@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Mail, Lock, ShieldCheck } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import { authError } from "@/lib/auth-errors";
+import { authError } from "@/lib/auth/auth-errors";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { loginSchema, type LoginInput } from "@/lib/validations/auth";
-import APIService from "@/services/api";
+import APIService from "@/lib/infra/api";
 
 export function LoginForm() {
 	const router = useRouter();

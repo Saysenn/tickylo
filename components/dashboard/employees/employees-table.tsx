@@ -2,7 +2,7 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import APIService from "@/services/api";
+import APIService from "@/lib/infra/api";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -10,8 +10,8 @@ import { EmployeeFormDialog } from "./employee-form-dialog";
 import { EmployeeDeleteDialog } from "./employee-delete-dialog";
 import { Pagination } from "@/components/ui/pagination";
 import { UserPlus, Pencil, Trash2, Users } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { formatInitials, formatDate } from "@/utils/format";
+import { cn } from "@/lib/utils/cn";
+import { formatInitials, formatDate } from "@/lib/utils/format";
 import type { Employee } from "./types";
 import { ROWS_PER_PAGE } from "@/configs/pagination.config";
 

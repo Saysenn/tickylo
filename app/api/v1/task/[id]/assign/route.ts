@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
-import { ok, errorResponse } from "@/lib/response";
+import { ok, errorResponse } from "@/lib/utils/response";
 import { z } from "zod";
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/lib/infra/prisma";
 import { requireAdmin } from "@/lib/auth/require-admin";
 
 const updateTaskSchema = z.object({

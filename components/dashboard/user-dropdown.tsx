@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { formatInitials } from "@/utils/format";
+import { formatInitials } from "@/lib/utils/format";
 import type { UserProfile } from "@/types";
 
 interface UserDropdownProps {

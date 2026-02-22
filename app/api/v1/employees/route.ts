@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { ok, errorResponse } from "@/lib/response";
+import { ok, errorResponse } from "@/lib/utils/response";
 import { ROLES, DEFAULT_ROLE, type Role } from "@/configs/rbac.config";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/auth/require-admin";

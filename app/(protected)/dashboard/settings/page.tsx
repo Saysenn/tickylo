@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { User } from "lucide-react";
-import { formatInitials } from "@/utils/format";
+import { formatInitials } from "@/lib/utils/format";
 import {
 	Card,
 	CardContent,

@@ -12,7 +12,7 @@ import {
 	Inbox,
 	BarChart2,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/cn";
 import type { Role } from "@/configs/rbac.config";
 
 interface NavItem {

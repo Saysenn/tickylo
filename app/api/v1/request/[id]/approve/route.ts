@@ -1,8 +1,8 @@
 import z from "zod";
 import { NextRequest } from "next/server";
 import { requireAdmin } from "@/lib/auth/require-admin";
-import { prisma } from "@/lib/prisma";
-import { errorResponse, ok } from "@/lib/response";
+import { prisma } from "@/lib/infra/prisma";
+import { errorResponse, ok } from "@/lib/utils/response";
 
 const approveSchema = z.object({
 	reason: z.string().max(500).optional(),

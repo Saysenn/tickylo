@@ -3,11 +3,11 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Clock, Square } from "lucide-react";
-import APIService from "@/services/api";
+import APIService from "@/lib/infra/api";
 import { Button } from "@/components/ui/button";
 import { TimeOutDialog } from "./time-out-dialog";
 import type { TimeEntry } from "./types";
-import { formatDuration } from "@/utils/format";
+import { formatDuration } from "@/lib/utils/format";
 
 export function TimeTrackerButton() {
 	const queryClient = useQueryClient();

@@ -3,9 +3,9 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { Clock } from "lucide-react";
-import APIService from "@/services/api";
+import APIService from "@/lib/infra/api";
 import { Pagination } from "@/components/ui/pagination";
-import { formatDate, formatTime } from "@/utils/format";
+import { formatDate, formatTime } from "@/lib/utils/format";
 import type { TimeEntry, TimeEntryPage } from "./types";
 
 const PAGE_SIZE = 10;
