@@ -1,6 +1,6 @@
 import axiosService from "./axios";
 
-const V1 = "/v1";
+const apiVersion = "v1";
 
 /**
  * Typed API client. All requests go through the Axios singleton
@@ -22,14 +22,15 @@ class APIService {
 	// Users
 	// ---------------------------------------------------------------------------
 	public users = {
-		me: () => axiosService.get(`${V1}/users/me`),
+		me: () => axiosService.get(`${apiVersion}/users/me`),
 	};
 
 	// ---------------------------------------------------------------------------
 	// Auth
 	// ---------------------------------------------------------------------------
 	public auth = {
-		register: (data: any) => axiosService.post(`${V1}/auth/register`, data),
+		register: (data: any) =>
+			axiosService.post(`/auth/${apiVersion}/register`, data),
 		callback: () => `${window.location.origin}/api/auth/callback`,
 		resetPassword: () =>
 			`${window.location.origin}/api/auth/callback?next=/reset-password`,
@@ -40,28 +41,29 @@ class APIService {
 	// ---------------------------------------------------------------------------
 	public employees = {
 		list: (page = 1, limit = 10) =>
-			axiosService.get(`${V1}/employees`, { page, limit }),
+			axiosService.get(`${apiVersion}/employees`, { page, limit }),
 		create: (data: {
 			name: string;
 			email: string;
 			password: string;
 			role: string;
-		}) => axiosService.post(`${V1}/employees`, data),
+		}) => axiosService.post(`${apiVersion}/employees`, data),
 		update: (id: string, data: { name?: string; role?: string }) =>
-			axiosService.put(`${V1}/employees/${id}`, data),
-		remove: (id: string) => axiosService.delete(`${V1}/employees/${id}`),
+			axiosService.put(`${apiVersion}/employees/${id}`, data),
+		remove: (id: string) =>
+			axiosService.delete(`${apiVersion}/employees/${id}`),
 	};
 
 	// ---------------------------------------------------------------------------
 	// Time Tracker
 	// ---------------------------------------------------------------------------
 	public time = {
-		start: () => axiosService.post(`${V1}/time`),
-		active: () => axiosService.get(`${V1}/time/active`),
+		start: () => axiosService.post(`${apiVersion}/time`),
+		active: () => axiosService.get(`${apiVersion}/time/active`),
 		stop: (id: string, data: { title?: string; description?: string }) =>
-			axiosService.patch(`${V1}/time/${id}`, data),
+			axiosService.patch(`${apiVersion}/time/${id}`, data),
 		list: (page = 1, limit = 10) =>
-			axiosService.get(`${V1}/time`, { page, limit }),
+			axiosService.get(`${apiVersion}/time`, { page, limit }),
 	};
 
 	// ---------------------------------------------------------------------------
@@ -69,8 +71,8 @@ class APIService {
 	// ---------------------------------------------------------------------------
 	public payments = {
 		checkout: (plan: "Pro") =>
-			axiosService.post(`${V1}/payments/checkout`, { plan }),
-		portal: () => axiosService.post(`${V1}/payments/portal`),
+			axiosService.post(`${apiVersion}/payments/checkout`, { plan }),
+		portal: () => axiosService.post(`${apiVersion}/payments/portal`),
 	};
 }
 
