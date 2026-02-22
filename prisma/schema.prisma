@@ -34,6 +34,7 @@ enum LeaveStatus {
   pending
   approved
   rejected
+  cancelled
 }
 
 // Extends Supabase auth.users with app-level data.
@@ -140,6 +141,7 @@ model Leave {
   end     DateTime
   type    LeaveType
   status  LeaveStatus @default(pending)
+  reason  String?
 
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
