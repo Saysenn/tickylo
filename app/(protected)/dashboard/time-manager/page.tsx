@@ -12,10 +12,7 @@ import type { TimeSummary } from "@/components/dashboard/time-manager/types";
 import { todayDateStr, daysAgoDateStr } from "@/lib/utils/format";
 import { useAppSelector } from "@/store/hooks";
 import { Button } from "@/components/ui/button";
-
-function msToHours(ms: number) {
-	return (ms / 1000 / 60 / 60).toFixed(1);
-}
+import { msToHours } from "@/lib/utils/format";
 
 export default function TimeManagerPage() {
 	const [from, setFrom] = useState(daysAgoDateStr(6));
@@ -115,7 +112,7 @@ export default function TimeManagerPage() {
 					{/* Team summary cards */}
 					{teamData && (
 						<div className="grid grid-cols-2 gap-4">
-							<div className="rounded-lg border bg-mint border-mint p-5">
+							<div className="rounded-lg border bg-mint/60 border-mint p-5">
 								<p className="text-xs font-medium text-ink/60 uppercase tracking-wider mb-2">
 									Total team hours
 								</p>
@@ -126,7 +123,7 @@ export default function TimeManagerPage() {
 									</span>
 								</p>
 							</div>
-							<div className="rounded-lg border bg-mint border-mint p-5">
+							<div className="rounded-lg border bg-mint/30 border-mint p-5">
 								<p className="text-xs font-medium text-ink/60 uppercase tracking-wider mb-2 flex items-center gap-1.5">
 									<span className="relative flex h-2 w-2 shrink-0">
 										<span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-600 opacity-75" />

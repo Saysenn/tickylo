@@ -107,3 +107,7 @@ export function formatDuration(ms: number): string {
 	return `${hours}:${minutes}:${seconds}`;
 	// return [h, m, s].map((v) => String(v).padStart(2, "0")).join(":");
 }
+
+export function msToHours(ms: number) {
+	return (ms / 1000 / 60 / 60).toFixed(1);
+}
