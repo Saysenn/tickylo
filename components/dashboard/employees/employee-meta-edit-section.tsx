@@ -63,10 +63,10 @@ export function EmployeeMetaEditSection({ employeeId, initialMeta }: Props) {
 	const [visaExpiry, setVisaExpiry] = useState(toDateInput(m?.visa_expiry));
 	const [salary, setSalary] = useState(m?.salary != null ? String(m.salary) : "");
 	const [dateJoined, setDateJoined] = useState(toDateInput(m?.date_joined));
-	const [sickLeave, setSickLeave] = useState(toIntInput(m?.sick_leave));
-	const [vacationLeave, setVacationLeave] = useState(toIntInput(m?.vacation_leave));
-	const [emergencyLeave, setEmergencyLeave] = useState(toIntInput(m?.emergency_leave));
-	const [personalLeave, setPersonalLeave] = useState(toIntInput(m?.personal_leave));
+	const [sickLeave, setSickLeave] = useState(toIntInput(m?.sick_leave ?? null));
+	const [vacationLeave, setVacationLeave] = useState(toIntInput(m?.vacation_leave ?? null));
+	const [emergencyLeave, setEmergencyLeave] = useState(toIntInput(m?.emergency_leave ?? null));
+	const [personalLeave, setPersonalLeave] = useState(toIntInput(m?.personal_leave ?? null));
 
 	const { mutate, isPending } = useMutation({
 		mutationFn: () =>
