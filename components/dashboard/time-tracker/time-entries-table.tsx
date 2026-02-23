@@ -79,19 +79,19 @@ export function TimeEntriesTable() {
 					<table className="w-full min-w-[560px] text-sm">
 						<thead>
 							<tr className="border-b bg-accent/30">
-								<th className="text-left px-4 py-3 text-xs font-semibold text-ink-3 uppercase tracking-wider">
+								<th className="text-left px-4 py-2 text-xs font-semibold text-ink-3 uppercase tracking-wider">
 									Date
 								</th>
-								<th className="text-left px-4 py-3 text-xs font-semibold text-ink-3 uppercase tracking-wider">
+								<th className="text-left px-4 py-2 text-xs font-semibold text-ink-3 uppercase tracking-wider">
 									Task
 								</th>
-								<th className="text-left px-4 py-3 text-xs font-semibold text-ink-3 uppercase tracking-wider hidden sm:table-cell">
+								<th className="text-left px-4 py-2 text-xs font-semibold text-ink-3 uppercase tracking-wider hidden sm:table-cell">
 									Time In
 								</th>
-								<th className="text-left px-4 py-3 text-xs font-semibold text-ink-3 uppercase tracking-wider hidden sm:table-cell">
+								<th className="text-left px-4 py-2 text-xs font-semibold text-ink-3 uppercase tracking-wider hidden sm:table-cell">
 									Time Out
 								</th>
-								<th className="text-left px-4 py-3 text-xs font-semibold text-ink-3 uppercase tracking-wider">
+								<th className="text-left px-4 py-2 text-xs font-semibold text-ink-3 uppercase tracking-wider">
 									Duration
 								</th>
 							</tr>
@@ -102,10 +102,10 @@ export function TimeEntriesTable() {
 									key={entry.id}
 									className="hover:bg-accent/20 transition-colors"
 								>
-									<td className="px-4 py-3 text-ink-3 whitespace-nowrap">
+									<td className="px-4 py-2 text-ink-3 whitespace-nowrap">
 										{formatDate(entry.start_time)}
 									</td>
-									<td className="px-4 py-3">
+									<td className="px-4 py-2">
 										<p className="font-medium text-ink truncate max-w-[160px]">
 											{entry.title ?? (
 												<span className="text-ink-3 font-normal italic">
@@ -119,13 +119,13 @@ export function TimeEntriesTable() {
 											</p>
 										)}
 									</td>
-									<td className="px-4 py-3 text-ink-3 hidden sm:table-cell whitespace-nowrap">
+									<td className="px-4 py-2 text-ink-3 hidden sm:table-cell whitespace-nowrap">
 										{formatTime(entry.start_time)}
 									</td>
-									<td className="px-4 py-3 text-ink-3 hidden sm:table-cell whitespace-nowrap">
+									<td className="px-4 py-2 text-ink-3 hidden sm:table-cell whitespace-nowrap">
 										{entry.end_time ? formatTime(entry.end_time) : "—"}
 									</td>
-									<td className="px-4 py-3 font-medium text-ink whitespace-nowrap">
+									<td className="px-4 py-2 font-medium text-ink whitespace-nowrap">
 										{entry.end_time
 											? formatDuration(entry.start_time, entry.end_time)
 											: "—"}

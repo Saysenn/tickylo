@@ -3,18 +3,22 @@ import { errorResponse, ok } from "@/lib/utils/response";
 import { prisma } from "@/lib/infra/prisma";
 import z from "zod";
 import { requireUser } from "@/lib/auth/require-user";
+import { requireAdmin } from "@/lib/auth/require-admin";
+import { ROLES } from "@/configs/rbac.config";
 
-/**
- * GET AND POST TASKS
- */
 const createTaskSchema = z.object({
-	title: z.string().max(200),
+	title: z.string().min(1).max(200),
 	description: z.string().max(1000).optional(),
 	priority: z.enum(["low", "medium", "high"]).optional(),
 	due_date: z.coerce.date().optional(),
+	assigned_to: z.string().optional(), // optional user_id to assign on creation
 });
 
-// GET /api/v1/task?page=1&limit=10 — paginated list of completed entries
+/**
+ * GET /api/v1/task?page=1&limit=10
+ * Admin: all tasks with assignee info
+ * Employee: tasks assigned to them
+ */
 export async function GET(request: NextRequest) {
 	try {
 		const user = await requireUser();
@@ -28,16 +32,39 @@ export async function GET(request: NextRequest) {
 		);
 		const skip = (page - 1) * limit;
 
+		const isAdmin = user.app_metadata?.role === ROLES.ADMIN;
+		const statusFilter = searchParams.get("status");
+		const search = searchParams.get("search")?.trim();
+
+		const searchFilter = search
+			? {
+					OR: [
+						{ title: { contains: search, mode: "insensitive" as const } },
+						{ description: { contains: search, mode: "insensitive" as const } },
+					],
+			  }
+			: {};
+
+		// Employee sees: tasks assigned to them + unassigned pool (user_id null)
+		const where: any = isAdmin
+			? { ...(statusFilter ? { status: statusFilter } : {}), ...searchFilter }
+			: {
+					OR: [{ user_id: user.id }, { user_id: null }],
+					...(statusFilter ? { status: statusFilter } : {}),
+					...searchFilter,
+			  };
+
 		const [entries, total] = await Promise.all([
 			prisma.task.findMany({
-				where: { user_id: user.id },
+				where,
+				include: {
+					assignee: { select: { id: true, name: true, email: true } },
+				},
 				orderBy: { created_at: "desc" },
 				take: limit,
 				skip,
 			}),
-			prisma.task.count({
-				where: { user_id: user.id },
-			}),
+			prisma.task.count({ where }),
 		]);
 
 		return ok({
@@ -46,19 +73,21 @@ export async function GET(request: NextRequest) {
 			totalPages: Math.ceil(total / limit) || 1,
 		});
 	} catch (err) {
-		console.error("[time:GET]", err);
+		console.error("[task:GET]", err);
 		return errorResponse("Internal server error", 500);
 	}
 }
 
-// POST /api/v1/task — create task
+/**
+ * POST /api/v1/task — admin only
+ * Creates a task; optionally assigns it to a user on creation
+ */
 export async function POST(request: NextRequest) {
 	try {
-		const user = await requireUser();
-		if (!user) return errorResponse("Unauthorized", 401);
+		const admin = await requireAdmin();
+		if (!admin) return errorResponse("Forbidden", 403);
 
 		const body = await request.json();
-
 		const validated = createTaskSchema.safeParse(body);
 		if (!validated.success) {
 			return errorResponse(
@@ -67,11 +96,18 @@ export async function POST(request: NextRequest) {
 			);
 		}
 
+		const { assigned_to, ...rest } = validated.data;
+
 		const entry = await prisma.task.create({
 			data: {
-				user_id: user.id,
-				status: "pending",
-				...validated.data,
+				...rest,
+				created_by: admin.id,
+				user_id: assigned_to ?? null,
+				status: assigned_to ? "assigned" : "pending",
+				assigned_at: assigned_to ? new Date() : null,
+			},
+			include: {
+				assignee: { select: { id: true, name: true, email: true } },
 			},
 		});
 

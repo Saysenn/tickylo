@@ -4,7 +4,7 @@ export const metadata = { title: "Performance" };
 
 export default function PerformancePage() {
   return (
-    <div className="max-w-5xl space-y-6">
+    <div className="w-full space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-ink">Performance</h1>
         <p className="text-ink-3 mt-1 text-sm">Track goals, KPIs, and conduct performance reviews.</p>

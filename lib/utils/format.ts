@@ -1,4 +1,56 @@
 /**
+ * Formats a Date object as a YYYY-MM-DD string using LOCAL date (not UTC).
+ * Using toISOString() would return the UTC date which can differ by ±1 day
+ * for users in non-UTC timezones.
+ */
+export function toDateStr(d: Date): string {
+	const year = d.getFullYear();
+	const month = String(d.getMonth() + 1).padStart(2, "0");
+	const day = String(d.getDate()).padStart(2, "0");
+	return `${year}-${month}-${day}`;
+}
+
+/**
+ * Returns today's date as a YYYY-MM-DD string.
+ */
+export function todayDateStr(): string {
+	return toDateStr(new Date());
+}
+
+/**
+ * Returns the date N days ago as a YYYY-MM-DD string.
+ */
+export function daysAgoDateStr(n: number): string {
+	const d = new Date();
+	d.setDate(d.getDate() - n);
+	return toDateStr(d);
+}
+
+/**
+ * Returns the first day of the current month as a YYYY-MM-DD string.
+ */
+export function startOfMonthDateStr(): string {
+	const d = new Date();
+	return toDateStr(new Date(d.getFullYear(), d.getMonth(), 1));
+}
+
+/**
+ * Returns the first day of last month as a YYYY-MM-DD string.
+ */
+export function startOfLastMonthDateStr(): string {
+	const d = new Date();
+	return toDateStr(new Date(d.getFullYear(), d.getMonth() - 1, 1));
+}
+
+/**
+ * Returns the last day of last month as a YYYY-MM-DD string.
+ */
+export function endOfLastMonthDateStr(): string {
+	const d = new Date();
+	return toDateStr(new Date(d.getFullYear(), d.getMonth(), 0));
+}
+
+/**
  * Returns up to 2 uppercase initials from a name, or the first letter of email as fallback.
  */
 export function formatInitials(name: string | null, email: string): string {

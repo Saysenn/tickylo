@@ -1,0 +1,378 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import APIService from "@/lib/infra/api";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Pagination } from "@/components/ui/pagination";
+import { RequestFormDialog } from "./request-form-dialog";
+import { useAppSelector } from "@/store/hooks";
+import { formatDate } from "@/lib/utils/format";
+import { cn } from "@/lib/utils/cn";
+import { Inbox, Plus, Trash2 } from "lucide-react";
+import { ROWS_PER_PAGE } from "@/configs/pagination.config";
+import type { LeaveRequest, LeaveRequestPage } from "./types";
+
+const STATUS_STYLES: Record<string, string> = {
+	pending: "bg-yellow-500/15 text-yellow-700 border-yellow-500/20",
+	approved: "bg-green-500/15 text-green-700 border-green-500/20",
+	rejected: "bg-red-500/15 text-red-700 border-red-500/20",
+	cancelled: "bg-accent text-ink-3 border-border/40",
+};
+
+const TYPE_LABEL: Record<string, string> = {
+	sick: "Sick",
+	vacation: "Vacation",
+	emergency: "Emergency",
+};
+
+const ALL_STATUSES = ["pending", "approved", "rejected", "cancelled"];
+
+export function RequestsTable() {
+	const router = useRouter();
+	const searchParams = useSearchParams();
+	const page = Math.max(1, parseInt(searchParams.get("page") ?? "1", 10));
+	const statusFilter = searchParams.get("status") ?? "";
+	const queryClient = useQueryClient();
+
+	const user = useAppSelector((s) => s.auth.user);
+	const isAdmin = user?.role === "admin";
+
+	// Bulk selection state (admin only)
+	const [selected, setSelected] = useState<Set<string>>(new Set());
+
+	const updateParam = (key: string, value: string) => {
+		const params = new URLSearchParams(searchParams.toString());
+		if (value) params.set(key, value);
+		else params.delete(key);
+		params.set("page", "1");
+		router.push(`?${params.toString()}`);
+		setSelected(new Set());
+	};
+
+	const goToPage = (p: number) => {
+		const params = new URLSearchParams(searchParams.toString());
+		params.set("page", String(p));
+		router.push(`?${params.toString()}`);
+		setSelected(new Set());
+	};
+	const resetPage = () => {
+		const params = new URLSearchParams(searchParams.toString());
+		params.set("page", "1");
+		router.replace(`?${params.toString()}`);
+	};
+
+	const { data: result, isLoading, isError } = useQuery<LeaveRequestPage>({
+		queryKey: ["requests", page, statusFilter],
+		queryFn: () => APIService.requests.list(page, ROWS_PER_PAGE, statusFilter || undefined),
+	});
+
+	const invalidateAll = () => {
+		queryClient.invalidateQueries({ queryKey: ["requests"] });
+		setSelected(new Set());
+	};
+
+	const { mutateAsync: createRequest, isPending: isCreating } = useMutation({
+		mutationFn: (data: { startDate: string; endDate: string; type: string; reason?: string }) =>
+			APIService.requests.create(data),
+		onSuccess: () => { invalidateAll(); resetPage(); },
+	});
+
+	const { mutateAsync: approveRequest, isPending: isApproving } = useMutation({
+		mutationFn: (id: string) => APIService.requests.approve(id),
+		onSuccess: invalidateAll,
+	});
+
+	const { mutateAsync: rejectRequest, isPending: isRejecting } = useMutation({
+		mutationFn: (id: string) => APIService.requests.reject(id),
+		onSuccess: invalidateAll,
+	});
+
+	const { mutateAsync: cancelRequest, isPending: isCancelling } = useMutation({
+		mutationFn: (id: string) => APIService.requests.cancel(id),
+		onSuccess: invalidateAll,
+	});
+
+	const { mutateAsync: deleteRequest, isPending: isDeleting } = useMutation({
+		mutationFn: (id: string) => APIService.requests.remove(id),
+		onSuccess: () => { invalidateAll(); resetPage(); },
+	});
+
+	const { mutateAsync: bulkDelete, isPending: isBulkDeleting } = useMutation({
+		mutationFn: (ids: string[]) => APIService.requests.bulkDelete(ids),
+		onSuccess: () => { invalidateAll(); resetPage(); },
+	});
+
+	const list = result?.data ?? [];
+	const totalPages = result?.totalPages ?? 1;
+
+	const allIds = list.map((r: LeaveRequest) => r.id);
+	const allSelected = allIds.length > 0 && allIds.every((id) => selected.has(id));
+
+	const toggleRow = (id: string) => {
+		setSelected((prev) => {
+			const next = new Set(prev);
+			if (next.has(id)) next.delete(id);
+			else next.add(id);
+			return next;
+		});
+	};
+
+	const toggleAll = () => {
+		if (allSelected) setSelected(new Set());
+		else setSelected(new Set(allIds));
+	};
+
+	if (isLoading) {
+		return (
+			<div className="flex items-center justify-center py-24">
+				<div className="w-5 h-5 border-2 border-mint/40 border-t-mint rounded-full animate-spin" />
+			</div>
+		);
+	}
+
+	if (isError) {
+		return (
+			<div className="flex flex-col items-center justify-center py-24 text-center">
+				<p className="text-sm text-ink-3">Failed to load requests. Please try again.</p>
+			</div>
+		);
+	}
+
+	return (
+		<div className="space-y-3">
+			{/* Toolbar */}
+			<div className="flex flex-wrap items-center gap-2 justify-between">
+				<div className="flex items-center gap-2 flex-wrap">
+					<select
+						value={statusFilter}
+						onChange={(e) => updateParam("status", e.target.value)}
+						className="h-8 rounded-md border border-border bg-background px-2 text-sm focus:outline-none focus:ring-1 focus:ring-mint"
+					>
+						<option value="">All statuses</option>
+						{ALL_STATUSES.map((s) => (
+							<option key={s} value={s} className="capitalize">
+								{s.charAt(0).toUpperCase() + s.slice(1)}
+							</option>
+						))}
+					</select>
+
+					{/* Admin bulk delete */}
+					{isAdmin && selected.size > 0 && (
+						<Button
+							size="sm"
+							variant="destructive"
+							className="h-8 gap-1.5"
+							disabled={isBulkDeleting}
+							onClick={() => bulkDelete(Array.from(selected))}
+						>
+							<Trash2 className="w-3.5 h-3.5" />
+							Delete {selected.size} selected
+						</Button>
+					)}
+				</div>
+
+				<div className="flex items-center gap-2">
+					<p className="text-sm text-ink-3">
+						{list.length} {list.length === 1 ? "request" : "requests"}
+					</p>
+					{!isAdmin && (
+						<RequestFormDialog
+							isPending={isCreating}
+							onSubmit={async (data) => { await createRequest(data); }}
+							trigger={
+								<Button size="sm">
+									<Plus className="w-4 h-4" />
+									New request
+								</Button>
+							}
+						/>
+					)}
+				</div>
+			</div>
+
+			{/* Empty state */}
+			{list.length === 0 && (
+				<div className="flex flex-col items-center justify-center py-24 text-center border rounded-lg">
+					<div className="w-12 h-12 rounded-xl bg-mint/15 flex items-center justify-center mb-4">
+						<Inbox className="w-6 h-6 text-ink-2" strokeWidth={1.8} />
+					</div>
+					<h3 className="font-semibold text-ink mb-1">No requests found</h3>
+					<p className="text-sm text-ink-3 max-w-xs">
+						{isAdmin
+							? "Leave requests from your team will appear here."
+							: "Submit a leave request to get started."}
+					</p>
+				</div>
+			)}
+
+			{/* Table */}
+			{list.length > 0 && (
+				<div key={`${page}-${statusFilter}`} className="animate-fade-in space-y-3">
+					<div className="rounded-lg border overflow-x-auto">
+						<table className="w-full min-w-[600px] text-sm">
+							<thead>
+								<tr className="border-b bg-accent/30">
+									{/* Admin checkbox */}
+									{isAdmin && (
+										<th className="w-10 px-3 py-2">
+											<input
+												type="checkbox"
+												checked={allSelected}
+												onChange={toggleAll}
+												className="rounded border-border cursor-pointer"
+											/>
+										</th>
+									)}
+									{isAdmin && (
+										<th className="text-left px-4 py-2 text-xs font-semibold text-ink-3 uppercase tracking-wider">
+											Employee
+										</th>
+									)}
+									<th className="text-left px-4 py-2 text-xs font-semibold text-ink-3 uppercase tracking-wider">
+										Type
+									</th>
+									<th className="text-left px-4 py-2 text-xs font-semibold text-ink-3 uppercase tracking-wider hidden sm:table-cell">
+										Dates
+									</th>
+									<th className="text-left px-4 py-2 text-xs font-semibold text-ink-3 uppercase tracking-wider">
+										Status
+									</th>
+									<th className="px-4 py-2" />
+								</tr>
+							</thead>
+							<tbody className="divide-y">
+								{list.map((req: LeaveRequest) => (
+									<tr key={req.id} className="hover:bg-accent/20 transition-colors">
+										{/* Admin checkbox */}
+										{isAdmin && (
+											<td className="w-10 px-3 py-2">
+												<input
+													type="checkbox"
+													checked={selected.has(req.id)}
+													onChange={() => toggleRow(req.id)}
+													className="rounded border-border cursor-pointer"
+												/>
+											</td>
+										)}
+
+										{/* Employee (admin only) */}
+										{isAdmin && (
+											<td className="px-4 py-2">
+												<div className="min-w-0">
+													<p className="font-medium text-ink truncate">
+														{req.user?.name ?? "—"}
+													</p>
+													<p className="text-xs text-ink-3 truncate">
+														{req.user?.email}
+													</p>
+												</div>
+											</td>
+										)}
+
+										{/* Type */}
+										<td className="px-4 py-2">
+											<span className="font-medium text-ink capitalize">
+												{TYPE_LABEL[req.type] ?? req.type}
+											</span>
+										</td>
+
+										{/* Dates */}
+										<td className="px-4 py-2 text-ink-3 text-xs hidden sm:table-cell">
+											{formatDate(req.start)} → {formatDate(req.end)}
+										</td>
+
+										{/* Status */}
+										<td className="px-4 py-2">
+											<Badge
+												variant="outline"
+												className={cn("capitalize text-xs", STATUS_STYLES[req.status])}
+											>
+												{req.status}
+											</Badge>
+										</td>
+
+										{/* Actions */}
+										<td className="px-4 py-2">
+											<div className="flex items-center justify-end gap-1">
+												{/* Admin: approve/reject pending */}
+												{isAdmin && req.status === "pending" && (
+													<>
+														<Button
+															size="sm"
+															variant="outline"
+															className="h-7 text-xs text-green-700 border-green-500/30 hover:bg-green-500/10"
+															disabled={isApproving}
+															onClick={() => approveRequest(req.id)}
+														>
+															Approve
+														</Button>
+														<Button
+															size="sm"
+															variant="outline"
+															className="h-7 text-xs text-destructive border-destructive/30 hover:bg-destructive/10"
+															disabled={isRejecting}
+															onClick={() => rejectRequest(req.id)}
+														>
+															Reject
+														</Button>
+													</>
+												)}
+												{/* Admin: delete any request */}
+											{isAdmin && (
+												<Button
+													size="sm"
+													variant="ghost"
+													className="h-7 text-xs text-destructive hover:text-destructive"
+													disabled={isDeleting}
+													onClick={() => deleteRequest(req.id)}
+												>
+													Delete
+												</Button>
+											)}
+											{/* Employee: cancel pending */}
+												{!isAdmin && req.status === "pending" && (
+													<Button
+														size="sm"
+														variant="outline"
+														className="h-7 text-xs"
+														disabled={isCancelling}
+														onClick={() => cancelRequest(req.id)}
+													>
+														Cancel
+													</Button>
+												)}
+												{/* Employee: delete pending or cancelled */}
+												{!isAdmin && (req.status === "pending" || req.status === "cancelled") && (
+													<Button
+														size="sm"
+														variant="ghost"
+														className="h-7 text-xs text-destructive hover:text-destructive"
+														disabled={isDeleting}
+														onClick={() => deleteRequest(req.id)}
+													>
+														Delete
+													</Button>
+												)}
+											</div>
+										</td>
+									</tr>
+								))}
+							</tbody>
+						</table>
+					</div>
+
+					<Pagination
+						page={page}
+						totalPages={totalPages}
+						onPrev={() => goToPage(Math.max(1, page - 1))}
+						onNext={() => goToPage(Math.min(totalPages, page + 1))}
+						onGoTo={goToPage}
+					/>
+				</div>
+			)}
+		</div>
+	);
+}

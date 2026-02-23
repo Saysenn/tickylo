@@ -43,9 +43,14 @@ class AxiosService {
 		return AxiosService.apiUrl;
 	}
 
-	/** GET request */
+	/** GET request — strips undefined/null values from params before serializing */
 	public async get<T = any>(url: string, params?: any): Promise<T> {
-		const response = await this.axiosInstance.get(url, { params });
+		const cleanParams = params
+			? Object.fromEntries(
+					Object.entries(params).filter(([, v]) => v !== undefined && v !== null),
+			  )
+			: undefined;
+		const response = await this.axiosInstance.get(url, { params: cleanParams });
 		return this.validateResponse(response);
 	}
 

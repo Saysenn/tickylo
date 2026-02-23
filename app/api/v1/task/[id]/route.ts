@@ -3,88 +3,116 @@ import { errorResponse, ok } from "@/lib/utils/response";
 import { prisma } from "@/lib/infra/prisma";
 import z from "zod";
 import { requireUser } from "@/lib/auth/require-user";
+import { requireAdmin } from "@/lib/auth/require-admin";
+import { ROLES } from "@/configs/rbac.config";
 
 /**
- * PATCH AND DELETE TASKS ENDPOINTS
+ * GET /api/v1/task/[id]
+ * Admin: any task. Employee: own assigned tasks or unassigned tasks.
  */
+export async function GET(
+	_request: NextRequest,
+	{ params }: { params: Promise<{ id: string }> },
+) {
+	try {
+		const { id } = await params;
 
-const updateTaskSchema = z.object({
-	title: z.string().max(200).optional(),
+		const user = await requireUser();
+		if (!user) return errorResponse("Unauthorized", 401);
+
+		const isAdmin = user.app_metadata?.role === ROLES.ADMIN;
+
+		const task = await prisma.task.findUnique({
+			where: { id },
+			include: {
+				assignee: { select: { id: true, name: true, email: true } },
+				creator: { select: { id: true, name: true, email: true } },
+			},
+		});
+
+		if (!task) return errorResponse("Task not found", 404);
+
+		// Employee can only view their own task or an unassigned one
+		if (!isAdmin && task.user_id !== null && task.user_id !== user.id) {
+			return errorResponse("Forbidden", 403);
+		}
+
+		return ok(task);
+	} catch (error) {
+		console.error("[task:GET]", error);
+		return errorResponse("Failed to fetch task", 500);
+	}
+}
+
+const adminUpdateSchema = z.object({
+	title: z.string().min(1).max(200).optional(),
 	description: z.string().max(1000).optional(),
-	status: z.enum(["pending", "in_progress", "completed"]).optional(),
+	status: z.enum(["pending", "assigned", "in_progress", "completed"]).optional(),
 	priority: z.enum(["low", "medium", "high"]).optional(),
-	due_date: z.date().optional(),
-	completed_at: z.date().optional(),
+	due_date: z.coerce.date().optional(),
 });
 
+/**
+ * PATCH /api/v1/task/[id]
+ * Admin: update any field
+ * Employee: not allowed via this route (use /start and /complete)
+ */
 export async function PATCH(
 	request: NextRequest,
 	{ params }: { params: Promise<{ id: string }> },
 ) {
 	try {
-		// check if id exist
 		const { id } = await params;
-		if (!id) return errorResponse("Task not found", 404);
 
-		// get current user
 		const user = await requireUser();
 		if (!user) return errorResponse("Unauthorized", 401);
 
-		// verify ownership
+		const isAdmin = user.app_metadata?.role === ROLES.ADMIN;
+		if (!isAdmin) return errorResponse("Forbidden", 403);
+
 		const task = await prisma.task.findUnique({ where: { id } });
 		if (!task) return errorResponse("Task not found", 404);
-		if (task.user_id !== user.id)
-			return errorResponse("Task not Assigned to you", 401);
 
-		// parse body response
 		const body = await request.json().catch(() => ({}));
-		const validated = updateTaskSchema.safeParse(body);
+		const validated = adminUpdateSchema.safeParse(body);
 		if (!validated.success) return errorResponse("Invalid request body", 400);
 
-		// update data
 		const updatedTask = await prisma.task.update({
 			where: { id },
 			data: validated.data,
+			include: {
+				assignee: { select: { id: true, name: true, email: true } },
+			},
 		});
 
 		return ok(updatedTask);
 	} catch (error) {
-		return errorResponse("Failed to Update Task", 500);
+		console.error("[task:PATCH]", error);
+		return errorResponse("Failed to update task", 500);
 	}
 }
 
+/**
+ * DELETE /api/v1/task/[id] — admin only
+ */
 export async function DELETE(
-	request: NextRequest,
+	_request: NextRequest,
 	{ params }: { params: Promise<{ id: string }> },
 ) {
 	try {
-		// check if id exist
 		const { id } = await params;
-		if (!id) return errorResponse("Task not found", 404);
 
-		// get current user
-		const user = await requireUser();
-		if (!user) return errorResponse("Unauthorized", 401);
+		const admin = await requireAdmin();
+		if (!admin) return errorResponse("Forbidden", 403);
 
-		// verify ownership
 		const task = await prisma.task.findUnique({ where: { id } });
 		if (!task) return errorResponse("Task not found", 404);
-		if (task.user_id !== user.id)
-			return errorResponse("Task not Assigned to you", 401);
 
-		// parse body response
-		const body = await request.json().catch(() => ({}));
-		const validated = updateTaskSchema.safeParse(body);
-		if (!validated.success) return errorResponse("Invalid request body", 400);
+		await prisma.task.delete({ where: { id } });
 
-		// delete task
-		// update data
-		const deletedTask = await prisma.task.delete({
-			where: { id },
-		});
-
-		return ok(deletedTask);
+		return ok({ success: true });
 	} catch (error) {
-		return errorResponse("Failed to Delete Task", 500);
+		console.error("[task:DELETE]", error);
+		return errorResponse("Failed to delete task", 500);
 	}
 }

@@ -165,7 +165,8 @@ export function EmployeesTable() {
 								{list.map((employee: Employee) => (
 									<tr
 										key={employee.id}
-										className="hover:bg-accent/20 transition-colors"
+										className="hover:bg-accent/20 transition-colors cursor-pointer"
+										onClick={() => router.push(`/dashboard/employees/${employee.id}`)}
 									>
 										{/* Avatar + name + email */}
 										<td className="px-4 py-3">
@@ -213,7 +214,7 @@ export function EmployeesTable() {
 										</td>
 
 										{/* Actions */}
-										<td className="px-4 py-3">
+										<td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
 											<div className="flex items-center justify-end gap-1">
 												<EmployeeFormDialog
 													mode="edit"

@@ -3,16 +3,19 @@ import { prisma } from "@/lib/infra/prisma";
 import z from "zod";
 import { NextRequest } from "next/server";
 import { errorResponse, ok } from "@/lib/utils/response";
+import { ROLES } from "@/configs/rbac.config";
 
 const leaveSchema = z.object({
 	startDate: z.coerce.date(),
 	endDate: z.coerce.date(),
-	type: z.enum(["vacation", "sick", "emergency"]), // adjust to your LeaveType enum
+	type: z.enum(["vacation", "sick", "emergency"]),
+	reason: z.string().max(500).optional(),
 });
 
 /**
- * GET /api/v1/leave?page=1&limit=10
- * Get all leave requests (paginated, user only)
+ * GET /api/v1/request?page=1&limit=10
+ * Admin: all requests with user info
+ * Employee: own requests only
  */
 export async function GET(request: NextRequest) {
 	try {
@@ -20,26 +23,31 @@ export async function GET(request: NextRequest) {
 		if (!user) return errorResponse("Unauthorized", 401);
 
 		const { searchParams } = new URL(request.url);
-
 		const page = Math.max(1, parseInt(searchParams.get("page") ?? "1", 10));
-
 		const limit = Math.min(
 			50,
 			Math.max(1, parseInt(searchParams.get("limit") ?? "10", 10)),
 		);
-
 		const skip = (page - 1) * limit;
+
+		const isAdmin = user.app_metadata?.role === ROLES.ADMIN;
+		const statusFilter = searchParams.get("status");
+
+		const where: any = isAdmin
+			? statusFilter ? { status: statusFilter } : {}
+			: { user_id: user.id, ...(statusFilter ? { status: statusFilter } : {}) };
 
 		const [leaves, total] = await Promise.all([
 			prisma.leave.findMany({
-				where: { user_id: user.id },
+				where,
+				include: isAdmin
+					? { user: { select: { id: true, name: true, email: true } } }
+					: undefined,
 				orderBy: { created_at: "desc" },
 				take: limit,
 				skip,
 			}),
-			prisma.leave.count({
-				where: { user_id: user.id },
-			}),
+			prisma.leave.count({ where }),
 		]);
 
 		return ok({
@@ -49,14 +57,13 @@ export async function GET(request: NextRequest) {
 			total,
 		});
 	} catch (err) {
-		console.error("[leave:GET]", err);
+		console.error("[request:GET]", err);
 		return errorResponse("Internal server error", 500);
 	}
 }
 
 /**
- * POST /api/v1/leave
- * Create new leave request
+ * POST /api/v1/request — employee creates a leave request
  */
 export async function POST(request: NextRequest) {
 	try {
@@ -64,7 +71,6 @@ export async function POST(request: NextRequest) {
 		if (!user) return errorResponse("Unauthorized", 401);
 
 		const body = await request.json();
-
 		const validated = leaveSchema.safeParse(body);
 		if (!validated.success) {
 			return errorResponse(
@@ -73,9 +79,8 @@ export async function POST(request: NextRequest) {
 			);
 		}
 
-		const { startDate, endDate, type } = validated.data;
+		const { startDate, endDate, type, reason } = validated.data;
 
-		// Basic validation: end must be after start
 		if (endDate < startDate) {
 			return errorResponse("End date must be after start date", 400);
 		}
@@ -86,13 +91,14 @@ export async function POST(request: NextRequest) {
 				start: startDate,
 				end: endDate,
 				type,
+				reason,
 				status: "pending",
 			},
 		});
 
 		return ok(leave, 201);
 	} catch (err) {
-		console.error("[leave:POST]", err);
+		console.error("[request:POST]", err);
 		return errorResponse("Internal server error", 500);
 	}
 }
