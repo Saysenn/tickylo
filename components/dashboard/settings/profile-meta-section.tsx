@@ -15,8 +15,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { formatDate } from "@/lib/utils/format";
-import { cn } from "@/lib/utils/cn";
+import {
+	SelectRoot,
+	SelectTrigger,
+	SelectValue,
+	SelectContent,
+	SelectItem,
+} from "@/components/ui/select";
+import { formatDate, toDateInput } from "@/lib/utils/format";
 
 interface UserMeta {
 	id: string;
@@ -35,14 +41,7 @@ interface UserMeta {
 	personal_leave: number | null;
 }
 
-// Convert ISO datetime string → "YYYY-MM-DD" for <input type="date">
-function toDateInput(iso: string | null | undefined): string {
-	if (!iso) return "";
-	return iso.slice(0, 10);
-}
-
 const VISA_STATUS_OPTIONS = [
-	{ value: "", label: "— Select status —" },
 	{ value: "valid", label: "Valid" },
 	{ value: "expired", label: "Expired" },
 	{ value: "pending", label: "Pending" },
@@ -67,7 +66,6 @@ export function ProfileMetaSection() {
 	const [successMsg, setSuccessMsg] = useState<string | null>(null);
 	const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-	// Pre-fill form when meta loads
 	useEffect(() => {
 		if (meta) {
 			setPhone(meta.phone ?? "");
@@ -101,7 +99,6 @@ export function ProfileMetaSection() {
 		},
 	});
 
-	// Determine if read-only admin section has anything to show
 	const hasAdminFields =
 		meta != null &&
 		(meta.salary != null ||
@@ -162,22 +159,22 @@ export function ProfileMetaSection() {
 
 								{/* Visa Status */}
 								<div className="space-y-1.5">
-									<Label htmlFor="meta-visa-status">Visa Status</Label>
-									<select
-										id="meta-visa-status"
-										value={visaStatus}
-										onChange={(e) => setVisaStatus(e.target.value)}
-										className={cn(
-											"border-input h-9 w-full rounded-md border bg-transparent px-3 py-1 text-sm shadow-xs outline-none transition-[color,box-shadow]",
-											"focus-visible:border-ring/50 focus-visible:ring-ring/25 focus-visible:ring-1",
-										)}
+									<Label>Visa Status</Label>
+									<SelectRoot
+										value={visaStatus || undefined}
+										onValueChange={setVisaStatus}
 									>
-										{VISA_STATUS_OPTIONS.map((o) => (
-											<option key={o.value} value={o.value}>
-												{o.label}
-											</option>
-										))}
-									</select>
+										<SelectTrigger>
+											<SelectValue placeholder="— Select status —" />
+										</SelectTrigger>
+										<SelectContent>
+											{VISA_STATUS_OPTIONS.map((o) => (
+												<SelectItem key={o.value} value={o.value}>
+													{o.label}
+												</SelectItem>
+											))}
+										</SelectContent>
+									</SelectRoot>
 								</div>
 
 								{/* Visa Expiry */}
@@ -218,11 +215,7 @@ export function ProfileMetaSection() {
 
 							{/* Save row */}
 							<div className="flex items-center gap-3 pt-1">
-								<Button
-									size="sm"
-									onClick={() => mutate()}
-									disabled={isPending}
-								>
+								<Button size="sm" onClick={() => mutate()} disabled={isPending}>
 									{isPending ? (
 										<>
 											<div className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin mr-2" />

@@ -111,3 +111,52 @@ export function formatDuration(ms: number): string {
 export function msToHours(ms: number) {
 	return (ms / 1000 / 60 / 60).toFixed(1);
 }
+
+/**
+ * Calculates average hours per day worked as a formatted string.
+ */
+export function avgHours(totalMs: number, daysWorked: number): string {
+	if (daysWorked === 0) return "0.0";
+	return msToHours(totalMs / daysWorked);
+}
+
+/**
+ * Formats a YYYY-MM-DD date string into a short day label (e.g., "Mon, Feb 20").
+ * Appends T00:00:00 to force local timezone parsing.
+ */
+export function formatDayLabel(dateStr: string): string {
+	const d = new Date(dateStr + "T00:00:00");
+	return d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+}
+
+/**
+ * Formats the duration between two ISO datetime strings in a compact human-readable form
+ * (e.g., "2h 30m", "45m 12s", "8s").
+ */
+export function formatDurationBetween(start: string, end: string): string {
+	const ms = new Date(end).getTime() - new Date(start).getTime();
+	const totalSeconds = Math.floor(ms / 1000);
+	const h = Math.floor(totalSeconds / 3600);
+	const m = Math.floor((totalSeconds % 3600) / 60);
+	const s = totalSeconds % 60;
+	if (h > 0) return `${h}h ${m}m`;
+	if (m > 0) return `${m}m ${s}s`;
+	return `${s}s`;
+}
+
+/**
+ * Converts an ISO datetime string to a "YYYY-MM-DD" value suitable for
+ * <input type="date">. Returns "" for null/undefined.
+ */
+export function toDateInput(iso: string | null | undefined): string {
+	if (!iso) return "";
+	return iso.slice(0, 10);
+}
+
+/**
+ * Converts a nullable number to its string representation for number inputs.
+ * Returns "" for null/undefined so the input renders as empty.
+ */
+export function toIntInput(v: number | null | undefined): string {
+	return v != null ? String(v) : "";
+}

@@ -1,18 +1,10 @@
 "use client";
 
+import { msToHours, avgHours } from "@/lib/utils/format";
 import type { TimeSummary } from "./types";
 
 interface TimeSummaryCardsProps {
 	summary: TimeSummary;
-}
-
-function msToHours(ms: number) {
-	return (ms / 1000 / 60 / 60).toFixed(1);
-}
-
-function avgHours(totalMs: number, daysWorked: number) {
-	if (daysWorked === 0) return "0.0";
-	return msToHours(totalMs / daysWorked);
 }
 
 interface CardProps {

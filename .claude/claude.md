@@ -59,15 +59,37 @@
 | --------------------- | -------------------------------------------------------------------------------------------------------- |
 | `lib/infra/axios.ts`  | Singleton HTTP client — reusable `get`, `post`, `put`, `delete` with auto 401 redirect                   |
 | `lib/infra/api.ts`    | **All API URLs live here**, grouped by domain. Add new endpoints here, never hardcode URLs in components |
-| `lib/utils/format.ts` | Generic reusable helpers (date/string formatting, etc.) — if it's not component-specific, it goes here   |
+| `lib/utils/format.ts` | **ALL** formatting/conversion helpers go here — dates, durations, initials, input converters, ms→hours, etc. NEVER define these inline in components |
 | `lib/utils/cn.ts`     | Tailwind class merging ONLY (`cn`) — not for general utilities                                           |
 | `configs/`            | App-wide constants (RBAC rules, auth routes, etc.)                                                       |
 | `providers/`          | React context providers — check here before writing a new one                                            |
 
+## Key utility functions already in `lib/utils/format.ts`
+
+Date helpers: `toDateStr`, `todayDateStr`, `daysAgoDateStr`, `startOfMonthDateStr`, `startOfLastMonthDateStr`, `endOfLastMonthDateStr`
+Display formatters: `formatDate`, `formatTime`, `formatDuration` (HH:MM:SS), `formatDurationBetween` (compact "2h 30m"), `formatDayLabel` (weekday label), `formatInitials`, `formatDate`
+Number/time: `msToHours`, `avgHours`
+Input helpers: `toDateInput` (ISO → `<input type="date">` value), `toIntInput` (number|null → string)
+
+**DRY rule**: Before writing any formatting/conversion function in a component, check `lib/utils/format.ts` first. If it doesn't exist there, add it there — never inline it.
+
+## UI Components — Always use shadcn/ui wrappers, never raw HTML equivalents
+
+| Need                | Use (from `@/components/ui/`)                                                      |
+| ------------------- | ---------------------------------------------------------------------------------- |
+| Dropdown/select     | `SelectRoot`, `SelectTrigger`, `SelectValue`, `SelectContent`, `SelectItem`        |
+| Dialog/modal        | `DialogRoot`, `DialogTrigger`, `DialogContent`, `DialogHeader`, `DialogTitle`      |
+| Button              | `Button` — supports `variant`, `size`, `isLoading` props                           |
+| Text input          | `Input` — never raw `<input>` except inside shadcn components                      |
+| Label               | `Label` — pairs with `htmlFor`                                                     |
+| Card layout         | `Card`, `CardHeader`, `CardTitle`, `CardDescription`, `CardContent`                |
+
+**Never use raw `<select>`, `<input>` (standalone), or `<button>` directly in page/feature components.**
+
 ## HTTP Requests — Layer order: api.ts → axios.ts → React Query
 
 - **NEVER** import `axios` directly in components
-- **ALL API URLs** must be defined in `services/api.ts` — never hardcode in components
+- **ALL API URLs** must be defined in `lib/infra/api.ts` — never hardcode in components
 - `axios.ts` baseURL is `/api` — so paths in `api.ts` start with `/v1/...` (not `/api/v1/...`), and direct axiosService calls use `/auth/...` (not `/api/auth/...`)
 - **Import React Query directly** from `@tanstack/react-query` — no wrapper:
   - `useQuery({ queryKey, queryFn: () => APIService.x.list() })` — for GET

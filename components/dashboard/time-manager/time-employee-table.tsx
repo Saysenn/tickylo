@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { ChevronRight } from "lucide-react";
+import { msToHours, avgHours } from "@/lib/utils/format";
 
 export interface EmployeeStat {
 	id: string;
@@ -14,15 +15,6 @@ export interface EmployeeStat {
 interface Props {
 	employees: EmployeeStat[];
 	onSelect: (id: string, name: string) => void;
-}
-
-function msToHours(ms: number) {
-	return (ms / 1000 / 60 / 60).toFixed(1);
-}
-
-function avgHours(totalMs: number, daysWorked: number) {
-	if (daysWorked === 0) return "0.0";
-	return msToHours(totalMs / daysWorked);
 }
 
 const PAGE_SIZE = 10;

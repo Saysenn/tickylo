@@ -8,8 +8,14 @@ import APIService from "@/lib/infra/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { formatDate } from "@/lib/utils/format";
-import { cn } from "@/lib/utils/cn";
+import {
+	SelectRoot,
+	SelectTrigger,
+	SelectValue,
+	SelectContent,
+	SelectItem,
+} from "@/components/ui/select";
+import { formatDate, toDateInput, toIntInput } from "@/lib/utils/format";
 
 interface Meta {
 	phone: string | null;
@@ -32,28 +38,17 @@ interface Props {
 }
 
 const VISA_STATUS_OPTIONS = [
-	{ value: "", label: "— Select status —" },
 	{ value: "valid", label: "Valid" },
 	{ value: "expired", label: "Expired" },
 	{ value: "pending", label: "Pending" },
 	{ value: "not_applicable", label: "Not applicable" },
 ];
 
-function toDateInput(iso: string | null | undefined): string {
-	if (!iso) return "";
-	return iso.slice(0, 10);
-}
-
-function toIntInput(v: number | null): string {
-	return v != null ? String(v) : "";
-}
-
 export function EmployeeMetaEditSection({ employeeId, initialMeta }: Props) {
 	const router = useRouter();
 	const [editing, setEditing] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 
-	// Form state — initialised from server-passed data
 	const m = initialMeta;
 	const [phone, setPhone] = useState(m?.phone ?? "");
 	const [dob, setDob] = useState(toDateInput(m?.dob));
@@ -87,7 +82,7 @@ export function EmployeeMetaEditSection({ employeeId, initialMeta }: Props) {
 		onSuccess: () => {
 			setEditing(false);
 			setError(null);
-			router.refresh(); // re-run server component to reflect new values
+			router.refresh();
 		},
 		onError: () => setError("Failed to save. Please try again."),
 	});
@@ -183,22 +178,22 @@ export function EmployeeMetaEditSection({ employeeId, initialMeta }: Props) {
 					</div>
 
 					<div className="space-y-1.5">
-						<Label htmlFor="emp-visa-status">Visa Status</Label>
-						<select
-							id="emp-visa-status"
-							value={visaStatus}
-							onChange={(e) => setVisaStatus(e.target.value)}
-							className={cn(
-								"border-input h-9 w-full rounded-md border bg-transparent px-3 py-1 text-sm shadow-xs outline-none transition-[color,box-shadow]",
-								"focus-visible:border-ring/50 focus-visible:ring-ring/25 focus-visible:ring-1",
-							)}
+						<Label>Visa Status</Label>
+						<SelectRoot
+							value={visaStatus || undefined}
+							onValueChange={setVisaStatus}
 						>
-							{VISA_STATUS_OPTIONS.map((o) => (
-								<option key={o.value} value={o.value}>
-									{o.label}
-								</option>
-							))}
-						</select>
+							<SelectTrigger>
+								<SelectValue placeholder="— Select status —" />
+							</SelectTrigger>
+							<SelectContent>
+								{VISA_STATUS_OPTIONS.map((o) => (
+									<SelectItem key={o.value} value={o.value}>
+										{o.label}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</SelectRoot>
 					</div>
 
 					<div className="space-y-1.5">

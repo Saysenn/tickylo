@@ -7,21 +7,10 @@ import { Clock } from "lucide-react";
 import APIService from "@/lib/infra/api";
 import { Pagination } from "@/components/ui/pagination";
 import { TimeDateRange } from "@/components/dashboard/time-manager/time-date-range";
-import { formatDate, formatTime, todayDateStr, daysAgoDateStr } from "@/lib/utils/format";
+import { formatDate, formatTime, todayDateStr, daysAgoDateStr, formatDurationBetween } from "@/lib/utils/format";
 import type { TimeEntry, TimeEntryPage } from "./types";
 
 const PAGE_SIZE = 10;
-
-function formatDuration(start: string, end: string): string {
-	const ms = new Date(end).getTime() - new Date(start).getTime();
-	const totalSeconds = Math.floor(ms / 1000);
-	const h = Math.floor(totalSeconds / 3600);
-	const m = Math.floor((totalSeconds % 3600) / 60);
-	const s = totalSeconds % 60;
-	if (h > 0) return `${h}h ${m}m`;
-	if (m > 0) return `${m}m ${s}s`;
-	return `${s}s`;
-}
 
 export function TimeEntriesTable() {
 	const router = useRouter();
@@ -126,7 +115,7 @@ export function TimeEntriesTable() {
 										</td>
 										<td className="px-4 py-2 font-medium text-ink whitespace-nowrap">
 											{entry.end_time
-												? formatDuration(entry.start_time, entry.end_time)
+												? formatDurationBetween(entry.start_time, entry.end_time)
 												: "—"}
 										</td>
 									</tr>

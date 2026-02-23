@@ -1,18 +1,10 @@
 "use client";
 
+import { msToHours, formatDayLabel } from "@/lib/utils/format";
 import type { TimeSummaryDay } from "./types";
 
 interface TimeDayBarsProps {
 	days: TimeSummaryDay[];
-}
-
-function formatLabel(dateStr: string) {
-	const d = new Date(dateStr + "T00:00:00");
-	return d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
-}
-
-function msToHours(ms: number) {
-	return (ms / 1000 / 60 / 60).toFixed(1);
 }
 
 export function TimeDayBars({ days }: TimeDayBarsProps) {
@@ -36,7 +28,7 @@ export function TimeDayBars({ days }: TimeDayBarsProps) {
 				return (
 					<div key={day.date} className="flex items-center gap-3 text-sm">
 						<span className="w-32 shrink-0 text-ink-3 text-xs">
-							{formatLabel(day.date)}
+							{formatDayLabel(day.date)}
 						</span>
 						<div className="flex-1 h-5 bg-accent rounded-full overflow-hidden">
 							<div

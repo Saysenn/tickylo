@@ -37,8 +37,8 @@ const SelectContent = React.forwardRef<
 		<Select.Content
 			ref={ref}
 			className={cn(
-				"relative z-50 min-w-[8rem] overflow-hidden rounded-xl border bg-background shadow-md data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
-				position === "popper" && "w-[var(--radix-select-trigger-width)]",
+				"relative z-50 min-w-32 overflow-hidden rounded-xl border bg-background shadow-md data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
+				position === "popper" && "w-(--radix-select-trigger-width)",
 				className,
 			)}
 			position={position}
@@ -57,7 +57,7 @@ const SelectItem = React.forwardRef<
 	<Select.Item
 		ref={ref}
 		className={cn(
-			"relative flex w-full cursor-pointer select-none items-center rounded-lg py-2 pl-8 pr-2 text-sm text-ink outline-none focus:bg-mint/10 focus:text-ink data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
+			"relative flex w-full cursor-pointer select-none items-center rounded-lg py-2 pl-8 pr-2 text-sm text-ink outline-none focus:bg-mint/10 focus:text-ink data-disabled:pointer-events-none data-disabled:opacity-50",
 			className,
 		)}
 		{...props}
