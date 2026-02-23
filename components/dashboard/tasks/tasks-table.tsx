@@ -205,11 +205,9 @@ export function TasksTable() {
 									<th className="text-left px-4 py-2 text-xs font-semibold text-ink-3 uppercase tracking-wider">
 										Title
 									</th>
-									{isAdmin && (
-										<th className="text-left px-4 py-2 text-xs font-semibold text-ink-3 uppercase tracking-wider hidden md:table-cell">
-											Assignee
-										</th>
-									)}
+									<th className="text-left px-4 py-2 text-xs font-semibold text-ink-3 uppercase tracking-wider hidden md:table-cell">
+										Assignee
+									</th>
 									<th className="text-left px-4 py-2 text-xs font-semibold text-ink-3 uppercase tracking-wider hidden sm:table-cell">
 										Priority
 									</th>
@@ -240,17 +238,15 @@ export function TasksTable() {
 											)}
 										</td>
 
-										{isAdmin && (
-											<td className="px-4 py-2 hidden md:table-cell">
-												{task.assignee ? (
-													<p className="text-ink truncate">
-														{task.assignee.name ?? task.assignee.email}
-													</p>
-												) : (
-													<span className="text-ink-3 text-xs">Unassigned</span>
-												)}
-											</td>
-										)}
+										<td className="px-4 py-2 hidden md:table-cell">
+											{task.assignee ? (
+												<p className="text-ink truncate text-sm">
+													{task.assignee.name ?? task.assignee.email}
+												</p>
+											) : (
+												<span className="text-ink-3 text-xs">Unassigned</span>
+											)}
+										</td>
 
 										<td className="px-4 py-2 hidden sm:table-cell">
 											{task.priority ? (

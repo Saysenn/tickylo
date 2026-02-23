@@ -3,7 +3,8 @@ import { prisma } from "@/lib/infra/prisma";
 import { ok, errorResponse } from "@/lib/utils/response";
 import { requireUser } from "@/lib/auth/require-user";
 
-// GET /api/v1/time?page=1&limit=10 — paginated list of completed entries
+// GET /api/v1/time?page=1&limit=10&from=YYYY-MM-DD&to=YYYY-MM-DD&tz_offset=<min>
+// Paginated list of completed entries, optionally filtered by local date range.
 export async function GET(request: NextRequest) {
 	try {
 		const user = await requireUser();
@@ -17,16 +18,34 @@ export async function GET(request: NextRequest) {
 		);
 		const skip = (page - 1) * limit;
 
+		const fromParam = searchParams.get("from");
+		const toParam = searchParams.get("to");
+		const tzOffset = parseInt(searchParams.get("tz_offset") ?? "0", 10);
+
+		const localMidnightUTC = (d: string) =>
+			new Date(new Date(d + "T00:00:00Z").getTime() + tzOffset * 60000);
+
+		const where = {
+			user_id: user.id,
+			end_time: { not: null as null },
+			...(fromParam && toParam
+				? {
+						start_time: {
+							gte: localMidnightUTC(fromParam),
+							lte: new Date(localMidnightUTC(toParam).getTime() + 24 * 60 * 60 * 1000 - 1),
+						},
+					}
+				: {}),
+		};
+
 		const [entries, total] = await Promise.all([
 			prisma.timeEntry.findMany({
-				where: { user_id: user.id, end_time: { not: null } },
+				where,
 				orderBy: { start_time: "desc" },
 				take: limit,
 				skip,
 			}),
-			prisma.timeEntry.count({
-				where: { user_id: user.id, end_time: { not: null } },
-			}),
+			prisma.timeEntry.count({ where }),
 		]);
 
 		return ok({

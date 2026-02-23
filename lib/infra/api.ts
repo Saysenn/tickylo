@@ -23,6 +23,15 @@ class APIService {
 	// ---------------------------------------------------------------------------
 	public users = {
 		me: () => axiosService.get(`${apiVersion}/users/me`),
+		getMeta: () => axiosService.get(`${apiVersion}/users/meta`),
+		updateMeta: (data: {
+			phone?: string;
+			dob?: string;
+			address?: string;
+			passport_number?: string;
+			visa_status?: string;
+			visa_expiry?: string;
+		}) => axiosService.patch(`${apiVersion}/users/meta`, data),
 	};
 
 	// ---------------------------------------------------------------------------
@@ -51,6 +60,23 @@ class APIService {
 		}) => axiosService.post(`${apiVersion}/employees`, data),
 		update: (id: string, data: { name?: string; role?: string }) =>
 			axiosService.put(`${apiVersion}/employees/${id}`, data),
+		updateMeta: (
+			id: string,
+			data: {
+				phone?: string | null;
+				dob?: string | null;
+				address?: string | null;
+				passport_number?: string | null;
+				visa_status?: string | null;
+				visa_expiry?: string | null;
+				salary?: number | null;
+				date_joined?: string | null;
+				sick_leave?: number | null;
+				vacation_leave?: number | null;
+				emergency_leave?: number | null;
+				personal_leave?: number | null;
+			},
+		) => axiosService.patch(`${apiVersion}/employees/${id}`, data),
 		remove: (id: string) =>
 			axiosService.delete(`${apiVersion}/employees/${id}`),
 	};
@@ -63,8 +89,8 @@ class APIService {
 		active: () => axiosService.get(`${apiVersion}/time/active`),
 		stop: (id: string, data: { title?: string; description?: string }) =>
 			axiosService.patch(`${apiVersion}/time/${id}`, data),
-		list: (page = 1, limit = 10) =>
-			axiosService.get(`${apiVersion}/time`, { page, limit }),
+		list: (page = 1, limit = 10, from?: string, to?: string, tzOffset?: number) =>
+			axiosService.get(`${apiVersion}/time`, { page, limit, from, to, tz_offset: tzOffset }),
 		summary: (from: string, to: string, userId?: string, tzOffset?: number) =>
 			axiosService.get(`${apiVersion}/time/summary`, {
 				from,

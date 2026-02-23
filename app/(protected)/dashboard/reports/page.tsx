@@ -21,7 +21,7 @@ const TASK_STATUS_STYLES: Record<string, string> = {
 };
 
 // Accent presets
-const ACCENT_STRONG = "bg-mint/40 border-mint"; // same as Time In button
+const ACCENT_STRONG = "bg-mint/20 border-mint/40";
 const ACCENT_GREEN = "bg-green-500/10 border-green-500/20";
 const ACCENT_YELLOW = "bg-yellow-500/15 border-yellow-500/20";
 const ACCENT_RED = "bg-red-500/15 border-red-500/20";

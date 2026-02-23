@@ -18,33 +18,26 @@ export async function GET(request: NextRequest) {
 		const tzOffsetParam = searchParams.get("tz_offset"); // in minutes
 		const tzOffset = tzOffsetParam ? parseInt(tzOffsetParam, 10) : 0;
 
-		const now = new Date();
+		// "local date midnight" → UTC timestamp (see summary route for formula derivation)
+		const localMidnightUTC = (dateStr: string): number =>
+			new Date(dateStr + "T00:00:00Z").getTime() + tzOffset * 60000;
 
-		// Helper to convert local date string to UTC for DB query
-		const localDateToUTC = (dateStr: string) => {
-			const d = new Date(dateStr + "T00:00:00");
-			d.setMinutes(d.getMinutes() - tzOffset);
-			return d;
-		};
+		// UTC timestamp → local "YYYY-MM-DD"
+		const toLocalDateKey = (date: Date): string =>
+			new Date(date.getTime() - tzOffset * 60000).toISOString().slice(0, 10);
 
 		let start: Date;
 		let end: Date;
 
 		if (fromParam && toParam) {
-			start = localDateToUTC(fromParam);
-			end = localDateToUTC(toParam);
-			end.setHours(23, 59, 59, 999);
+			start = new Date(localMidnightUTC(fromParam));
+			end = new Date(localMidnightUTC(toParam) + 24 * 60 * 60 * 1000 - 1);
 		} else {
-			// Default last 7 days
-			const nowLocal = new Date(now);
-			nowLocal.setMinutes(nowLocal.getMinutes() - tzOffset);
-
-			start = new Date(nowLocal);
-			start.setDate(nowLocal.getDate() - 6);
-			start.setHours(0, 0, 0, 0);
-
-			end = new Date(nowLocal);
-			end.setHours(23, 59, 59, 999);
+			// Default: last 7 days in the client's local timezone
+			const nowLocalMs = Date.now() - tzOffset * 60000;
+			const todayKey = new Date(nowLocalMs).toISOString().slice(0, 10);
+			end = new Date(localMidnightUTC(todayKey) + 24 * 60 * 60 * 1000 - 1);
+			start = new Date(localMidnightUTC(todayKey) - 6 * 24 * 60 * 60 * 1000);
 		}
 
 		if (isNaN(start.getTime()) || isNaN(end.getTime())) {
@@ -68,13 +61,6 @@ export async function GET(request: NextRequest) {
 				end_time: true,
 			},
 		});
-
-		// Helper to convert UTC entry to local date key
-		const toLocalDateKey = (date: Date) => {
-			const local = new Date(date);
-			local.setMinutes(local.getMinutes() + tzOffset);
-			return local.toISOString().slice(0, 10);
-		};
 
 		// Aggregate per user by local day
 		const stats: Record<string, { totalMs: number; dates: Set<string> }> = {};

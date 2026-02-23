@@ -112,28 +112,28 @@ export default function TimeManagerPage() {
 					{/* Team summary cards */}
 					{teamData && (
 						<div className="grid grid-cols-2 gap-4">
-							<div className="rounded-lg border bg-mint/60 border-mint p-5">
-								<p className="text-xs font-medium text-ink/60 uppercase tracking-wider mb-2">
+							<div className="rounded-lg border bg-mint/15 border-mint/30 p-5">
+								<p className="text-xs font-medium text-ink-3 uppercase tracking-wider mb-2">
 									Total team hours
 								</p>
 								<p className="text-3xl font-bold text-ink">
 									{msToHours(teamData.totalTeamMs)}
-									<span className="text-base font-normal text-ink/60 ml-1">
+									<span className="text-base font-normal text-ink-3 ml-1">
 										hrs
 									</span>
 								</p>
 							</div>
-							<div className="rounded-lg border bg-mint/30 border-mint p-5">
-								<p className="text-xs font-medium text-ink/60 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+							<div className="rounded-lg border bg-mint/15 border-mint/30 p-5">
+								<p className="text-xs font-medium text-ink-3 uppercase tracking-wider mb-2 flex items-center gap-1.5">
 									<span className="relative flex h-2 w-2 shrink-0">
-										<span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-600 opacity-75" />
-										<span className="relative inline-flex rounded-full h-2 w-2 bg-green-600" />
+										<span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-mint opacity-75" />
+										<span className="relative inline-flex rounded-full h-2 w-2 bg-mint" />
 									</span>
 									Active members
 								</p>
 								<p className="text-3xl font-bold text-ink">
 									{teamData.activeCount}
-									<span className="text-base font-normal text-ink/60 ml-1">
+									<span className="text-base font-normal text-ink-3 ml-1">
 										/ {teamData.employees?.length ?? 0}
 									</span>
 								</p>

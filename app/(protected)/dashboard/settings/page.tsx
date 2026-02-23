@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { TwoFactorSettings } from "@/components/dashboard/settings/two-factor-settings";
+import { ProfileMetaSection } from "@/components/dashboard/settings/profile-meta-section";
 
 export const metadata = {
 	title: "Settings",
@@ -99,6 +100,9 @@ export default async function SettingsPage() {
 				{/* Right — 2FA */}
 				<TwoFactorSettings />
 			</div>
+
+			{/* Personal Information */}
+			<ProfileMetaSection />
 		</div>
 	);
 }

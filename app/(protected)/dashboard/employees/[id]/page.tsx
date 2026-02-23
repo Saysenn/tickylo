@@ -9,6 +9,8 @@ import { formatInitials, formatDate, formatDuration } from "@/lib/utils/format";
 import { cn } from "@/lib/utils/cn";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import { EmployeeMetaEditSection } from "@/components/dashboard/employees/employee-meta-edit-section";
+import { EmployeeLeaveBalanceSection } from "@/components/dashboard/employees/employee-leave-balance-section";
 
 export const metadata = { title: "Employee Details" };
 
@@ -125,60 +127,43 @@ export default async function EmployeeDetailPage({
 				</div>
 			</div>
 
-			{/* Metadata */}
-			{meta && (
-				<section className="rounded-lg border bg-background p-6 space-y-4">
-					<h2 className="font-semibold text-ink">Details</h2>
-					<div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm">
-						{[
-							{ label: "Phone", value: meta.phone },
-							{ label: "Date of birth", value: formatDate(meta.dob?.toISOString()) },
-							{ label: "Date joined", value: formatDate(meta.date_joined?.toISOString()) },
-							{ label: "Address", value: meta.address },
-							{
-								label: "Salary",
-								value: meta.salary != null ? `$${meta.salary.toLocaleString()}` : null,
-							},
-							{ label: "Visa status", value: meta.visa_status },
-							{
-								label: "Visa expiry",
-								value: meta.visa_expiry ? formatDate(meta.visa_expiry.toISOString()) : null,
-							},
-							{ label: "Passport", value: meta.passport_number },
-						].map(({ label, value }) => (
-							<div key={label}>
-								<p className="text-xs text-ink-3 mb-0.5">{label}</p>
-								<p className="font-medium text-ink">{value ?? "—"}</p>
-							</div>
-						))}
-					</div>
-				</section>
-			)}
+			{/* Metadata — editable by admin */}
+			<EmployeeMetaEditSection
+				employeeId={id}
+				initialMeta={
+					meta
+						? {
+								phone: meta.phone,
+								dob: meta.dob?.toISOString() ?? null,
+								address: meta.address,
+								passport_number: meta.passport_number,
+								visa_status: meta.visa_status,
+								visa_expiry: meta.visa_expiry?.toISOString() ?? null,
+								salary: meta.salary,
+								date_joined: meta.date_joined?.toISOString() ?? null,
+								sick_leave: meta.sick_leave,
+								vacation_leave: meta.vacation_leave,
+								emergency_leave: meta.emergency_leave,
+								personal_leave: meta.personal_leave,
+							}
+						: null
+				}
+			/>
 
 			{/* Leave balances + history */}
 			<section className="rounded-lg border bg-background p-6 space-y-4">
 				<h2 className="font-semibold text-ink">Leave</h2>
 
-				{/* Balances */}
-				{meta ? (
-					<div className="grid grid-cols-3 gap-3">
-						{[
-							{ label: "Sick", value: meta.sick_leave ?? 0 },
-							{ label: "Vacation", value: meta.vacation_leave ?? 0 },
-							{ label: "Emergency", value: meta.emergency_leave ?? 0 },
-						].map(({ label, value }) => (
-							<div
-								key={label}
-								className="rounded-md border bg-accent/20 p-3 text-center"
-							>
-								<p className="text-2xl font-bold text-ink">{value}</p>
-								<p className="text-xs text-ink-3 mt-0.5">{label} days left</p>
-							</div>
-						))}
-					</div>
-				) : (
-					<p className="text-sm text-ink-3">No metadata configured.</p>
-				)}
+				{/* Editable leave balances */}
+				<EmployeeLeaveBalanceSection
+					employeeId={id}
+					initialBalances={{
+						sick_leave: meta?.sick_leave ?? 0,
+						vacation_leave: meta?.vacation_leave ?? 0,
+						emergency_leave: meta?.emergency_leave ?? 0,
+						personal_leave: meta?.personal_leave ?? 0,
+					}}
+				/>
 
 				{/* Leave history */}
 				{leaves.length > 0 && (
