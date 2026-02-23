@@ -1,9 +1,11 @@
 import redis from "@/configs/redis.config";
 
 const redisClient = {
-	set: async (key: string, value: string, ex: number = 60) => {
+	set: async (key: string, value: any, ex: number = 60) => {
 		try {
-			return await redis.set(key, value, "EX", ex);
+			const valueToStore =
+				typeof value === "string" ? value : JSON.stringify(value);
+			return await redis.set(key, valueToStore, "EX", ex);
 		} catch (error) {
 			console.error("Redis set error:", error);
 			throw error;
@@ -12,7 +14,8 @@ const redisClient = {
 
 	get: async (key: string) => {
 		try {
-			return await redis.get(key);
+			const data = await redis.get(key);
+			return data ? JSON.parse(data) : null;
 		} catch (error) {
 			console.error("Redis get error:", error);
 			throw error;
@@ -30,7 +33,7 @@ const redisClient = {
 
 	delMany: async (keys: string[]) => {
 		try {
-			if (keys.length > 0) return await redis.del(...keys);
+			return await redis.del(...keys);
 		} catch (error) {
 			console.error("Redis delMany error:", error);
 			throw error;
