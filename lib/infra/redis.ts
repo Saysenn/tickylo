@@ -1,67 +1,41 @@
-// lib/RedisService.ts
-import type { Redis } from "ioredis";
-import RedisConstructor from "ioredis";
+import redis from "@/configs/redis.config";
 
-export class RedisService {
-	private static instance: RedisService;
-	private redis: Redis;
-	private redisUrl: string;
-
-	private constructor() {
-		this.redisUrl = process.env.REDIS_URL || "";
-		this.redis = new RedisConstructor(this.redisUrl, {
-			lazyConnect: true,
-			maxRetriesPerRequest: null,
-		});
-
-		// Prevent "Unhandled error event"
-		this.redis.on("error", (err) => {
-			if (process.env.NODE_ENV !== "production") {
-				console.warn("Redis connection issue:", err.message);
-			}
-		});
-	}
-
-	public static getInstance(): RedisService {
-		if (!RedisService.instance) {
-			RedisService.instance = new RedisService();
+const redisClient = {
+	set: async (key: string, value: string, ex: number = 60) => {
+		try {
+			return await redis.set(key, value, "EX", ex);
+		} catch (error) {
+			console.error("Redis set error:", error);
+			throw error;
 		}
-		return RedisService.instance;
-	}
+	},
 
-	private async ensureConnection() {
-		if (this.redis.status === "wait") {
-			await this.redis.connect();
+	get: async (key: string) => {
+		try {
+			return await redis.get(key);
+		} catch (error) {
+			console.error("Redis get error:", error);
+			throw error;
 		}
-	}
+	},
 
-	public async set(key: string, value: string, seconds?: number) {
-		await this.ensureConnection();
-
-		if (seconds) {
-			return this.redis.setex(key, seconds, value);
+	del: async (key: string) => {
+		try {
+			return await redis.del(key);
+		} catch (error) {
+			console.error("Redis del error:", error);
+			throw error;
 		}
-		return this.redis.set(key, value);
-	}
+	},
 
-	public async get(key: string) {
-		await this.ensureConnection();
-		return this.redis.get(key);
-	}
-
-	public async del(key: string) {
-		await this.ensureConnection();
-		return this.redis.del(key);
-	}
-
-	public async delByPattern(pattern: string) {
-		await this.ensureConnection();
-
-		const keys = await this.redis.keys(pattern);
-		if (keys.length > 0) {
-			await this.redis.del(...keys);
+	delMany: async (keys: string[]) => {
+		try {
+			if (keys.length > 0) return await redis.del(...keys);
+		} catch (error) {
+			console.error("Redis delMany error:", error);
+			throw error;
 		}
-	}
-}
+	},
+};
 
-export default RedisService.getInstance();
+export default redisClient;
