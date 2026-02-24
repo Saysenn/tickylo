@@ -15,12 +15,14 @@ export async function GET(_req: NextRequest) {
 
 		const isAdmin = (user.app_metadata?.role as string) === ROLES.ADMIN;
 
-		// Last 7 days date range
-		const today = new Date();
-		today.setHours(23, 59, 59, 999);
-		const sevenDaysAgo = new Date();
-		sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
-		sevenDaysAgo.setHours(0, 0, 0, 0);
+		// Last 7 days date range.
+		// Use the client's local date (passed as ?date=YYYY-MM-DD) so the window
+		// is relative to the user's timezone, not the UTC server clock.
+		const dateParam = _req.nextUrl.searchParams.get("date");
+		const todayStr = dateParam ?? new Date().toISOString().slice(0, 10);
+		const today = new Date(`${todayStr}T23:59:59.999Z`);
+		const sevenDaysAgo = new Date(`${todayStr}T00:00:00.000Z`);
+		sevenDaysAgo.setUTCDate(sevenDaysAgo.getUTCDate() - 6);
 
 		if (isAdmin) {
 			const [
@@ -191,7 +193,7 @@ function buildWeeklyDays(
 	const days: { date: string; totalMs: number }[] = [];
 	for (let i = 0; i < 7; i++) {
 		const d = new Date(start);
-		d.setDate(d.getDate() + i);
+		d.setUTCDate(d.getUTCDate() + i);
 		const dateStr = d.toISOString().slice(0, 10);
 		days.push({ date: dateStr, totalMs: 0 });
 	}

@@ -176,7 +176,12 @@ class APIService {
 	// Dashboard (role-aware)
 	// ---------------------------------------------------------------------------
 	public dashboard = {
-		get: () => axiosService.get(`${apiVersion}/dashboard`),
+		// Pass the client's local date so the server builds the 7-day window
+		// relative to the user's timezone, not the UTC server clock.
+		get: () =>
+			axiosService.get(
+				`${apiVersion}/dashboard?date=${new Date().toLocaleDateString("en-CA")}`,
+			),
 	};
 
 	// ---------------------------------------------------------------------------

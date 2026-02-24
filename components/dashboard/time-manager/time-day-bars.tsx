@@ -1,10 +1,42 @@
 "use client";
 
+import {
+	BarChart,
+	Bar,
+	XAxis,
+	YAxis,
+	Tooltip,
+	ResponsiveContainer,
+	Cell,
+	LabelList,
+} from "recharts";
 import { formatDurationMs, formatDayLabel } from "@/lib/utils/format";
 import type { TimeSummaryDay } from "./types";
 
 interface TimeDayBarsProps {
 	days: TimeSummaryDay[];
+}
+
+interface TooltipPayloadItem {
+	value: number;
+}
+
+function CustomTooltip({
+	active,
+	payload,
+	label,
+}: {
+	active?: boolean;
+	payload?: TooltipPayloadItem[];
+	label?: string;
+}) {
+	if (!active || !payload?.length || !payload[0].value) return null;
+	return (
+		<div className="bg-white/90 backdrop-blur-sm border border-mint/30 text-[11px] font-medium text-ink-2 px-2.5 py-1.5 rounded-lg shadow-sm space-y-0.5">
+			<p className="text-ink-3">{label}</p>
+			<p className="text-ink">{formatDurationMs(payload[0].value)}</p>
+		</div>
+	);
 }
 
 export function TimeDayBars({ days }: TimeDayBarsProps) {
@@ -16,32 +48,57 @@ export function TimeDayBars({ days }: TimeDayBarsProps) {
 		);
 	}
 
-	const maxMs = Math.max(...days.map((d) => d.totalMs), 1);
+	const data = days.map((d) => ({
+		label: formatDayLabel(d.date),
+		totalMs: d.totalMs,
+	}));
+
+	const chartHeight = days.length * 38 + 16;
 
 	return (
-		<div className="rounded-lg border bg-background p-5 space-y-2">
+		<div className="rounded-lg border bg-background p-5">
 			<p className="text-xs font-semibold text-ink-3 uppercase tracking-wider mb-4">
 				Daily breakdown
 			</p>
-			{days.map((day) => {
-				const pct = day.totalMs === 0 ? 0 : (day.totalMs / maxMs) * 100;
-				return (
-					<div key={day.date} className="flex items-center gap-3 text-sm">
-						<span className="w-32 shrink-0 text-ink-3 text-xs">
-							{formatDayLabel(day.date)}
-						</span>
-						<div className="flex-1 h-5 bg-accent rounded-full overflow-hidden">
-							<div
-								className="h-full bg-mint/70 rounded-full transition-all duration-300"
-								style={{ width: `${pct}%` }}
+			<ResponsiveContainer width="100%" height={chartHeight}>
+				<BarChart
+					layout="vertical"
+					data={data}
+					margin={{ top: 0, right: 72, bottom: 0, left: 0 }}
+					barSize={16}
+				>
+					<XAxis type="number" hide domain={[0, "dataMax"]} />
+					<YAxis
+						type="category"
+						dataKey="label"
+						axisLine={false}
+						tickLine={false}
+						width={120}
+						tick={{ fontSize: 11, fill: "#9ca3af", fontFamily: "system-ui,sans-serif" }}
+					/>
+					<Tooltip
+						content={<CustomTooltip />}
+						cursor={{ fill: "rgba(128,237,153,0.06)" }}
+					/>
+					<Bar dataKey="totalMs" radius={[0, 4, 4, 0]} isAnimationActive animationDuration={700}>
+						{data.map((entry, i) => (
+							<Cell
+								key={i}
+								fill={entry.totalMs > 0 ? "rgba(128,237,153,0.6)" : "rgba(128,237,153,0.12)"}
 							/>
-						</div>
-						<span className="w-20 shrink-0 text-right text-ink-3 text-xs">
-							{day.totalMs > 0 ? formatDurationMs(day.totalMs) : "—"}
-						</span>
-					</div>
-				);
-			})}
+						))}
+						<LabelList
+							dataKey="totalMs"
+							position="right"
+							formatter={(value) => {
+								const ms = typeof value === "number" ? value : 0;
+								return ms > 0 ? formatDurationMs(ms) : "—";
+							}}
+							style={{ fontSize: 11, fill: "#9ca3af", fontFamily: "system-ui,sans-serif" }}
+						/>
+					</Bar>
+				</BarChart>
+			</ResponsiveContainer>
 		</div>
 	);
 }
