@@ -121,6 +121,21 @@ export function avgHours(totalMs: number, daysWorked: number): string {
 }
 
 /**
+ * Formats milliseconds into a compact human-readable duration showing
+ * hours, minutes, and seconds accurately (e.g., "3m 23s", "1h 3m 5s").
+ * Omits leading zero components (no "0h"), always shows at least seconds.
+ */
+export function formatDurationMs(ms: number): string {
+	const totalSeconds = Math.floor(ms / 1000);
+	const h = Math.floor(totalSeconds / 3600);
+	const m = Math.floor((totalSeconds % 3600) / 60);
+	const s = totalSeconds % 60;
+	if (h > 0) return `${h}h ${m}m ${s}s`;
+	if (m > 0) return `${m}m ${s}s`;
+	return `${s}s`;
+}
+
+/**
  * Formats a YYYY-MM-DD date string into a short day label (e.g., "Mon, Feb 20").
  * Appends T00:00:00 to force local timezone parsing.
  */
@@ -130,18 +145,12 @@ export function formatDayLabel(dateStr: string): string {
 }
 
 /**
- * Formats the duration between two ISO datetime strings in a compact human-readable form
- * (e.g., "2h 30m", "45m 12s", "8s").
+ * Formats the exact duration between two ISO datetime strings (e.g., "3m 23s", "1h 2m 5s").
+ * No rounding — delegates to formatDurationMs.
  */
 export function formatDurationBetween(start: string, end: string): string {
 	const ms = new Date(end).getTime() - new Date(start).getTime();
-	const totalSeconds = Math.floor(ms / 1000);
-	const h = Math.floor(totalSeconds / 3600);
-	const m = Math.floor((totalSeconds % 3600) / 60);
-	const s = totalSeconds % 60;
-	if (h > 0) return `${h}h ${m}m`;
-	if (m > 0) return `${m}m ${s}s`;
-	return `${s}s`;
+	return formatDurationMs(ms);
 }
 
 /**

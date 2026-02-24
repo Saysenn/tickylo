@@ -243,7 +243,7 @@ export default async function EmployeeDetailPage({
 			{/* Time summary */}
 			<section className="rounded-lg border bg-background p-6 space-y-4">
 				<div className="flex items-center justify-between">
-					<h2 className="font-semibold text-ink">Time (last 30 days)</h2>
+					<h2 className="font-semibold text-ink">Time <span className="font-normal text-ink-3">(last 30 days)</span></h2>
 					<span className="text-sm text-ink-3">
 						Total: {formatDuration(totalTimeMs)}
 					</span>

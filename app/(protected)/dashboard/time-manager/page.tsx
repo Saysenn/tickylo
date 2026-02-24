@@ -9,10 +9,9 @@ import { TimeSummaryCards } from "@/components/dashboard/time-manager/time-summa
 import { TimeDayBars } from "@/components/dashboard/time-manager/time-day-bars";
 import { TimeEmployeeTable } from "@/components/dashboard/time-manager/time-employee-table";
 import type { TimeSummary } from "@/components/dashboard/time-manager/types";
-import { todayDateStr, daysAgoDateStr } from "@/lib/utils/format";
+import { todayDateStr, daysAgoDateStr, formatDurationMs } from "@/lib/utils/format";
 import { useAppSelector } from "@/store/hooks";
 import { Button } from "@/components/ui/button";
-import { msToHours } from "@/lib/utils/format";
 
 export default function TimeManagerPage() {
 	const [from, setFrom] = useState(daysAgoDateStr(6));
@@ -117,10 +116,7 @@ export default function TimeManagerPage() {
 									Total team hours
 								</p>
 								<p className="text-3xl font-bold text-ink">
-									{msToHours(teamData.totalTeamMs)}
-									<span className="text-base font-normal text-ink-3 ml-1">
-										hrs
-									</span>
+									{formatDurationMs(teamData.totalTeamMs)}
 								</p>
 							</div>
 							<div className="rounded-lg border bg-mint/15 border-mint/30 p-5">

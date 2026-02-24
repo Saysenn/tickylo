@@ -157,7 +157,7 @@ export default function ReportsPage() {
 
 					{/* Time Stats */}
 					<section className="space-y-3">
-						<h2 className="font-semibold text-ink">Time (This Month)</h2>
+						<h2 className="font-semibold text-ink">Time <span className="font-normal text-ink-3">(This Month)</span></h2>
 						<div className="grid grid-cols-2 gap-3">
 							<StatCard
 								label="Total team hours"

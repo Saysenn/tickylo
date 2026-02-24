@@ -67,7 +67,7 @@
 ## Key utility functions already in `lib/utils/format.ts`
 
 Date helpers: `toDateStr`, `todayDateStr`, `daysAgoDateStr`, `startOfMonthDateStr`, `startOfLastMonthDateStr`, `endOfLastMonthDateStr`
-Display formatters: `formatDate`, `formatTime`, `formatDuration` (HH:MM:SS), `formatDurationBetween` (compact "2h 30m"), `formatDayLabel` (weekday label), `formatInitials`, `formatDate`
+Display formatters: `formatDate`, `formatTime`, `formatDuration` (HH:MM:SS), `formatDurationBetween` (compact "2h 30m", seconds rounded), `formatDurationMs` (accurate "Xh Ym Zs" from ms), `formatDayLabel` (weekday label), `formatInitials`
 Number/time: `msToHours`, `avgHours`
 Input helpers: `toDateInput` (ISO → `<input type="date">` value), `toIntInput` (number|null → string)
 

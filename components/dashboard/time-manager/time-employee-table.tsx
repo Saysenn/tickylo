@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { ChevronRight } from "lucide-react";
-import { msToHours, avgHours } from "@/lib/utils/format";
+import { formatDurationMs } from "@/lib/utils/format";
 
 export interface EmployeeStat {
 	id: string;
@@ -98,14 +98,14 @@ export function TimeEmployeeTable({ employees, onSelect }: Props) {
 									</td>
 									<td className="px-4 py-3 text-right font-mono tabular-nums">
 										<span className={emp.totalMs === 0 ? "text-ink-3" : "text-ink font-medium"}>
-											{msToHours(emp.totalMs)} hrs
+											{formatDurationMs(emp.totalMs)}
 										</span>
 									</td>
 									<td className="px-4 py-3 text-right text-ink-3 hidden sm:table-cell">
 										{emp.daysWorked}
 									</td>
 									<td className="px-4 py-3 text-right text-ink-3 hidden sm:table-cell">
-										{avgHours(emp.totalMs, emp.daysWorked)} hrs
+										{formatDurationMs(emp.daysWorked > 0 ? Math.round(emp.totalMs / emp.daysWorked) : 0)}
 									</td>
 									<td className="px-4 py-3 text-ink-3">
 										<ChevronRight className="w-4 h-4" />

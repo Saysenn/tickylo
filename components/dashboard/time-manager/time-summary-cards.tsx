@@ -1,6 +1,6 @@
 "use client";
 
-import { msToHours, avgHours } from "@/lib/utils/format";
+import { formatDurationMs } from "@/lib/utils/format";
 import type { TimeSummary } from "./types";
 
 interface TimeSummaryCardsProps {
@@ -10,7 +10,7 @@ interface TimeSummaryCardsProps {
 interface CardProps {
 	label: string;
 	value: string;
-	unit: string;
+	unit?: string;
 }
 
 function StatCard({ label, value, unit }: CardProps) {
@@ -21,24 +21,23 @@ function StatCard({ label, value, unit }: CardProps) {
 			</p>
 			<p className="text-3xl font-bold text-ink">
 				{value}
-				<span className="text-base font-normal text-ink-3 ml-1">{unit}</span>
+				{unit && <span className="text-base font-normal text-ink-3 ml-1">{unit}</span>}
 			</p>
 		</div>
 	);
 }
 
 export function TimeSummaryCards({ summary }: TimeSummaryCardsProps) {
+	const avgMs = summary.daysWorked > 0 ? Math.round(summary.totalMs / summary.daysWorked) : 0;
 	return (
 		<div className="grid grid-cols-3 gap-4">
 			<StatCard
-				label="Total hours"
-				value={msToHours(summary.totalMs)}
-				unit="hrs"
+				label="Total time"
+				value={formatDurationMs(summary.totalMs)}
 			/>
 			<StatCard
 				label="Avg per day"
-				value={avgHours(summary.totalMs, summary.daysWorked)}
-				unit="hrs"
+				value={formatDurationMs(avgMs)}
 			/>
 			<StatCard
 				label="Days worked"

@@ -1,6 +1,6 @@
 "use client";
 
-import { msToHours, formatDayLabel } from "@/lib/utils/format";
+import { formatDurationMs, formatDayLabel } from "@/lib/utils/format";
 import type { TimeSummaryDay } from "./types";
 
 interface TimeDayBarsProps {
@@ -37,7 +37,7 @@ export function TimeDayBars({ days }: TimeDayBarsProps) {
 							/>
 						</div>
 						<span className="w-14 shrink-0 text-right text-ink-3 text-xs">
-							{day.totalMs > 0 ? `${msToHours(day.totalMs)}h` : "—"}
+							{day.totalMs > 0 ? formatDurationMs(day.totalMs) : "—"}
 						</span>
 					</div>
 				);
