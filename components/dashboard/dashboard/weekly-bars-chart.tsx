@@ -47,13 +47,13 @@ export function WeeklyBarsChart({ days, title = "Weekly Activity" }: WeeklyBarsC
 								)}
 							</div>
 
-							{/* Bar track */}
-							<div className="flex-1 w-full flex items-end" style={{ minHeight: "120px" }}>
+							{/* Bar track — definite height needed so height:X% on children resolves */}
+							<div className="w-full flex items-end" style={{ height: "140px" }}>
 								{day.totalMs === 0 ? (
 									// Empty day — dashed outlined pill
 									<div
 										className="w-full rounded-full border-2 border-dashed border-mint/20"
-										style={{ height: "18%" }}
+										style={{ height: "24px" }}
 									/>
 								) : isToday ? (
 									// Today — vibrant gradient with glow
