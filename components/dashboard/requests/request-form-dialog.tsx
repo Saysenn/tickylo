@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
 	DialogRoot,
 	DialogContent,
@@ -10,6 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import APIService from "@/lib/infra/api";
 
 interface RequestFormDialogProps {
 	isPending: boolean;
@@ -21,6 +23,18 @@ interface RequestFormDialogProps {
 	}) => Promise<void>;
 	trigger: React.ReactNode;
 }
+
+interface UserMeta {
+	sick_leave: number | null;
+	vacation_leave: number | null;
+	emergency_leave: number | null;
+}
+
+const LEAVE_TYPES: { value: string; label: string; field: keyof UserMeta }[] = [
+	{ value: "vacation", label: "Vacation", field: "vacation_leave" },
+	{ value: "sick", label: "Sick", field: "sick_leave" },
+	{ value: "emergency", label: "Emergency", field: "emergency_leave" },
+];
 
 export function RequestFormDialog({
 	isPending,
@@ -34,6 +48,23 @@ export function RequestFormDialog({
 	const [reason, setReason] = useState("");
 	const [error, setError] = useState("");
 
+	const { data: meta, isLoading: isLoadingMeta } = useQuery<UserMeta | null>({
+		queryKey: ["user-meta"],
+		queryFn: () => APIService.users.getMeta(),
+		enabled: open,
+		staleTime: 30_000,
+	});
+
+	const getBalance = (field: keyof UserMeta): number =>
+		meta ? (meta[field] ?? 0) : 0;
+
+	const isExhausted = (field: keyof UserMeta): boolean =>
+		meta !== undefined && meta !== null && getBalance(field) <= 0;
+
+	const selectedType = LEAVE_TYPES.find((t) => t.value === type);
+	const selectedExhausted = selectedType ? isExhausted(selectedType.field) : false;
+	const metaExists = meta !== undefined && meta !== null;
+
 	async function handleSubmit(e: React.FormEvent) {
 		e.preventDefault();
 		setError("");
@@ -44,6 +75,10 @@ export function RequestFormDialog({
 		}
 		if (new Date(endDate) < new Date(startDate)) {
 			setError("End date must be after start date.");
+			return;
+		}
+		if (selectedExhausted) {
+			setError(`You have no remaining ${selectedType?.label.toLowerCase()} leave days.`);
 			return;
 		}
 
@@ -75,10 +110,35 @@ export function RequestFormDialog({
 							onChange={(e) => setType(e.target.value)}
 							className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-mint"
 						>
-							<option value="vacation">Vacation</option>
-							<option value="sick">Sick</option>
-							<option value="emergency">Emergency</option>
+							{LEAVE_TYPES.map((lt) => {
+								const balance = getBalance(lt.field);
+								const exhausted = isExhausted(lt.field);
+								return (
+									<option key={lt.value} value={lt.value} disabled={exhausted}>
+										{lt.label}
+										{metaExists && !isLoadingMeta
+											? exhausted
+												? " — No days remaining"
+												: ` — ${balance} day${balance === 1 ? "" : "s"} remaining`
+											: ""}
+									</option>
+								);
+							})}
 						</select>
+
+						{/* Inline warning for exhausted selected type */}
+						{metaExists && selectedExhausted && (
+							<p className="text-xs text-destructive mt-1">
+								You have no remaining {selectedType?.label.toLowerCase()} leave days. Please select a different type or contact your admin.
+							</p>
+						)}
+
+						{/* Warning when meta not set up */}
+						{!isLoadingMeta && open && meta === null && (
+							<p className="text-xs text-ink-3 mt-1">
+								Your leave balance hasn&apos;t been configured yet. Your request will be reviewed by your admin.
+							</p>
+						)}
 					</div>
 
 					{/* Dates */}
@@ -132,7 +192,11 @@ export function RequestFormDialog({
 						>
 							Cancel
 						</Button>
-						<Button type="submit" size="sm" disabled={isPending}>
+						<Button
+							type="submit"
+							size="sm"
+							disabled={isPending || isLoadingMeta || selectedExhausted}
+						>
 							{isPending ? "Submitting…" : "Submit request"}
 						</Button>
 					</div>

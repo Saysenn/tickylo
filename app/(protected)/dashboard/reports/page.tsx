@@ -15,67 +15,60 @@ const LEAVE_STATUS_STYLES: Record<string, string> = {
 
 const TASK_STATUS_STYLES: Record<string, string> = {
 	pending: "bg-accent text-ink-3 border-border/40",
-	assigned: "bg-blue-500/15 text-blue-700 border-blue-500/20",
+	assigned: "bg-mint/10 text-mint border-mint/20",
 	in_progress: "bg-yellow-500/15 text-yellow-700 border-yellow-500/20",
 	completed: "bg-green-500/15 text-green-700 border-green-500/20",
 };
-
-// Accent presets
-const ACCENT_STRONG = "bg-mint/20 border-mint/40";
-const ACCENT_GREEN = "bg-green-500/10 border-green-500/20";
-const ACCENT_YELLOW = "bg-yellow-500/15 border-yellow-500/20";
-const ACCENT_RED = "bg-red-500/15 border-red-500/20";
-const ACCENT_GRAY = "bg-gray-200/50 border-border/40";
 
 interface StatCardProps {
 	label: string;
 	value: string | number;
 	sub?: string;
-	accent?: string;
 	showActiveDot?: boolean;
+	featured?: boolean;
+	accentClass?: string; // border + text color tint for non-featured glass cards
 }
 
 function StatCard({
 	label,
 	value,
 	sub,
-	accent = ACCENT_GREEN,
 	showActiveDot = false,
+	featured = false,
+	accentClass = "",
 }: StatCardProps) {
-	const isStrong = accent === ACCENT_STRONG;
+	if (featured) {
+		return (
+			<div
+				className="rounded-xl border border-mint/30 p-4 relative overflow-hidden shadow-[0_0_40px_rgba(128,237,153,0.22)] hover:shadow-[0_0_60px_rgba(128,237,153,0.35)] transition-shadow"
+				style={{ background: "linear-gradient(135deg, #1c3a1c 0%, #143018 50%, #0d200d 100%)" }}
+			>
+				<div
+					className="absolute inset-0 pointer-events-none"
+					style={{ background: "radial-gradient(ellipse at 80% 20%, rgba(128, 237, 153, 0.15) 0%, transparent 60%)" }}
+				/>
+				<div className="relative flex items-center gap-1.5 mb-1">
+					<p className="text-xs uppercase tracking-wider text-white/60">{label}</p>
+				</div>
+				<p className="relative text-2xl font-bold text-white">{value}</p>
+				{sub && <p className="relative text-xs mt-0.5 text-white/50">{sub}</p>}
+			</div>
+		);
+	}
+
 	return (
-		<div className={`rounded-lg border p-4 ${accent}`}>
+		<div className={cn("glass rounded-xl p-4 transition-shadow hover:shadow-[0_4px_20px_rgba(128,237,153,0.12)]", accentClass)}>
 			<div className="flex items-center gap-1.5 mb-1">
 				{showActiveDot && (
 					<span className="relative flex h-2 w-2 shrink-0">
-						<span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-600 opacity-75" />
-						<span className="relative inline-flex rounded-full h-2 w-2 bg-green-600" />
+						<span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-mint opacity-75" />
+						<span className="relative inline-flex rounded-full h-2 w-2 bg-mint" />
 					</span>
 				)}
-				<p
-					className={cn(
-						"text-xs uppercase tracking-wider",
-						isStrong ? "text-ink/60" : "text-ink-3",
-					)}
-				>
-					{label}
-				</p>
+				<p className="text-xs uppercase tracking-wider text-ink-3">{label}</p>
 			</div>
-			<p
-				className={cn("text-2xl font-bold", isStrong ? "text-ink" : "text-ink")}
-			>
-				{value}
-			</p>
-			{sub && (
-				<p
-					className={cn(
-						"text-xs mt-0.5",
-						isStrong ? "text-ink/60" : "text-ink-3",
-					)}
-				>
-					{sub}
-				</p>
-			)}
+			<p className="text-2xl font-bold text-ink">{value}</p>
+			{sub && <p className="text-xs mt-0.5 text-ink-3">{sub}</p>}
 		</div>
 	);
 }
@@ -87,7 +80,18 @@ export default function ReportsPage() {
 	});
 
 	return (
-		<div className="w-full space-y-8">
+		<div className="relative w-full space-y-8">
+			{/* Mint mesh gradient background */}
+			<div
+				className="fixed inset-0 -z-10 pointer-events-none"
+				style={{
+					background: `
+						radial-gradient(ellipse at 12% 8%, rgba(128, 237, 153, 0.20) 0%, transparent 42%),
+						radial-gradient(ellipse at 88% 85%, rgba(128, 237, 153, 0.14) 0%, transparent 42%)
+					`,
+				}}
+			/>
+
 			<div>
 				<h1 className="text-2xl font-bold text-ink">Reports</h1>
 				<p className="text-ink-3 mt-1 text-sm">
@@ -108,22 +112,22 @@ export default function ReportsPage() {
 							<StatCard
 								label="Total"
 								value={report.leaves.total}
-								accent={ACCENT_STRONG}
+								featured
 							/>
 							<StatCard
 								label="Pending"
 								value={report.leaves.pending}
-								accent={ACCENT_YELLOW}
+								accentClass="border-yellow-400/30"
 							/>
 							<StatCard
 								label="Approved"
 								value={report.leaves.approved}
-								accent={ACCENT_GREEN}
+								accentClass="border-mint/30"
 							/>
 							<StatCard
 								label="Rejected"
 								value={report.leaves.rejected}
-								accent={ACCENT_RED}
+								accentClass="border-red-400/30"
 							/>
 						</div>
 					</section>
@@ -135,41 +139,42 @@ export default function ReportsPage() {
 							<StatCard
 								label="Total"
 								value={report.tasks.total}
-								accent={ACCENT_STRONG}
+								featured
 							/>
 							<StatCard
 								label="Unassigned"
 								value={report.tasks.pending}
-								accent={ACCENT_GRAY}
 							/>
 							<StatCard
 								label="In Progress"
 								value={report.tasks.in_progress}
-								accent={ACCENT_YELLOW}
+								accentClass="border-yellow-400/30"
 							/>
 							<StatCard
 								label="Completed"
 								value={report.tasks.completed}
-								accent={ACCENT_GREEN}
+								accentClass="border-mint/30"
 							/>
 						</div>
 					</section>
 
 					{/* Time Stats */}
 					<section className="space-y-3">
-						<h2 className="font-semibold text-ink">Time <span className="font-normal text-ink-3">(This Month)</span></h2>
+						<h2 className="font-semibold text-ink">
+							Time <span className="font-normal text-ink-3">(This Month)</span>
+						</h2>
 						<div className="grid grid-cols-2 gap-3">
 							<StatCard
 								label="Total team hours"
 								value={formatDuration(report.time.totalMsThisMonth)}
 								sub="Across all tracked sessions"
-								accent={ACCENT_STRONG}
+								featured
 							/>
 							<StatCard
 								label="Active members"
 								value={report.time.activeUsers}
 								sub="Members with time entries this month"
-								accent={ACCENT_GREEN}
+								accentClass="border-mint/25"
 								showActiveDot
 							/>
 						</div>
@@ -179,10 +184,10 @@ export default function ReportsPage() {
 					<section className="space-y-3">
 						<h2 className="font-semibold text-ink">Recent Leave Requests</h2>
 						{report.recent.leaves.length > 0 ? (
-							<div className="rounded-lg border overflow-x-auto">
+							<div className="glass rounded-xl overflow-x-auto">
 								<table className="w-full text-sm min-w-[400px]">
 									<thead>
-										<tr className="border-b bg-accent/30">
+										<tr className="border-b border-mint/10">
 											<th className="text-left px-4 py-2 text-xs font-semibold text-ink-3 uppercase tracking-wider">
 												Employee
 											</th>
@@ -197,9 +202,9 @@ export default function ReportsPage() {
 											</th>
 										</tr>
 									</thead>
-									<tbody className="divide-y">
+									<tbody className="divide-y divide-mint/8">
 										{report.recent.leaves.map((l: any) => (
-											<tr key={l.id} className="hover:bg-accent/10">
+											<tr key={l.id} className="hover:bg-mint/5">
 												<td className="px-4 py-2">
 													<p className="font-medium text-ink">
 														{l.user?.name ?? "—"}
@@ -235,10 +240,10 @@ export default function ReportsPage() {
 					<section className="space-y-3">
 						<h2 className="font-semibold text-ink">Recent Tasks</h2>
 						{report.recent.tasks.length > 0 ? (
-							<div className="rounded-lg border overflow-x-auto">
+							<div className="glass rounded-xl overflow-x-auto">
 								<table className="w-full text-sm min-w-[400px]">
 									<thead>
-										<tr className="border-b bg-accent/30">
+										<tr className="border-b border-mint/10">
 											<th className="text-left px-4 py-2 text-xs font-semibold text-ink-3 uppercase tracking-wider">
 												Title
 											</th>
@@ -250,9 +255,9 @@ export default function ReportsPage() {
 											</th>
 										</tr>
 									</thead>
-									<tbody className="divide-y">
+									<tbody className="divide-y divide-mint/8">
 										{report.recent.tasks.map((t: any) => (
-											<tr key={t.id} className="hover:bg-accent/10">
+											<tr key={t.id} className="hover:bg-mint/5">
 												<td className="px-4 py-2 font-medium text-ink">
 													{t.title}
 												</td>

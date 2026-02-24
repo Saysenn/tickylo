@@ -3,15 +3,22 @@
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { isAxiosError } from "axios";
 import APIService from "@/lib/infra/api";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Pagination } from "@/components/ui/pagination";
+import {
+	DialogRoot,
+	DialogContent,
+	DialogHeader,
+	DialogTitle,
+} from "@/components/ui/dialog";
 import { RequestFormDialog } from "./request-form-dialog";
 import { useAppSelector } from "@/store/hooks";
 import { formatDate } from "@/lib/utils/format";
 import { cn } from "@/lib/utils/cn";
-import { Inbox, Plus, Trash2 } from "lucide-react";
+import { Inbox, Plus, Trash2, BellRing, CheckCircle2 } from "lucide-react";
 import { ROWS_PER_PAGE } from "@/configs/pagination.config";
 import type { LeaveRequest, LeaveRequestPage } from "./types";
 
@@ -42,6 +49,13 @@ export function RequestsTable() {
 
 	// Bulk selection state (admin only)
 	const [selected, setSelected] = useState<Set<string>>(new Set());
+
+	// Insufficient leave dialog state
+	const [insufficientDialog, setInsufficientDialog] = useState<{
+		open: boolean;
+		request: LeaveRequest | null;
+		reminded: boolean;
+	}>({ open: false, request: null, reminded: false });
 
 	const updateParam = (key: string, value: string) => {
 		const params = new URLSearchParams(searchParams.toString());
@@ -105,6 +119,21 @@ export function RequestsTable() {
 		onSuccess: () => { invalidateAll(); resetPage(); },
 	});
 
+	const handleApprove = async (req: LeaveRequest) => {
+		try {
+			await approveRequest(req.id);
+		} catch (err) {
+			if (
+				isAxiosError(err) &&
+				err.response?.status === 400 &&
+				typeof err.response?.data?.error === "string" &&
+				err.response.data.error.toLowerCase().includes("leave balance")
+			) {
+				setInsufficientDialog({ open: true, request: req, reminded: false });
+			}
+		}
+	};
+
 	const list = result?.data ?? [];
 	const totalPages = result?.totalPages ?? 1;
 
@@ -140,6 +169,20 @@ export function RequestsTable() {
 			</div>
 		);
 	}
+
+	const TYPE_LABEL_MAP: Record<string, string> = {
+		sick: "Sick",
+		vacation: "Vacation",
+		emergency: "Emergency",
+	};
+
+	const closeInsufficientDialog = () =>
+		setInsufficientDialog({ open: false, request: null, reminded: false });
+
+	const handleSendReminder = () => {
+		setInsufficientDialog((prev) => ({ ...prev, reminded: true }));
+		setTimeout(closeInsufficientDialog, 1800);
+	};
 
 	return (
 		<div className="space-y-3">
@@ -305,7 +348,7 @@ export function RequestsTable() {
 															variant="outline"
 															className="h-7 text-xs text-green-700 border-green-500/30 hover:bg-green-500/10"
 															disabled={isApproving}
-															onClick={() => approveRequest(req.id)}
+															onClick={() => handleApprove(req)}
 														>
 															Approve
 														</Button>
@@ -373,6 +416,59 @@ export function RequestsTable() {
 					/>
 				</div>
 			)}
+
+		{/* Insufficient leave balance dialog */}
+		<DialogRoot
+			open={insufficientDialog.open}
+			onOpenChange={(open) => { if (!open) closeInsufficientDialog(); }}
+		>
+			<DialogContent className="sm:max-w-sm">
+				<DialogHeader>
+					<DialogTitle>Insufficient Leave Balance</DialogTitle>
+				</DialogHeader>
+
+				{insufficientDialog.reminded ? (
+					<div className="flex flex-col items-center gap-3 py-4 text-center">
+						<CheckCircle2 className="w-10 h-10 text-mint" strokeWidth={1.5} />
+						<p className="text-sm font-medium text-ink">Reminder sent</p>
+						<p className="text-xs text-ink-3">
+							{insufficientDialog.request?.user?.name ?? "The employee"} has been notified.
+						</p>
+					</div>
+				) : (
+					<>
+						<div className="py-2 space-y-3">
+							<p className="text-sm text-ink">
+								<span className="font-medium">
+									{insufficientDialog.request?.user?.name ?? "This employee"}
+								</span>{" "}
+								has no remaining{" "}
+								<span className="font-medium">
+									{TYPE_LABEL_MAP[insufficientDialog.request?.type ?? ""] ?? insufficientDialog.request?.type}
+								</span>{" "}
+								leave days.
+							</p>
+							<p className="text-xs text-ink-3">
+								You can dismiss this notice or send a reminder to the employee to check their leave balance.
+							</p>
+						</div>
+
+						<div className="flex justify-end gap-2 mt-4">
+							<Button variant="outline" onClick={closeInsufficientDialog}>
+								Dismiss
+							</Button>
+							<Button
+								onClick={handleSendReminder}
+								className="gap-2 bg-mint hover:bg-mint-hover text-ink font-semibold"
+							>
+								<BellRing className="w-4 h-4" />
+								Send Reminder
+							</Button>
+						</div>
+					</>
+				)}
+			</DialogContent>
+		</DialogRoot>
 		</div>
 	);
 }

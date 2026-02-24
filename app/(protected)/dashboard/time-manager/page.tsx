@@ -58,7 +58,18 @@ export default function TimeManagerPage() {
 	const isLoading = showTeamView ? teamLoading : summaryLoading;
 
 	return (
-		<div className="w-full space-y-6">
+		<div className="relative w-full space-y-6">
+			{/* Mint mesh gradient background */}
+			<div
+				className="fixed inset-0 -z-10 pointer-events-none"
+				style={{
+					background: `
+						radial-gradient(ellipse at 12% 8%, rgba(128, 237, 153, 0.20) 0%, transparent 42%),
+						radial-gradient(ellipse at 88% 85%, rgba(128, 237, 153, 0.14) 0%, transparent 42%)
+					`,
+				}}
+			/>
+
 			<div>
 				<h1 className="text-2xl font-bold text-ink">Time Manager</h1>
 				<p className="text-ink-3 mt-1 text-sm">
@@ -111,15 +122,24 @@ export default function TimeManagerPage() {
 					{/* Team summary cards */}
 					{teamData && (
 						<div className="grid grid-cols-2 gap-4">
-							<div className="rounded-lg border bg-mint/15 border-mint/30 p-5">
-								<p className="text-xs font-medium text-ink-3 uppercase tracking-wider mb-2">
+							{/* Featured — dark gradient */}
+							<div
+								className="rounded-xl border border-mint/30 p-5 relative overflow-hidden shadow-[0_0_40px_rgba(128,237,153,0.22)] hover:shadow-[0_0_60px_rgba(128,237,153,0.35)] transition-shadow"
+								style={{ background: "linear-gradient(135deg, #1c3a1c 0%, #143018 50%, #0d200d 100%)" }}
+							>
+								<div
+									className="absolute inset-0 pointer-events-none"
+									style={{ background: "radial-gradient(ellipse at 80% 20%, rgba(128, 237, 153, 0.15) 0%, transparent 60%)" }}
+								/>
+								<p className="relative text-xs font-medium text-white/60 uppercase tracking-wider mb-2">
 									Total team hours
 								</p>
-								<p className="text-3xl font-bold text-ink">
+								<p className="relative text-3xl font-bold text-white">
 									{formatDurationMs(teamData.totalTeamMs)}
 								</p>
 							</div>
-							<div className="rounded-lg border bg-mint/15 border-mint/30 p-5">
+							{/* Glass card */}
+							<div className="glass rounded-xl border-mint/25 p-5 hover:shadow-[0_4px_20px_rgba(128,237,153,0.12)] transition-shadow">
 								<p className="text-xs font-medium text-ink-3 uppercase tracking-wider mb-2 flex items-center gap-1.5">
 									<span className="relative flex h-2 w-2 shrink-0">
 										<span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-mint opacity-75" />

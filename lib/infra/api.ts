@@ -171,6 +171,21 @@ class APIService {
 			axiosService.post(`${apiVersion}/payments/checkout`, { plan }),
 		portal: () => axiosService.post(`${apiVersion}/payments/portal`),
 	};
+
+	// ---------------------------------------------------------------------------
+	// Dashboard (role-aware)
+	// ---------------------------------------------------------------------------
+	public dashboard = {
+		get: () => axiosService.get(`${apiVersion}/dashboard`),
+	};
+
+	// ---------------------------------------------------------------------------
+	// Performance (admin only)
+	// ---------------------------------------------------------------------------
+	public performance = {
+		list: (from: string, to: string) =>
+			axiosService.get(`${apiVersion}/performance`, { from, to }),
+	};
 }
 
 export default APIService.getInstance();

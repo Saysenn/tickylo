@@ -38,41 +38,36 @@ export async function PATCH(
 			if (!leave) throw new Error("NOT_FOUND");
 			if (leave.status !== "pending") throw new Error("ALREADY_PROCESSED");
 
-			// 2️⃣ Deduct leave balance
-			const userMeta = await tx.userMetaData.findUnique({
-				where: { user_id: leave.user_id },
-			});
-			if (!userMeta) throw new Error("USER_META_NOT_FOUND");
-
-			const leaveFieldMap: Record<string, keyof typeof userMeta> = {
+			// 2️⃣ Optionally deduct leave balance (skip if no metadata or unknown type)
+			const leaveFieldMap: Record<string, string> = {
 				sick: "sick_leave",
 				vacation: "vacation_leave",
 				emergency: "emergency_leave",
 			};
 
 			const field = leaveFieldMap[leave.type];
-			const balance = Number(userMeta[field] ?? 0);
-			if (balance <= 0) {
-				throw new Error("INSUFFICIENT_LEAVE");
-			}
 
-			const updatedMeta = await tx.userMetaData.update({
-				where: { user_id: leave.user_id },
-				data: {
-					[field]: { decrement: 1 },
-				},
-			});
+			if (field) {
+				const userMeta = await tx.userMetaData.findUnique({
+					where: { user_id: leave.user_id },
+				});
+				if (userMeta) {
+					const balance = Number((userMeta as Record<string, unknown>)[field] ?? 0);
+					if (balance <= 0) throw new Error("INSUFFICIENT_LEAVE");
+					await tx.userMetaData.update({
+						where: { user_id: leave.user_id },
+						data: { [field]: { decrement: 1 } },
+					});
+				}
+			}
 
 			// 3️⃣ Approve the leave
 			const updatedLeave = await tx.leave.update({
 				where: { id },
-				data: {
-					status: "approved",
-					reason,
-				},
+				data: { status: "approved", reason },
 			});
-			// notify
-			return ok({ leave: updatedLeave, meta: updatedMeta });
+
+			return updatedLeave;
 		});
 
 		return ok(result);
@@ -84,8 +79,6 @@ export async function PATCH(
 				return errorResponse("Leave request not found", 404);
 			case "ALREADY_PROCESSED":
 				return errorResponse("Only pending leaves can be approved", 400);
-			case "USER_META_NOT_FOUND":
-				return errorResponse("User metadata not found", 500);
 			case "INSUFFICIENT_LEAVE":
 				return errorResponse("User does not have enough leave balance", 400);
 			default:

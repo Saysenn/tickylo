@@ -143,11 +143,19 @@ export function TasksTable() {
 		]);
 	};
 
+	// If there's an active timer, open the dialog so the user can add notes before stopping it.
+	// If the timer was already stopped (e.g. from the header), complete the task immediately.
+	const handleCompleteClick = async (task: Task) => {
+		if (activeEntry) {
+			setPendingCompleteTask(task);
+		} else {
+			await completeTask(task.id);
+		}
+	};
+
 	const handleCompleteConfirm = async ({ title, description }: { title?: string; description?: string }) => {
 		if (!pendingCompleteTask) return;
-		if (activeEntry) {
-			await stopTimer({ title: title ?? pendingCompleteTask.title, description });
-		}
+		await stopTimer({ title: title ?? pendingCompleteTask.title, description });
 		await completeTask(pendingCompleteTask.id);
 		setPendingCompleteTask(null);
 	};
@@ -347,7 +355,7 @@ export function TasksTable() {
 															size="sm"
 															className="h-7 text-xs bg-green-600 hover:bg-green-700 text-white"
 															disabled={isCompleting || isStopping}
-															onClick={() => setPendingCompleteTask(task)}
+															onClick={() => handleCompleteClick(task)}
 														>
 															Complete
 														</Button>
