@@ -3,6 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import APIService from "@/lib/infra/api";
 import { Badge } from "@/components/ui/badge";
+import { EmployeeReportsSection } from "@/components/dashboard/reports/employee-reports-section";
 import { formatDate, formatDuration } from "@/lib/utils/format";
 import { cn } from "@/lib/utils/cn";
 
@@ -105,6 +106,9 @@ export default function ReportsPage() {
 				</div>
 			) : report ? (
 				<div className="space-y-8">
+					{/* Employee Reports — full width, above all stats */}
+					<EmployeeReportsSection />
+
 					{/* Leave Stats */}
 					<section className="space-y-3">
 						<h2 className="font-semibold text-ink">Leave Requests</h2>

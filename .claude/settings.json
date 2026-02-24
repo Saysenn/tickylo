@@ -14,7 +14,8 @@
       "/Users/sayon/Documents/GitHub/performai/app/api/v1/task/[id]/claim",
       "/Users/sayon/Documents/GitHub/performai/app/api/v1/request/[id]",
       "/Users/sayon/Documents/GitHub/performai/app/(protected)/dashboard/employees",
-      "/Users/sayon/Documents/GitHub/performai/app/(protected)/dashboard/tasks"
+      "/Users/sayon/Documents/GitHub/performai/app/(protected)/dashboard/tasks",
+      "/Users/sayon/Documents/GitHub/performai/app/(protected)/dashboard/reports/employee"
     ]
   }
 }
