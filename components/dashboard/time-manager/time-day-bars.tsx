@@ -36,7 +36,7 @@ export function TimeDayBars({ days }: TimeDayBarsProps) {
 								style={{ width: `${pct}%` }}
 							/>
 						</div>
-						<span className="w-14 shrink-0 text-right text-ink-3 text-xs">
+						<span className="w-20 shrink-0 text-right text-ink-3 text-xs">
 							{day.totalMs > 0 ? formatDurationMs(day.totalMs) : "—"}
 						</span>
 					</div>
