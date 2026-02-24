@@ -1,7 +1,12 @@
 import { NextRequest } from "next/server";
+import { z } from "zod";
 import { prisma } from "@/lib/infra/prisma";
 import { ok, errorResponse } from "@/lib/utils/response";
 import { requireUser } from "@/lib/auth/require-user";
+
+const startSchema = z.object({
+	title: z.string().max(200).optional(),
+});
 
 // GET /api/v1/time?page=1&limit=10&from=YYYY-MM-DD&to=YYYY-MM-DD&tz_offset=<min>
 // Paginated list of completed entries, optionally filtered by local date range.
@@ -59,8 +64,8 @@ export async function GET(request: NextRequest) {
 	}
 }
 
-// POST /api/v1/time — start timer
-export async function POST() {
+// POST /api/v1/time — start timer (optionally pre-fill title from task)
+export async function POST(request: NextRequest) {
 	try {
 		const user = await requireUser();
 		if (!user) return errorResponse("Unauthorized", 401);
@@ -71,8 +76,11 @@ export async function POST() {
 		});
 		if (active) return errorResponse("You already have an active session", 409);
 
+		const body = await request.json().catch(() => ({}));
+		const { title } = startSchema.parse(body);
+
 		const entry = await prisma.timeEntry.create({
-			data: { user_id: user.id, start_time: new Date() },
+			data: { user_id: user.id, start_time: new Date(), title: title ?? null },
 		});
 
 		return ok(entry, 201);

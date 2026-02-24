@@ -85,7 +85,7 @@ class APIService {
 	// Time Tracker
 	// ---------------------------------------------------------------------------
 	public time = {
-		start: () => axiosService.post(`${apiVersion}/time`),
+		start: (data?: { title?: string }) => axiosService.post(`${apiVersion}/time`, data ?? {}),
 		active: () => axiosService.get(`${apiVersion}/time/active`),
 		stop: (id: string, data: { title?: string; description?: string }) =>
 			axiosService.patch(`${apiVersion}/time/${id}`, data),

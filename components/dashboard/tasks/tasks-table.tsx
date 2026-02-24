@@ -9,12 +9,14 @@ import { Button } from "@/components/ui/button";
 import { Pagination } from "@/components/ui/pagination";
 import { TaskFormDialog } from "./task-form-dialog";
 import { TaskDeleteDialog } from "./task-delete-dialog";
+import { TimeOutDialog } from "@/components/dashboard/time-tracker/time-out-dialog";
 import { useAppSelector } from "@/store/hooks";
 import { formatDate } from "@/lib/utils/format";
 import { cn } from "@/lib/utils/cn";
 import { ClipboardList, Plus } from "lucide-react";
 import { ROWS_PER_PAGE } from "@/configs/pagination.config";
 import type { Task, TaskPage } from "./types";
+import type { TimeEntry } from "@/components/dashboard/time-tracker/types";
 
 const STATUS_STYLES: Record<string, string> = {
 	pending: "bg-accent text-ink-3 border-border/40",
@@ -47,6 +49,7 @@ export function TasksTable() {
 	const queryClient = useQueryClient();
 
 	const [searchInput, setSearchInput] = useState(search);
+	const [pendingCompleteTask, setPendingCompleteTask] = useState<Task | null>(null);
 	const user = useAppSelector((s) => s.auth.user);
 	const isAdmin = user?.role === "admin";
 
@@ -78,6 +81,13 @@ export function TasksTable() {
 		queryFn: () => APIService.tasks.list(page, ROWS_PER_PAGE, statusFilter || undefined, search || undefined),
 	});
 
+	// Track active timer so we can stop it when completing a task
+	const { data: activeEntry } = useQuery<TimeEntry | null>({
+		queryKey: ["time", "active"],
+		queryFn: () => APIService.time.active(),
+		staleTime: 0,
+	});
+
 	const invalidateAll = () =>
 		queryClient.invalidateQueries({ queryKey: ["tasks"] });
 
@@ -107,10 +117,40 @@ export function TasksTable() {
 		onSuccess: invalidateAll,
 	});
 
+	const { mutateAsync: startTimer, isPending: isStartingTimer } = useMutation({
+		mutationFn: (data: { title?: string }) => APIService.time.start(data),
+		onSuccess: () => queryClient.invalidateQueries({ queryKey: ["time", "active"] }),
+	});
+
+	const { mutateAsync: stopTimer, isPending: isStopping } = useMutation({
+		mutationFn: (data: { title?: string; description?: string }) =>
+			APIService.time.stop(activeEntry!.id, data),
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["time", "active"] });
+			queryClient.invalidateQueries({ queryKey: ["time"] });
+		},
+	});
+
 	const { mutateAsync: completeTask, isPending: isCompleting } = useMutation({
 		mutationFn: (id: string) => APIService.tasks.complete(id),
 		onSuccess: invalidateAll,
 	});
+
+	const handleStart = async (task: Task) => {
+		await Promise.all([
+			startTask(task.id),
+			startTimer({ title: task.title }),
+		]);
+	};
+
+	const handleCompleteConfirm = async ({ title, description }: { title?: string; description?: string }) => {
+		if (!pendingCompleteTask) return;
+		if (activeEntry) {
+			await stopTimer({ title: title ?? pendingCompleteTask.title, description });
+		}
+		await completeTask(pendingCompleteTask.id);
+		setPendingCompleteTask(null);
+	};
 
 	if (isLoading) {
 		return (
@@ -294,8 +334,8 @@ export function TasksTable() {
 															size="sm"
 															variant="outline"
 															className="h-7 text-xs"
-															disabled={isStarting}
-															onClick={() => startTask(task.id)}
+															disabled={isStarting || isStartingTimer}
+															onClick={() => handleStart(task)}
 														>
 															Start
 														</Button>
@@ -306,8 +346,8 @@ export function TasksTable() {
 														<Button
 															size="sm"
 															className="h-7 text-xs bg-green-600 hover:bg-green-700 text-white"
-															disabled={isCompleting}
-															onClick={() => completeTask(task.id)}
+															disabled={isCompleting || isStopping}
+															onClick={() => setPendingCompleteTask(task)}
 														>
 															Complete
 														</Button>
@@ -346,6 +386,16 @@ export function TasksTable() {
 					/>
 				</div>
 			)}
+
+			{/* Complete task dialog — stops timer + marks task done */}
+			<TimeOutDialog
+				open={!!pendingCompleteTask}
+				isTask
+				defaultTitle={pendingCompleteTask?.title}
+				isPending={isCompleting || isStopping}
+				onConfirm={handleCompleteConfirm}
+				onCancel={() => setPendingCompleteTask(null)}
+			/>
 		</div>
 	);
 }

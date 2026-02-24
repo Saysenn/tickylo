@@ -85,6 +85,7 @@ export function TimeTrackerButton() {
 				<TimeOutDialog
 					open={dialogOpen}
 					isPending={isStopping}
+					defaultTitle={activeEntry.title ?? undefined}
 					onConfirm={(data) => stopTimer(data)}
 					onCancel={() => setDialogOpen(false)}
 				/>

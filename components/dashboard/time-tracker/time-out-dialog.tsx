@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,13 +14,25 @@ import {
 interface TimeOutDialogProps {
   open: boolean;
   isPending: boolean;
+  /** When true, uses green "Complete" styling. Title is still editable. */
+  isTask?: boolean;
+  /** Pre-fills the editable title input. */
+  defaultTitle?: string;
   onConfirm: (data: { title?: string; description?: string }) => void;
   onCancel: () => void;
 }
 
-export function TimeOutDialog({ open, isPending, onConfirm, onCancel }: TimeOutDialogProps) {
-  const [title, setTitle]             = useState("");
+export function TimeOutDialog({ open, isPending, isTask, defaultTitle, onConfirm, onCancel }: TimeOutDialogProps) {
+  const [title, setTitle]             = useState(defaultTitle ?? "");
   const [description, setDescription] = useState("");
+
+  // Seed title from defaultTitle whenever the dialog opens
+  useEffect(() => {
+    if (open) {
+      setTitle(defaultTitle ?? "");
+      setDescription("");
+    }
+  }, [open, defaultTitle]);
 
   const handleConfirm = () => {
     onConfirm({
@@ -37,13 +49,13 @@ export function TimeOutDialog({ open, isPending, onConfirm, onCancel }: TimeOutD
     <DialogRoot open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>End session</DialogTitle>
+          <DialogTitle>{isTask ? "Complete task" : "End session"}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4 py-2">
           <div className="space-y-2">
             <Label htmlFor="task-title" className="text-ink-2 text-sm">
-              Task title <span className="text-ink-3">(optional)</span>
+              Task title
             </Label>
             <Input
               id="task-title"
@@ -56,7 +68,7 @@ export function TimeOutDialog({ open, isPending, onConfirm, onCancel }: TimeOutD
 
           <div className="space-y-2">
             <Label htmlFor="task-description" className="text-ink-2 text-sm">
-              Description <span className="text-ink-3">(optional)</span>
+              Description
             </Label>
             <Input
               id="task-description"
@@ -69,14 +81,17 @@ export function TimeOutDialog({ open, isPending, onConfirm, onCancel }: TimeOutD
 
         <div className="flex justify-end gap-2 mt-4">
           <Button variant="outline" onClick={onCancel} disabled={isPending}>
-            Keep running
+            {isTask ? "Cancel" : "Keep running"}
           </Button>
           <Button
             onClick={handleConfirm}
             isLoading={isPending}
-            className="bg-destructive/90 hover:bg-destructive text-white"
+            className={isTask
+              ? "bg-green-600 hover:bg-green-700 text-white"
+              : "bg-destructive/90 hover:bg-destructive text-white"
+            }
           >
-            Clock out
+            {isTask ? "Complete" : "Clock out"}
           </Button>
         </div>
       </DialogContent>
