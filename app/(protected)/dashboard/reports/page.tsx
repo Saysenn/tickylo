@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import APIService from "@/lib/infra/api";
 import { Badge } from "@/components/ui/badge";
@@ -96,7 +97,7 @@ export default function ReportsPage() {
 			<div>
 				<h1 className="text-2xl font-bold text-ink">Reports</h1>
 				<p className="text-ink-3 mt-1 text-sm">
-					Team-wide analytics and activity overview.
+					Employee performance, leave requests, and task activity — all in one place.
 				</p>
 			</div>
 
@@ -109,165 +110,148 @@ export default function ReportsPage() {
 					{/* Employee Reports — full width, above all stats */}
 					<EmployeeReportsSection />
 
-					{/* Leave Stats */}
-					<section className="space-y-3">
-						<h2 className="font-semibold text-ink">Leave Requests</h2>
-						<div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-							<StatCard
-								label="Total"
-								value={report.leaves.total}
-								featured
-							/>
-							<StatCard
-								label="Pending"
-								value={report.leaves.pending}
-								accentClass="border-yellow-400/30"
-							/>
-							<StatCard
-								label="Approved"
-								value={report.leaves.approved}
-								accentClass="border-mint/30"
-							/>
-							<StatCard
-								label="Rejected"
-								value={report.leaves.rejected}
-								accentClass="border-red-400/30"
-							/>
-						</div>
-					</section>
+					{/* Leave + Tasks — side by side */}
+					<div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
 
-					{/* Task Stats */}
-					<section className="space-y-3">
-						<h2 className="font-semibold text-ink">Tasks</h2>
-						<div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-							<StatCard
-								label="Total"
-								value={report.tasks.total}
-								featured
-							/>
-							<StatCard
-								label="Unassigned"
-								value={report.tasks.pending}
-							/>
-							<StatCard
-								label="In Progress"
-								value={report.tasks.in_progress}
-								accentClass="border-yellow-400/30"
-							/>
-							<StatCard
-								label="Completed"
-								value={report.tasks.completed}
-								accentClass="border-mint/30"
-							/>
-						</div>
-					</section>
-
-{/* Recent Leaves */}
-					<section className="space-y-3">
-						<h2 className="font-semibold text-ink">Recent Leave Requests</h2>
-						{report.recent.leaves.length > 0 ? (
-							<div className="glass rounded-xl overflow-x-auto">
-								<table className="w-full text-sm min-w-[400px]">
-									<thead>
-										<tr className="border-b border-mint/10">
-											<th className="text-left px-4 py-2 text-xs font-semibold text-ink-3 uppercase tracking-wider">
-												Employee
-											</th>
-											<th className="text-left px-4 py-2 text-xs font-semibold text-ink-3 uppercase tracking-wider">
-												Type
-											</th>
-											<th className="text-left px-4 py-2 text-xs font-semibold text-ink-3 uppercase tracking-wider hidden sm:table-cell">
-												Dates
-											</th>
-											<th className="text-left px-4 py-2 text-xs font-semibold text-ink-3 uppercase tracking-wider">
-												Status
-											</th>
-										</tr>
-									</thead>
-									<tbody className="divide-y divide-mint/8">
-										{report.recent.leaves.map((l: any) => (
-											<tr key={l.id} className="hover:bg-mint/5">
-												<td className="px-4 py-2">
-													<p className="font-medium text-ink">
-														{l.user?.name ?? "—"}
-													</p>
-													<p className="text-xs text-ink-3">{l.user?.email}</p>
-												</td>
-												<td className="px-4 py-2 capitalize">{l.type}</td>
-												<td className="px-4 py-2 text-ink-3 text-xs hidden sm:table-cell">
-													{formatDate(l.start)} → {formatDate(l.end)}
-												</td>
-												<td className="px-4 py-2">
-													<Badge
-														variant="outline"
-														className={cn(
-															"capitalize text-xs",
-															LEAVE_STATUS_STYLES[l.status],
-														)}
-													>
-														{l.status}
-													</Badge>
-												</td>
-											</tr>
-										))}
-									</tbody>
-								</table>
+						{/* ── Leave Requests card ── */}
+						<div className="glass rounded-2xl flex flex-col overflow-hidden">
+							{/* Header */}
+							<div className="px-5 pt-5 pb-4 border-b border-mint/10">
+								<div className="flex items-center justify-between">
+									<div>
+										<h2 className="font-semibold text-ink">Leave Requests</h2>
+										<p className="text-xs text-ink-3 mt-0.5">All-time summary</p>
+									</div>
+									<Link href="/dashboard/requests" className="text-xs font-medium text-mint hover:text-mint/70 transition-colors">
+										View all →
+									</Link>
+								</div>
+								{/* Stat badges — stretch equally */}
+								<div className="flex items-center gap-2 mt-3">
+									<div className="flex flex-1 flex-col items-center px-3 py-1.5 rounded-lg bg-ink/5">
+										<span className="text-lg font-bold text-ink leading-none">{report.leaves.total}</span>
+										<span className="text-[10px] text-ink-3 mt-0.5 uppercase tracking-wide">Total</span>
+									</div>
+									<div className="flex flex-1 flex-col items-center px-3 py-1.5 rounded-lg bg-yellow-500/8">
+										<span className="text-lg font-bold text-yellow-700 leading-none">{report.leaves.pending}</span>
+										<span className="text-[10px] text-yellow-600/70 mt-0.5 uppercase tracking-wide">Pending</span>
+									</div>
+									<div className="flex flex-1 flex-col items-center px-3 py-1.5 rounded-lg bg-mint/10">
+										<span className="text-lg font-bold text-mint leading-none">{report.leaves.approved}</span>
+										<span className="text-[10px] text-mint/60 mt-0.5 uppercase tracking-wide">Approved</span>
+									</div>
+									<div className="flex flex-1 flex-col items-center px-3 py-1.5 rounded-lg bg-red-500/8">
+										<span className="text-lg font-bold text-red-600 leading-none">{report.leaves.rejected}</span>
+										<span className="text-[10px] text-red-400/70 mt-0.5 uppercase tracking-wide">Rejected</span>
+									</div>
+								</div>
 							</div>
-						) : (
-							<p className="text-sm text-ink-3">No recent leave requests.</p>
-						)}
-					</section>
 
-					{/* Recent Tasks */}
-					<section className="space-y-3">
-						<h2 className="font-semibold text-ink">Recent Tasks</h2>
-						{report.recent.tasks.length > 0 ? (
-							<div className="glass rounded-xl overflow-x-auto">
-								<table className="w-full text-sm min-w-[400px]">
-									<thead>
-										<tr className="border-b border-mint/10">
-											<th className="text-left px-4 py-2 text-xs font-semibold text-ink-3 uppercase tracking-wider">
-												Title
-											</th>
-											<th className="text-left px-4 py-2 text-xs font-semibold text-ink-3 uppercase tracking-wider hidden sm:table-cell">
-												Assignee
-											</th>
-											<th className="text-left px-4 py-2 text-xs font-semibold text-ink-3 uppercase tracking-wider">
-												Status
-											</th>
-										</tr>
-									</thead>
-									<tbody className="divide-y divide-mint/8">
-										{report.recent.tasks.map((t: any) => (
-											<tr key={t.id} className="hover:bg-mint/5">
-												<td className="px-4 py-2 font-medium text-ink">
-													{t.title}
-												</td>
-												<td className="px-4 py-2 text-ink-3 hidden sm:table-cell">
-													{t.assignee?.name ?? t.assignee?.email ?? (
-														<span className="text-xs">Unassigned</span>
-													)}
-												</td>
-												<td className="px-4 py-2">
-													<Badge
-														variant="outline"
-														className={cn(
-															"text-xs",
-															TASK_STATUS_STYLES[t.status],
-														)}
-													>
-														{t.status.replace("_", " ")}
-													</Badge>
-												</td>
+							{/* Mini table */}
+							<div className="flex-1 overflow-x-auto">
+								{report.recent.leaves.length > 0 ? (
+									<table className="w-full text-sm">
+										<thead>
+											<tr className="border-b border-mint/8">
+												<th className="text-left px-5 py-2 text-[10px] font-semibold text-ink-3 uppercase tracking-wider">Employee</th>
+												<th className="text-left px-3 py-2 text-[10px] font-semibold text-ink-3 uppercase tracking-wider">Type</th>
+												<th className="text-right px-5 py-2 text-[10px] font-semibold text-ink-3 uppercase tracking-wider">Status</th>
 											</tr>
-										))}
-									</tbody>
-								</table>
+										</thead>
+										<tbody className="divide-y divide-mint/6">
+											{report.recent.leaves.map((l: any) => (
+												<tr key={l.id} className="hover:bg-mint/5 transition-colors">
+													<td className="px-5 py-2.5">
+														<p className="text-xs font-medium text-ink truncate max-w-[140px]">{l.user?.name ?? "—"}</p>
+													</td>
+													<td className="px-3 py-2.5 text-xs text-ink-3 capitalize">{l.type}</td>
+													<td className="px-5 py-2.5 text-right">
+														<Badge variant="outline" className={cn("capitalize text-[10px] px-1.5 py-0", LEAVE_STATUS_STYLES[l.status])}>
+															{l.status}
+														</Badge>
+													</td>
+												</tr>
+											))}
+										</tbody>
+									</table>
+								) : (
+									<p className="px-5 py-6 text-xs text-ink-3">No leave requests yet.</p>
+								)}
 							</div>
-						) : (
-							<p className="text-sm text-ink-3">No recent tasks.</p>
-						)}
-					</section>
+
+						</div>
+
+						{/* ── Tasks card ── */}
+						<div className="glass rounded-2xl flex flex-col overflow-hidden">
+							{/* Header */}
+							<div className="px-5 pt-5 pb-4 border-b border-mint/10">
+								<div className="flex items-center justify-between">
+									<div>
+										<h2 className="font-semibold text-ink">Tasks</h2>
+										<p className="text-xs text-ink-3 mt-0.5">All-time summary</p>
+									</div>
+									<Link href="/dashboard/tasks" className="text-xs font-medium text-mint hover:text-mint/70 transition-colors">
+										View all →
+									</Link>
+								</div>
+								{/* Stat badges — stretch equally */}
+								<div className="flex items-center gap-2 mt-3">
+									<div className="flex flex-1 flex-col items-center px-3 py-1.5 rounded-lg bg-ink/5">
+										<span className="text-lg font-bold text-ink leading-none">{report.tasks.total}</span>
+										<span className="text-[10px] text-ink-3 mt-0.5 uppercase tracking-wide">Total</span>
+									</div>
+									<div className="flex flex-1 flex-col items-center px-3 py-1.5 rounded-lg bg-ink/5">
+										<span className="text-lg font-bold text-ink leading-none">{report.tasks.pending}</span>
+										<span className="text-[10px] text-ink-3 mt-0.5 uppercase tracking-wide">Unassigned</span>
+									</div>
+									<div className="flex flex-1 flex-col items-center px-3 py-1.5 rounded-lg bg-yellow-500/8">
+										<span className="text-lg font-bold text-yellow-700 leading-none">{report.tasks.in_progress}</span>
+										<span className="text-[10px] text-yellow-600/70 mt-0.5 uppercase tracking-wide">In Progress</span>
+									</div>
+									<div className="flex flex-1 flex-col items-center px-3 py-1.5 rounded-lg bg-mint/10">
+										<span className="text-lg font-bold text-mint leading-none">{report.tasks.completed}</span>
+										<span className="text-[10px] text-mint/60 mt-0.5 uppercase tracking-wide">Done</span>
+									</div>
+								</div>
+							</div>
+
+							{/* Mini table */}
+							<div className="flex-1 overflow-x-auto">
+								{report.recent.tasks.length > 0 ? (
+									<table className="w-full text-sm">
+										<thead>
+											<tr className="border-b border-mint/8">
+												<th className="text-left px-5 py-2 text-[10px] font-semibold text-ink-3 uppercase tracking-wider">Title</th>
+												<th className="text-left px-3 py-2 text-[10px] font-semibold text-ink-3 uppercase tracking-wider">Assignee</th>
+												<th className="text-right px-5 py-2 text-[10px] font-semibold text-ink-3 uppercase tracking-wider">Status</th>
+											</tr>
+										</thead>
+										<tbody className="divide-y divide-mint/6">
+											{report.recent.tasks.map((t: any) => (
+												<tr key={t.id} className="hover:bg-mint/5 transition-colors">
+													<td className="px-5 py-2.5">
+														<p className="text-xs font-medium text-ink truncate max-w-[140px]">{t.title}</p>
+													</td>
+													<td className="px-3 py-2.5 text-xs text-ink-3 truncate max-w-[100px]">
+														{t.assignee?.name ?? t.assignee?.email ?? "Unassigned"}
+													</td>
+													<td className="px-5 py-2.5 text-right">
+														<Badge variant="outline" className={cn("text-[10px] px-1.5 py-0", TASK_STATUS_STYLES[t.status])}>
+															{t.status.replace("_", " ")}
+														</Badge>
+													</td>
+												</tr>
+											))}
+										</tbody>
+									</table>
+								) : (
+									<p className="px-5 py-6 text-xs text-ink-3">No tasks yet.</p>
+								)}
+							</div>
+
+						</div>
+
+					</div>
 				</div>
 			) : null}
 		</div>

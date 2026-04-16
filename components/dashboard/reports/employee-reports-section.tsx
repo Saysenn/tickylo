@@ -74,13 +74,6 @@ export function EmployeeReportsSection() {
 
 	return (
 		<section className="space-y-3">
-			<div>
-				<h2 className="font-semibold text-ink">Employee Reports</h2>
-				<p className="text-xs text-ink-3 mt-0.5">
-					Generate, view, and send performance reports per employee.
-				</p>
-			</div>
-
 			<Card
 				className="p-0 gap-0 border border-[rgba(128,237,153,0.18)] backdrop-blur-xl"
 				style={{ background: "var(--surface)" }}
