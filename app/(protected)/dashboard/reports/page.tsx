@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import APIService from "@/lib/infra/api";
 import { Badge } from "@/components/ui/badge";
 import { EmployeeReportsSection } from "@/components/dashboard/reports/employee-reports-section";
-import { formatDate, formatDuration } from "@/lib/utils/format";
+import { formatDate } from "@/lib/utils/format";
 import { cn } from "@/lib/utils/cn";
 
 const LEAVE_STATUS_STYLES: Record<string, string> = {
@@ -162,29 +162,7 @@ export default function ReportsPage() {
 						</div>
 					</section>
 
-					{/* Time Stats */}
-					<section className="space-y-3">
-						<h2 className="font-semibold text-ink">
-							Time <span className="font-normal text-ink-3">(This Month)</span>
-						</h2>
-						<div className="grid grid-cols-2 gap-3">
-							<StatCard
-								label="Total team hours"
-								value={formatDuration(report.time.totalMsThisMonth)}
-								sub="Across all tracked sessions"
-								featured
-							/>
-							<StatCard
-								label="Active members"
-								value={report.time.activeUsers}
-								sub="Members with time entries this month"
-								accentClass="border-mint/25"
-								showActiveDot
-							/>
-						</div>
-					</section>
-
-					{/* Recent Leaves */}
+{/* Recent Leaves */}
 					<section className="space-y-3">
 						<h2 className="font-semibold text-ink">Recent Leave Requests</h2>
 						{report.recent.leaves.length > 0 ? (
