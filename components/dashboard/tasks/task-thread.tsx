@@ -1,9 +1,9 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { isAxiosError } from "axios";
-import { Trash2, AlertCircle, Info, MessageSquare, Eraser, ArrowRightLeft } from "lucide-react";
+import { Trash2, AlertCircle, Info, MessageSquare, Eraser, ArrowRightLeft, Smile } from "lucide-react";
 import APIService from "@/lib/infra/api";
 import { useAppSelector } from "@/store/hooks";
 import { formatInitials, formatDate, formatTime } from "@/lib/utils/format";
@@ -11,6 +11,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils/cn";
 import { ROLES } from "@/configs/rbac.config";
+
+const FIXED_EMOJIS = ["👍", "❤️", "😂", "😮", "😢", "🔥"];
 
 const COMMENT_DELETE_WINDOW_MS = 5 * 60 * 1000; // 5 minutes
 
@@ -34,6 +36,72 @@ interface Comment {
 interface TaskThreadProps {
 	taskId: string;
 	taskCreatedBy: string;
+	/** "thread" = user comments only, "activity" = system events only, undefined = all */
+	view?: "thread" | "activity";
+}
+
+interface ReactionGroup {
+	emoji: string;
+	count: number;
+	reacted: boolean;
+}
+
+function CommentReactions({ taskId, commentId }: { taskId: string; commentId: string }) {
+	const [pickerOpen, setPickerOpen] = useState(false);
+	const queryClient = useQueryClient();
+
+	const { data: reactions = [] } = useQuery<ReactionGroup[]>({
+		queryKey: ["reactions", commentId],
+		queryFn: () => APIService.tasks.reactions.list(taskId, commentId),
+	});
+
+	const { mutate: toggle } = useMutation({
+		mutationFn: (emoji: string) => APIService.tasks.reactions.toggle(taskId, commentId, emoji),
+		onSuccess: () => queryClient.invalidateQueries({ queryKey: ["reactions", commentId] }),
+	});
+
+	return (
+		<div className="flex items-center flex-wrap gap-1 mt-1.5">
+			{reactions.map((r) => (
+				<button
+					key={r.emoji}
+					type="button"
+					onClick={() => toggle(r.emoji)}
+					className={cn(
+						"inline-flex items-center gap-1 rounded-full border px-1.5 py-0.5 text-[11px] transition-colors",
+						r.reacted
+							? "border-mint/40 bg-mint/10 text-mint"
+							: "border-border/50 bg-accent/30 text-ink-3 hover:border-mint/30 hover:bg-mint/5",
+					)}
+				>
+					{r.emoji} <span>{r.count}</span>
+				</button>
+			))}
+			<div className="relative">
+				<button
+					type="button"
+					onClick={() => setPickerOpen((o) => !o)}
+					className="inline-flex items-center justify-center w-6 h-6 rounded-full border border-border/50 bg-accent/30 text-ink-3 hover:border-mint/30 hover:bg-mint/5 transition-colors opacity-0 group-hover:opacity-100"
+				>
+					<Smile className="w-3 h-3" />
+				</button>
+				{pickerOpen && (
+					<div className="absolute bottom-7 left-0 z-20 flex gap-1 rounded-lg border bg-background shadow-md p-1.5">
+						{FIXED_EMOJIS.map((e) => (
+							<button
+								key={e}
+								type="button"
+								onClick={() => { toggle(e); setPickerOpen(false); }}
+								className="text-base w-7 h-7 flex items-center justify-center rounded hover:bg-accent/50 transition-colors"
+							>
+								{e}
+							</button>
+						))}
+					</div>
+				)}
+			</div>
+		</div>
+	);
 }
 
 function getSystemEventMeta(body: string): {
@@ -63,7 +131,7 @@ function getSystemEventMeta(body: string): {
 	};
 }
 
-export function TaskThread({ taskId, taskCreatedBy }: TaskThreadProps) {
+export function TaskThread({ taskId, taskCreatedBy, view }: TaskThreadProps) {
 	const queryClient = useQueryClient();
 	const user = useAppSelector((s) => s.auth.user);
 	const isAdmin = user?.role === ROLES.ADMIN;
@@ -74,14 +142,66 @@ export function TaskThread({ taskId, taskCreatedBy }: TaskThreadProps) {
 	const [error, setError] = useState<string | null>(null);
 	const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-	const { data: comments = [], isLoading } = useQuery<Comment[]>({
+	// @mention autocomplete
+	const [mentionQuery, setMentionQuery] = useState<string | null>(null); // null = closed
+	const { data: employeesResult } = useQuery<{ data: { id: string; name: string | null; email: string }[] }>({
+		queryKey: ["employees-list"],
+		queryFn: () => APIService.employees.list(1, 50),
+		enabled: mentionQuery !== null,
+	});
+	const mentionSuggestions = (employeesResult?.data ?? []).filter((e) => {
+		if (!mentionQuery) return true;
+		const q = mentionQuery.toLowerCase();
+		return (e.name ?? e.email).toLowerCase().includes(q);
+	}).slice(0, 6);
+
+	useEffect(() => {
+		const handleKey = (e: KeyboardEvent) => {
+			if (e.key === "Escape") setMentionQuery(null);
+		};
+		document.addEventListener("keydown", handleKey);
+		return () => document.removeEventListener("keydown", handleKey);
+	}, []);
+
+	const handleDraftChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+		const val = e.target.value;
+		setDraft(val);
+		setError(null);
+		// Detect @mention: look for @ followed by word chars at cursor
+		const cursor = e.target.selectionStart ?? val.length;
+		const before = val.slice(0, cursor);
+		const match = before.match(/@(\w*)$/);
+		if (match) {
+			setMentionQuery(match[1]);
+		} else {
+			setMentionQuery(null);
+		}
+	};
+
+	const insertMention = (name: string) => {
+		const cursor = textareaRef.current?.selectionStart ?? draft.length;
+		const before = draft.slice(0, cursor);
+		const after = draft.slice(cursor);
+		const replaced = before.replace(/@(\w*)$/, `@${name} `);
+		setDraft(replaced + after);
+		setMentionQuery(null);
+		setTimeout(() => textareaRef.current?.focus(), 0);
+	};
+
+	const { data: allComments = [], isLoading } = useQuery<Comment[]>({
 		queryKey: ["task-comments", taskId],
 		queryFn: () => APIService.tasks.comments.list(taskId),
 		enabled: !!taskId,
 		refetchInterval: 15000,
 	});
 
-	const userCommentCount = comments.filter((c) => !c.is_system).length;
+	const comments = view === "thread"
+		? allComments.filter((c) => !c.is_system)
+		: view === "activity"
+		? allComments.filter((c) => c.is_system)
+		: allComments;
+
+	const userCommentCount = allComments.filter((c) => !c.is_system).length;
 
 	const invalidate = () =>
 		queryClient.invalidateQueries({ queryKey: ["task-comments", taskId] });
@@ -150,7 +270,7 @@ export function TaskThread({ taskId, taskCreatedBy }: TaskThreadProps) {
 						{userCommentCount}
 					</Badge>
 				)}
-				{canClearAll && userCommentCount > 0 && (
+				{canClearAll && userCommentCount > 0 && view !== "activity" && (
 					<button
 						type="button"
 						onClick={() => clearAll()}
@@ -174,10 +294,17 @@ export function TaskThread({ taskId, taskCreatedBy }: TaskThreadProps) {
 						<div className="w-8 h-8 rounded-full bg-ink/5 flex items-center justify-center mb-2">
 							<MessageSquare className="w-4 h-4 text-ink-3" />
 						</div>
-						<p className="text-xs text-ink-3">No activity yet.</p>
-						<p className="text-[11px] text-ink-3/60 mt-0.5">
-							Be the first to add context to this task.
-						</p>
+						{view === "activity" ? (
+							<>
+								<p className="text-xs text-ink-3">No activity yet.</p>
+								<p className="text-[11px] text-ink-3/60 mt-0.5">System events like assignments and transfers will appear here.</p>
+							</>
+						) : (
+							<>
+								<p className="text-xs text-ink-3">No comments yet.</p>
+								<p className="text-[11px] text-ink-3/60 mt-0.5">Be the first to add context to this task.</p>
+							</>
+						)}
 					</div>
 				) : (
 					comments.map((c) => {
@@ -249,6 +376,7 @@ export function TaskThread({ taskId, taskCreatedBy }: TaskThreadProps) {
 											</button>
 										)}
 									</div>
+									<CommentReactions taskId={taskId} commentId={c.id} />
 								</div>
 							</div>
 						);
@@ -256,50 +384,65 @@ export function TaskThread({ taskId, taskCreatedBy }: TaskThreadProps) {
 				)}
 			</div>
 
-			{comments.length > 0 && <div className="border-t border-border/30" />}
+			{view !== "activity" && comments.length > 0 && <div className="border-t border-border/30" />}
 
 			{/* Compose */}
-			<form onSubmit={handleSubmit}>
-				{error && <p className="text-xs text-destructive mb-2">{error}</p>}
-				<div className="flex items-start gap-3">
-					<div className="w-7 h-7 rounded-full bg-mint/20 flex items-center justify-center text-[10px] font-bold text-mint shrink-0 mt-1">
-						{formatInitials(user?.name ?? null, user?.email ?? "")}
-					</div>
+			{view !== "activity" && (
+				<form onSubmit={handleSubmit}>
+					{error && <p className="text-xs text-destructive mb-2">{error}</p>}
+					<div className="flex items-start gap-3">
+						<div className="w-7 h-7 rounded-full bg-mint/20 flex items-center justify-center text-[10px] font-bold text-mint shrink-0 mt-1">
+							{formatInitials(user?.name ?? null, user?.email ?? "")}
+						</div>
 
-					<div className="flex-1 space-y-2">
-						<textarea
-							ref={textareaRef}
-							value={draft}
-							onChange={(e) => {
-								setDraft(e.target.value);
-								setError(null);
-							}}
-							onKeyDown={handleKeyDown}
-							placeholder="Add a comment…"
-							maxLength={2000}
-							rows={2}
-							className={cn(
-								"w-full resize-none rounded-lg border border-border/50 bg-background px-3 py-2 text-sm text-ink placeholder:text-ink-3",
-								"focus:outline-none focus:ring-1 focus:ring-mint/50 focus:border-mint/40 transition-colors",
-							)}
-						/>
-						<div className="flex items-center justify-between">
-							<span className="text-[10px] text-ink-3">
-								{draft.length > 0 ? `${draft.length}/2000` : "⌘↵ to send"}
-							</span>
-							<Button
-								type="submit"
-								size="sm"
-								disabled={!draft.trim() || isPosting}
-								isLoading={isPosting}
-								className="bg-mint hover:bg-mint/90 text-ink font-semibold h-7 px-3 text-xs"
-							>
-								Post
-							</Button>
+						<div className="flex-1 space-y-2">
+							<div className="relative">
+								<textarea
+									ref={textareaRef}
+									value={draft}
+									onChange={handleDraftChange}
+									onKeyDown={handleKeyDown}
+									placeholder="Add a comment… (use @ to mention)"
+									maxLength={2000}
+									rows={2}
+									className={cn(
+										"w-full resize-none rounded-lg border border-border/50 bg-background px-3 py-2 text-sm text-ink placeholder:text-ink-3",
+										"focus:outline-none focus:ring-1 focus:ring-mint/50 focus:border-mint/40 transition-colors",
+									)}
+								/>
+								{mentionQuery !== null && mentionSuggestions.length > 0 && (
+									<div className="absolute bottom-full left-0 mb-1 z-20 min-w-[180px] rounded-lg border bg-background shadow-md overflow-hidden">
+										{mentionSuggestions.map((e) => (
+											<button
+												key={e.id}
+												type="button"
+												onMouseDown={(ev) => { ev.preventDefault(); insertMention(e.name ?? e.email); }}
+												className="w-full text-left px-3 py-1.5 text-sm text-ink hover:bg-accent/50 transition-colors"
+											>
+												{e.name ?? e.email}
+											</button>
+										))}
+									</div>
+								)}
+							</div>
+							<div className="flex items-center justify-between">
+								<span className="text-[10px] text-ink-3">
+									{draft.length > 0 ? `${draft.length}/2000` : "⌘↵ to send"}
+								</span>
+								<Button
+									type="submit"
+									size="sm"
+									disabled={!draft.trim() || isPosting}
+									isLoading={isPosting}
+									className="bg-mint hover:bg-mint/90 text-ink font-semibold h-7 px-3 text-xs"
+								>
+									Post
+								</Button>
+							</div>
 						</div>
 					</div>
-				</div>
-			</form>
+				</form>
+			)}
 		</div>
 	);
 }

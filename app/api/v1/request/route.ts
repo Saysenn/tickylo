@@ -4,6 +4,7 @@ import z from "zod";
 import { NextRequest } from "next/server";
 import { errorResponse, ok } from "@/lib/utils/response";
 import { ROLES } from "@/configs/rbac.config";
+import { notifyAdmins } from "@/lib/utils/create-notification";
 
 const leaveSchema = z.object({
 	startDate: z.coerce.date(),
@@ -95,6 +96,15 @@ export async function POST(request: NextRequest) {
 				status: "pending",
 			},
 		});
+
+		// Notify all admins about the new leave request (fire-and-forget)
+		const requesterName = user.user_metadata?.name ?? user.email ?? "An employee";
+		notifyAdmins({
+			type: "leave_requested",
+			title: "New leave request",
+			body: `${requesterName} submitted a ${type} leave request.`,
+			link: `/dashboard/requests`,
+		}).catch(() => {});
 
 		return ok(leave, 201);
 	} catch (err) {

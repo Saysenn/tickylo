@@ -3,7 +3,7 @@ import { ok, errorResponse } from "@/lib/utils/response";
 import { z } from "zod";
 import { prisma } from "@/lib/infra/prisma";
 import { requireUser } from "@/lib/auth/require-user";
-import { createNotification } from "@/lib/utils/create-notification";
+import { createNotification, notifyWatchers } from "@/lib/utils/create-notification";
 
 const postSchema = z.object({
 	body: z.string().min(1).max(2000),
@@ -93,6 +93,12 @@ export async function POST(
 				link: `/dashboard/tasks/${id}`,
 			}).catch(() => {});
 		}
+		notifyWatchers(id, {
+			type: "comment_added",
+			title: `${commenterName} commented on a task`,
+			body: `"${task.title}": ${snippet}`,
+			link: `/dashboard/tasks/${id}`,
+		}, [...recipientIds, user.id]).catch(() => {});
 
 		return ok(comment);
 	} catch (err) {

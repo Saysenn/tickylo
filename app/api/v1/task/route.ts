@@ -55,11 +55,20 @@ export async function GET(request: NextRequest) {
 				? {} // no filter — see all tasks
 				: { user_id: user.id }; // default: "assigned" — only own tasks
 
+		// "overdue" is a virtual filter — not a real status enum value
+		const overdueFilter =
+			statusFilter === "overdue"
+				? { due_date: { lt: new Date() }, status: { not: "completed" as const } }
+				: {};
+		const statusQueryFilter =
+			statusFilter && statusFilter !== "overdue" ? { status: statusFilter } : {};
+
 		const where: any = isAdmin
-			? { ...(statusFilter ? { status: statusFilter } : {}), ...searchFilter }
+			? { ...statusQueryFilter, ...overdueFilter, ...searchFilter }
 			: {
 					...employeeVisibilityFilter,
-					...(statusFilter ? { status: statusFilter } : {}),
+					...statusQueryFilter,
+					...overdueFilter,
 					...searchFilter,
 			  };
 

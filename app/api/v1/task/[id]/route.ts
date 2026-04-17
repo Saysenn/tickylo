@@ -5,7 +5,7 @@ import z from "zod";
 import { requireUser } from "@/lib/auth/require-user";
 import { requireAdmin } from "@/lib/auth/require-admin";
 import { ROLES } from "@/configs/rbac.config";
-import { createNotification } from "@/lib/utils/create-notification";
+import { createNotification, notifyEmployees } from "@/lib/utils/create-notification";
 
 /**
  * GET /api/v1/task/[id]
@@ -116,6 +116,24 @@ export async function DELETE(
 		if (!task) return errorResponse("Task not found", 404);
 
 		await prisma.task.delete({ where: { id } });
+
+		// Notify whoever was affected (fire-and-forget)
+		if (task.user_id) {
+			// Assigned task — notify the assignee
+			createNotification({
+				user_id: task.user_id,
+				type: "task_deleted",
+				title: "Task removed",
+				body: `"${task.title}" has been deleted by admin.`,
+			}).catch(() => {});
+		} else {
+			// Unassigned task — notify all employees (mirrors the task_available notification)
+			notifyEmployees({
+				type: "task_deleted",
+				title: "Task removed",
+				body: `"${task.title}" has been removed by admin.`,
+			}).catch(() => {});
+		}
 
 		return ok({ success: true });
 	} catch (error) {

@@ -32,6 +32,27 @@ export async function notifyAdmins(data: Omit<NotificationData, "user_id">) {
 }
 
 /**
+ * Notify all watchers of a task, skipping any user IDs in the excludeIds set.
+ */
+export async function notifyWatchers(
+	taskId: string,
+	data: Omit<NotificationData, "user_id">,
+	excludeIds: string[] = [],
+) {
+	const watchers = await prisma.taskWatcher.findMany({
+		where: { task_id: taskId },
+		select: { user_id: true },
+	});
+	const recipients = watchers
+		.map((w) => w.user_id)
+		.filter((id) => !excludeIds.includes(id));
+	if (recipients.length === 0) return;
+	await prisma.notification.createMany({
+		data: recipients.map((user_id) => ({ ...data, user_id })),
+	});
+}
+
+/**
  * Notify all non-admin users (employees).
  */
 export async function notifyEmployees(data: Omit<NotificationData, "user_id">) {

@@ -47,13 +47,15 @@ model User {
   avatar_url    String?
   role          String?
 
-  TimeEntries    TimeEntry[]
-  createdTasks   Task[]         @relation("TaskCreatedBy")
-  assignedTasks  Task[]         @relation("TaskAssignedTo")
-  taskComments   TaskComment[]
-  notifications  Notification[]
-  meta           UserMetaData?
-  leave          Leave[]
+  TimeEntries       TimeEntry[]
+  createdTasks      Task[]            @relation("TaskCreatedBy")
+  assignedTasks     Task[]            @relation("TaskAssignedTo")
+  taskComments      TaskComment[]
+  notifications     Notification[]
+  meta              UserMetaData?
+  leave             Leave[]
+  taskWatchers      TaskWatcher[]
+  commentReactions  CommentReaction[]
 
   created_at DateTime    @default(now())
   updated_at DateTime    @updatedAt
@@ -130,9 +132,11 @@ model Task {
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
-  creator  User  @relation("TaskCreatedBy",  fields: [created_by], references: [id])
-  assignee User? @relation("TaskAssignedTo", fields: [user_id],    references: [id])
-  comments TaskComment[]
+  creator   User          @relation("TaskCreatedBy",  fields: [created_by], references: [id])
+  assignee  User?         @relation("TaskAssignedTo", fields: [user_id],    references: [id])
+  comments  TaskComment[]
+  watchers  TaskWatcher[]
+  subtasks  TaskSubtask[]
 
   @@index([created_by])
   @@index([user_id])
@@ -150,12 +154,59 @@ model TaskComment {
 
   created_at DateTime @default(now())
 
-  task   Task  @relation(fields: [task_id], references: [id], onDelete: Cascade)
-  author User? @relation(fields: [user_id], references: [id], onDelete: SetNull)
+  task      Task              @relation(fields: [task_id], references: [id], onDelete: Cascade)
+  author    User?             @relation(fields: [user_id], references: [id], onDelete: SetNull)
+  reactions CommentReaction[]
 
   @@index([task_id])
   @@index([user_id])
   @@map("task_comments")
+}
+
+model TaskWatcher {
+  id         String   @id @default(cuid())
+  task_id    String
+  user_id    String
+  created_at DateTime @default(now())
+
+  task Task @relation(fields: [task_id], references: [id], onDelete: Cascade)
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([task_id, user_id])
+  @@index([task_id])
+  @@map("task_watchers")
+}
+
+model CommentReaction {
+  id         String   @id @default(cuid())
+  comment_id String
+  user_id    String
+  emoji      String
+
+  created_at DateTime @default(now())
+
+  comment TaskComment @relation(fields: [comment_id], references: [id], onDelete: Cascade)
+  user    User        @relation(fields: [user_id],    references: [id], onDelete: Cascade)
+
+  @@unique([comment_id, user_id, emoji])
+  @@index([comment_id])
+  @@map("comment_reactions")
+}
+
+model TaskSubtask {
+  id        String  @id @default(cuid())
+  task_id   String
+  title     String
+  completed Boolean @default(false)
+  position  Int     @default(0)
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  task Task @relation(fields: [task_id], references: [id], onDelete: Cascade)
+
+  @@index([task_id])
+  @@map("task_subtasks")
 }
 
 model Leave {

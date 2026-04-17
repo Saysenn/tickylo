@@ -3,6 +3,7 @@ import { NextRequest } from "next/server";
 import { requireAdmin } from "@/lib/auth/require-admin";
 import { prisma } from "@/lib/infra/prisma";
 import { errorResponse, ok } from "@/lib/utils/response";
+import { createNotification } from "@/lib/utils/create-notification";
 
 const rejectSchema = z.object({
 	reason: z.string().max(500).optional(),
@@ -49,7 +50,14 @@ export async function PATCH(
 			},
 		});
 
-		// notify
+		// Notify the employee their leave was rejected (fire-and-forget)
+		createNotification({
+			user_id: updatedLeave.user_id,
+			type: "leave_rejected",
+			title: "Leave request rejected",
+			body: `Your ${updatedLeave.type} leave request has been rejected.${reason ? ` Reason: ${reason}` : ""}`,
+			link: `/dashboard/requests`,
+		}).catch(() => {});
 
 		return ok(updatedLeave);
 	} catch (err) {

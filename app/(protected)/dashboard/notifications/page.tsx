@@ -12,6 +12,12 @@ import {
 	MessageSquare,
 	Info,
 	CheckCheck,
+	Trash2,
+	Play,
+	Pencil,
+	CalendarCheck,
+	CalendarX,
+	CalendarClock,
 } from "lucide-react";
 import APIService from "@/lib/infra/api";
 import { formatRelativeTime, formatDate, formatTime } from "@/lib/utils/format";
@@ -51,6 +57,18 @@ function notificationIcon(type: string) {
 			return <MessageSquare className="w-4 h-4 text-yellow-500" />;
 		case "task_available":
 			return <ClipboardList className="w-4 h-4 text-mint" />;
+		case "task_started":
+			return <Play className="w-4 h-4 text-blue-500" />;
+		case "task_updated":
+			return <Pencil className="w-4 h-4 text-yellow-500" />;
+		case "task_deleted":
+			return <Trash2 className="w-4 h-4 text-red-500" />;
+		case "leave_requested":
+			return <CalendarClock className="w-4 h-4 text-purple-500" />;
+		case "leave_approved":
+			return <CalendarCheck className="w-4 h-4 text-green-500" />;
+		case "leave_rejected":
+			return <CalendarX className="w-4 h-4 text-red-500" />;
 		default:
 			return <Info className="w-4 h-4 text-ink-3" />;
 	}

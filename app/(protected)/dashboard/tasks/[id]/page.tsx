@@ -23,9 +23,12 @@ import {
 import { useAppSelector } from "@/store/hooks";
 import { formatDate } from "@/lib/utils/format";
 import { cn } from "@/lib/utils/cn";
-import { ArrowLeft, UserCog, ArrowRightLeft } from "lucide-react";
+import { ArrowLeft, UserCog, ArrowRightLeft, Eye, EyeOff } from "lucide-react";
+import ReactMarkdown from "react-markdown";
 import type { Task } from "@/components/dashboard/tasks/types";
 import { TaskThread } from "@/components/dashboard/tasks/task-thread";
+import { TaskSubtasks } from "@/components/dashboard/tasks/task-subtasks";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 const STATUS_STYLES: Record<string, string> = {
 	pending: "bg-accent text-ink-3 border-border/40",
@@ -116,6 +119,11 @@ export default function TaskDetailPage() {
 		onSuccess: invalidate,
 	});
 
+	const { mutateAsync: updateTask } = useMutation({
+		mutationFn: (data: { due_date?: string | null }) => APIService.tasks.update(id, data),
+		onSuccess: invalidate,
+	});
+
 	const { mutateAsync: reassignTask, isPending: isReassigning } = useMutation({
 		mutationFn: (employeeId: string) => APIService.tasks.assign(id, employeeId),
 		onSuccess: () => {
@@ -134,6 +142,28 @@ export default function TaskDetailPage() {
 			setTransferOpen(false);
 			setTransferTo("");
 		},
+	});
+
+	const invalidateWatchers = () =>
+		queryClient.invalidateQueries({ queryKey: ["task-watchers", id] });
+
+	const { data: watchersData } = useQuery<{ watchers: { id: string; name: string | null; email: string }[]; isWatching: boolean; count: number }>({
+		queryKey: ["task-watchers", id],
+		queryFn: () => APIService.tasks.watchers.list(id),
+		enabled: !!id,
+	});
+
+	const isWatching = watchersData?.isWatching ?? false;
+	const watcherCount = watchersData?.count ?? 0;
+
+	const { mutateAsync: watchTask, isPending: isWatching_ } = useMutation({
+		mutationFn: () => APIService.tasks.watchers.watch(id),
+		onSuccess: invalidateWatchers,
+	});
+
+	const { mutateAsync: unwatchTask, isPending: isUnwatching } = useMutation({
+		mutationFn: () => APIService.tasks.watchers.unwatch(id),
+		onSuccess: invalidateWatchers,
 	});
 
 	if (isLoading) {
@@ -192,7 +222,9 @@ export default function TaskDetailPage() {
 					</div>
 					<h1 className="text-2xl font-bold text-ink">{task.title}</h1>
 					{task.description && (
-						<p className="text-ink-3 text-sm whitespace-pre-wrap">{task.description}</p>
+						<div className="prose prose-sm prose-neutral dark:prose-invert max-w-none text-ink-3 [&_p]:my-1 [&_ul]:my-1 [&_ol]:my-1 [&_li]:my-0.5 [&_strong]:text-ink [&_code]:bg-accent/50 [&_code]:px-1 [&_code]:rounded [&_code]:text-xs">
+							<ReactMarkdown>{task.description}</ReactMarkdown>
+						</div>
 					)}
 				</div>
 
@@ -208,9 +240,27 @@ export default function TaskDetailPage() {
 					</div>
 					<div>
 						<p className="text-xs text-ink-3 uppercase tracking-wider mb-1">Due Date</p>
-						<p className="text-sm text-ink font-medium">
-							{task.due_date ? formatDate(task.due_date) : <span className="text-ink-3">—</span>}
-						</p>
+						{isAdmin ? (
+							<input
+								type="date"
+								defaultValue={task.due_date ? task.due_date.slice(0, 10) : ""}
+								onChange={(e) => updateTask({ due_date: e.target.value || null })}
+								className="h-7 rounded-md border border-border/50 bg-background px-2 text-sm text-ink focus:outline-none focus:ring-1 focus:ring-mint/50 focus:border-mint/40"
+							/>
+						) : task.due_date ? (
+							<div className="flex items-center gap-2 flex-wrap">
+								<p className={cn("text-sm font-medium", task.status !== "completed" && new Date(task.due_date) < new Date() ? "text-red-600" : "text-ink")}>
+									{formatDate(task.due_date)}
+								</p>
+								{task.status !== "completed" && new Date(task.due_date) < new Date() && (
+									<Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 bg-red-500/10 text-red-600 border-red-500/20">
+										Overdue
+									</Badge>
+								)}
+							</div>
+						) : (
+							<span className="text-ink-3 text-sm">—</span>
+						)}
 					</div>
 					<div>
 						<p className="text-xs text-ink-3 uppercase tracking-wider mb-1">Created</p>
@@ -278,6 +328,17 @@ export default function TaskDetailPage() {
 								Request transfer
 							</Button>
 						)}
+						<Button
+							size="sm"
+							variant="outline"
+							className={cn("gap-1.5 ml-auto", isWatching ? "text-mint border-mint/40" : "text-ink-3")}
+							disabled={isWatching_ || isUnwatching}
+							onClick={() => isWatching ? unwatchTask() : watchTask()}
+						>
+							{isWatching ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+							{isWatching ? "Unwatch" : "Watch"}
+							{watcherCount > 0 && <span className="text-[10px] opacity-60">({watcherCount})</span>}
+						</Button>
 					</div>
 				)}
 
@@ -292,6 +353,17 @@ export default function TaskDetailPage() {
 						>
 							<UserCog className="w-3.5 h-3.5" />
 							Reassign
+						</Button>
+						<Button
+							size="sm"
+							variant="outline"
+							className={cn("gap-1.5 ml-auto", isWatching ? "text-mint border-mint/40" : "text-ink-3")}
+							disabled={isWatching_ || isUnwatching}
+							onClick={() => isWatching ? unwatchTask() : watchTask()}
+						>
+							{isWatching ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+							{isWatching ? "Unwatch" : "Watch"}
+							{watcherCount > 0 && <span className="text-[10px] opacity-60">({watcherCount})</span>}
 						</Button>
 					</div>
 				)}
@@ -391,9 +463,25 @@ export default function TaskDetailPage() {
 				</DialogContent>
 			</DialogRoot>
 
-			{/* Thread */}
+			{/* Subtasks */}
 			<div className="rounded-lg border bg-background p-6">
-				<TaskThread taskId={id} taskCreatedBy={task.created_by} />
+				<TaskSubtasks taskId={id} />
+			</div>
+
+			{/* Thread + Activity tabs */}
+			<div className="rounded-lg border bg-background p-6">
+				<Tabs defaultValue="thread">
+					<TabsList className="mb-4">
+						<TabsTrigger value="thread">Thread</TabsTrigger>
+						<TabsTrigger value="activity">Activity</TabsTrigger>
+					</TabsList>
+					<TabsContent value="thread">
+						<TaskThread taskId={id} taskCreatedBy={task.created_by} view="thread" />
+					</TabsContent>
+					<TabsContent value="activity">
+						<TaskThread taskId={id} taskCreatedBy={task.created_by} view="activity" />
+					</TabsContent>
+				</Tabs>
 			</div>
 		</div>
 	);

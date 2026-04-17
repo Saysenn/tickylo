@@ -2,6 +2,7 @@ import { errorResponse, ok } from "@/lib/utils/response";
 import { prisma } from "@/lib/infra/prisma";
 import { requireUser } from "@/lib/auth/require-user";
 import { NextRequest } from "next/server";
+import { notifyAdmins } from "@/lib/utils/create-notification";
 
 export async function PATCH(
 	request: NextRequest,
@@ -25,6 +26,15 @@ export async function PATCH(
 			where: { id },
 			data: { status: "in_progress", started_at: new Date() },
 		});
+
+		// Notify admins (fire-and-forget)
+		const starterName = user.user_metadata?.name ?? user.email ?? "An employee";
+		notifyAdmins({
+			type: "task_started",
+			title: "Task started",
+			body: `${starterName} started working on "${task.title}".`,
+			link: `/dashboard/tasks/${id}`,
+		}).catch(() => {});
 
 		return ok(updated);
 	} catch (error) {

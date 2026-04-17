@@ -2,7 +2,7 @@ import { errorResponse, ok } from "@/lib/utils/response";
 import { prisma } from "@/lib/infra/prisma";
 import { requireUser } from "@/lib/auth/require-user";
 import { NextRequest } from "next/server";
-import { createNotification } from "@/lib/utils/create-notification";
+import { createNotification, notifyAdmins, notifyWatchers } from "@/lib/utils/create-notification";
 
 export async function PATCH(
 	request: NextRequest,
@@ -28,16 +28,33 @@ export async function PATCH(
 			data: { status: "completed", completed_at: new Date() },
 		});
 
-		// Notify creator if different from assignee (fire-and-forget)
+		const completerName = user.user_metadata?.name ?? user.email ?? "An employee";
+		const completionBody = `"${task.title}" has been marked as complete by ${completerName}.`;
+
+		// Notify creator (fire-and-forget)
 		if (task.created_by !== user.id) {
 			createNotification({
 				user_id: task.created_by,
 				type: "task_completed",
 				title: "Task completed",
-				body: `"${task.title}" has been marked as complete.`,
+				body: completionBody,
 				link: `/dashboard/tasks/${id}`,
 			}).catch(() => {});
 		}
+		// Notify all admins
+		notifyAdmins({
+			type: "task_completed",
+			title: "Task completed",
+			body: completionBody,
+			link: `/dashboard/tasks/${id}`,
+		}).catch(() => {});
+		// Notify watchers (exclude completer, creator, admins already covered above)
+		notifyWatchers(id, {
+			type: "task_completed",
+			title: "Task completed",
+			body: completionBody,
+			link: `/dashboard/tasks/${id}`,
+		}, [user.id, task.created_by]).catch(() => {});
 
 		return ok(updated);
 	} catch (error) {

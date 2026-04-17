@@ -8,7 +8,8 @@ import { TaskDonutChart } from "./task-donut-chart";
 import { TeamActivityWidget } from "./team-activity-widget";
 import { TasksListWidget } from "./tasks-list-widget";
 import { TimerCard } from "./timer-card";
-import { Users, Timer, CheckSquare, ClipboardList } from "lucide-react";
+import { WorkloadChart } from "@/components/dashboard/tasks/workload-chart";
+import { Users, CheckSquare, ClipboardList } from "lucide-react";
 
 interface AdminDashboardData {
 	employees: { total: number };
@@ -113,6 +114,9 @@ export function AdminDashboard() {
 				/>
 				<TimerCard />
 			</div>
+
+			{/* Row 4 — Workload chart */}
+			<WorkloadChart />
 		</div>
 	);
 }

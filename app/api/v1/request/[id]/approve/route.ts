@@ -3,6 +3,7 @@ import { NextRequest } from "next/server";
 import { requireAdmin } from "@/lib/auth/require-admin";
 import { prisma } from "@/lib/infra/prisma";
 import { errorResponse, ok } from "@/lib/utils/response";
+import { createNotification } from "@/lib/utils/create-notification";
 
 const approveSchema = z.object({
 	reason: z.string().max(500).optional(),
@@ -69,6 +70,15 @@ export async function PATCH(
 
 			return updatedLeave;
 		});
+
+		// Notify the employee their leave was approved (fire-and-forget)
+		createNotification({
+			user_id: result.user_id,
+			type: "leave_approved",
+			title: "Leave request approved",
+			body: `Your ${result.type} leave request has been approved.`,
+			link: `/dashboard/requests`,
+		}).catch(() => {});
 
 		return ok(result);
 	} catch (err: any) {

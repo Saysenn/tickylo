@@ -145,6 +145,32 @@ class APIService {
 			clear: (taskId: string) =>
 				axiosService.delete(`${apiVersion}/task/${taskId}/comments/clear`),
 		},
+		reactions: {
+			list: (taskId: string, commentId: string) =>
+				axiosService.get(`${apiVersion}/task/${taskId}/comments/${commentId}/reactions`),
+			toggle: (taskId: string, commentId: string, emoji: string) =>
+				axiosService.post(`${apiVersion}/task/${taskId}/comments/${commentId}/reactions`, { emoji }),
+		},
+		watchers: {
+			list: (taskId: string) =>
+				axiosService.get(`${apiVersion}/task/${taskId}/watchers`),
+			watch: (taskId: string) =>
+				axiosService.post(`${apiVersion}/task/${taskId}/watchers`, {}),
+			unwatch: (taskId: string) =>
+				axiosService.delete(`${apiVersion}/task/${taskId}/watchers`),
+		},
+		subtasks: {
+			list: (taskId: string) =>
+				axiosService.get(`${apiVersion}/task/${taskId}/subtasks`),
+			create: (taskId: string, title: string) =>
+				axiosService.post(`${apiVersion}/task/${taskId}/subtasks`, { title }),
+			update: (taskId: string, subtaskId: string, data: { title?: string; completed?: boolean; position?: number }) =>
+				axiosService.patch(`${apiVersion}/task/${taskId}/subtasks/${subtaskId}`, data),
+			remove: (taskId: string, subtaskId: string) =>
+				axiosService.delete(`${apiVersion}/task/${taskId}/subtasks/${subtaskId}`),
+		},
+		bulk: (action: "assign" | "complete" | "delete", ids: string[], user_id?: string) =>
+			axiosService.post(`${apiVersion}/task/bulk`, { action, ids, user_id }),
 	};
 
 	// ---------------------------------------------------------------------------

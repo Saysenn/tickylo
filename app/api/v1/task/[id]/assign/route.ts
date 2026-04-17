@@ -3,7 +3,7 @@ import { ok, errorResponse } from "@/lib/utils/response";
 import { z } from "zod";
 import { prisma } from "@/lib/infra/prisma";
 import { requireAdmin } from "@/lib/auth/require-admin";
-import { createNotification } from "@/lib/utils/create-notification";
+import { createNotification, notifyWatchers } from "@/lib/utils/create-notification";
 
 const updateTaskSchema = z.object({
 	user_id: z.string().uuid(),
@@ -75,8 +75,9 @@ export async function PATCH(
 			}),
 		]);
 
-		// Notify the new assignee (fire-and-forget)
+		// Notify the new assignee + watchers (fire-and-forget)
 		const isReassign = !!task.user_id;
+		const eventBody = `"${task.title}" has been ${isReassign ? "reassigned" : "assigned"} to ${newName}.`;
 		createNotification({
 			user_id,
 			type: isReassign ? "task_reassigned" : "task_assigned",
@@ -84,6 +85,22 @@ export async function PATCH(
 			body: `"${task.title}" has been ${isReassign ? "reassigned" : "assigned"} to you.`,
 			link: `/dashboard/tasks/${id}`,
 		}).catch(() => {});
+		// Notify the old assignee when task is taken away from them
+		if (isReassign && task.user_id && task.user_id !== user_id) {
+			createNotification({
+				user_id: task.user_id,
+				type: "task_reassigned",
+				title: "Task reassigned",
+				body: `"${task.title}" has been reassigned to ${newName}.`,
+				link: `/dashboard/tasks/${id}`,
+			}).catch(() => {});
+		}
+		notifyWatchers(id, {
+			type: isReassign ? "task_reassigned" : "task_assigned",
+			title: isReassign ? "Task reassigned" : "Task assigned",
+			body: eventBody,
+			link: `/dashboard/tasks/${id}`,
+		}, [user_id, ...(task.user_id ? [task.user_id] : [])]).catch(() => {});
 
 		return ok(updated);
 	} catch (error) {
