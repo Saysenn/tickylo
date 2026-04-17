@@ -3,6 +3,7 @@ import { ok, errorResponse } from "@/lib/utils/response";
 import { z } from "zod";
 import { prisma } from "@/lib/infra/prisma";
 import { requireUser } from "@/lib/auth/require-user";
+import { createNotification } from "@/lib/utils/create-notification";
 
 const postSchema = z.object({
 	body: z.string().min(1).max(2000),
@@ -74,6 +75,24 @@ export async function POST(
 				author: { select: { id: true, name: true, email: true } },
 			},
 		});
+
+		// Notify assignee and creator about the new comment (skip the commenter)
+		const commenterName = user.user_metadata?.name ?? user.email ?? "Someone";
+		const snippet = validated.data.body.length > 60
+			? `${validated.data.body.slice(0, 60)}…`
+			: validated.data.body;
+		const recipientIds = new Set<string>();
+		if (task.user_id && task.user_id !== user.id) recipientIds.add(task.user_id);
+		if (task.created_by !== user.id) recipientIds.add(task.created_by);
+		for (const recipientId of recipientIds) {
+			createNotification({
+				user_id: recipientId,
+				type: "comment_added",
+				title: `${commenterName} commented on a task`,
+				body: `"${task.title}": ${snippet}`,
+				link: `/dashboard/tasks/${id}`,
+			}).catch(() => {});
+		}
 
 		return ok(comment);
 	} catch (err) {

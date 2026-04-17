@@ -2,6 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { UserDropdown } from "./user-dropdown";
+import { NotificationBell } from "./notification-bell";
 import type { UserProfile } from "@/types";
 
 const TimeTrackerButton = dynamic(
@@ -58,6 +59,7 @@ export function Header({ user, title, onMenuClick, sidebarOpen = false }: Header
 
       <div className="flex items-center gap-2">
         <TimeTrackerButton />
+        <NotificationBell />
         <UserDropdown user={user} />
       </div>
     </header>

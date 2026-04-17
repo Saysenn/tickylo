@@ -3,6 +3,7 @@ import { ok, errorResponse } from "@/lib/utils/response";
 import { z } from "zod";
 import { prisma } from "@/lib/infra/prisma";
 import { requireUser } from "@/lib/auth/require-user";
+import { notifyAdmins } from "@/lib/utils/create-notification";
 
 const schema = z.object({
 	requested_to: z.string().uuid().optional(), // null = let admin decide
@@ -69,6 +70,14 @@ export async function POST(
 				is_system: true,
 			},
 		});
+
+		// Notify all admins (fire-and-forget)
+		notifyAdmins({
+			type: "transfer_requested",
+			title: "Transfer request",
+			body: `${requesterName} requested to transfer "${task.title}" to ${targetName}.`,
+			link: `/dashboard/tasks/${id}`,
+		}).catch(() => {});
 
 		return ok(comment);
 	} catch (err) {

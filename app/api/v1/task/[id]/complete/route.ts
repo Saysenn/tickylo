@@ -2,6 +2,7 @@ import { errorResponse, ok } from "@/lib/utils/response";
 import { prisma } from "@/lib/infra/prisma";
 import { requireUser } from "@/lib/auth/require-user";
 import { NextRequest } from "next/server";
+import { createNotification } from "@/lib/utils/create-notification";
 
 export async function PATCH(
 	request: NextRequest,
@@ -26,6 +27,17 @@ export async function PATCH(
 			where: { id },
 			data: { status: "completed", completed_at: new Date() },
 		});
+
+		// Notify creator if different from assignee (fire-and-forget)
+		if (task.created_by !== user.id) {
+			createNotification({
+				user_id: task.created_by,
+				type: "task_completed",
+				title: "Task completed",
+				body: `"${task.title}" has been marked as complete.`,
+				link: `/dashboard/tasks/${id}`,
+			}).catch(() => {});
+		}
 
 		return ok(updated);
 	} catch (error) {

@@ -3,6 +3,7 @@ import { ok, errorResponse } from "@/lib/utils/response";
 import { z } from "zod";
 import { prisma } from "@/lib/infra/prisma";
 import { requireAdmin } from "@/lib/auth/require-admin";
+import { createNotification } from "@/lib/utils/create-notification";
 
 const updateTaskSchema = z.object({
 	user_id: z.string().uuid(),
@@ -73,6 +74,16 @@ export async function PATCH(
 				},
 			}),
 		]);
+
+		// Notify the new assignee (fire-and-forget)
+		const isReassign = !!task.user_id;
+		createNotification({
+			user_id,
+			type: isReassign ? "task_reassigned" : "task_assigned",
+			title: isReassign ? "Task reassigned to you" : "New task assigned",
+			body: `"${task.title}" has been ${isReassign ? "reassigned" : "assigned"} to you.`,
+			link: `/dashboard/tasks/${id}`,
+		}).catch(() => {});
 
 		return ok(updated);
 	} catch (error) {

@@ -5,6 +5,7 @@ import z from "zod";
 import { requireUser } from "@/lib/auth/require-user";
 import { requireAdmin } from "@/lib/auth/require-admin";
 import { ROLES } from "@/configs/rbac.config";
+import { createNotification } from "@/lib/utils/create-notification";
 
 /**
  * GET /api/v1/task/[id]
@@ -31,11 +32,6 @@ export async function GET(
 		});
 
 		if (!task) return errorResponse("Task not found", 404);
-
-		// Employee can only view their own task or an unassigned one
-		if (!isAdmin && task.user_id !== null && task.user_id !== user.id) {
-			return errorResponse("Forbidden", 403);
-		}
 
 		return ok(task);
 	} catch (error) {
@@ -84,6 +80,17 @@ export async function PATCH(
 				assignee: { select: { id: true, name: true, email: true } },
 			},
 		});
+
+		// Notify assignee if task has one (fire-and-forget)
+		if (updatedTask.user_id) {
+			createNotification({
+				user_id: updatedTask.user_id,
+				type: "task_updated",
+				title: "Task updated",
+				body: `"${updatedTask.title}" has been updated by admin.`,
+				link: `/dashboard/tasks/${id}`,
+			}).catch(() => {});
+		}
 
 		return ok(updatedTask);
 	} catch (error) {

@@ -5,6 +5,7 @@ import z from "zod";
 import { requireUser } from "@/lib/auth/require-user";
 import { requireAdmin } from "@/lib/auth/require-admin";
 import { ROLES } from "@/configs/rbac.config";
+import { createNotification, notifyEmployees } from "@/lib/utils/create-notification";
 
 const createTaskSchema = z.object({
 	title: z.string().min(1).max(200),
@@ -51,8 +52,8 @@ export async function GET(request: NextRequest) {
 			view === "unassigned"
 				? { user_id: null }
 				: view === "all"
-				? { OR: [{ user_id: user.id }, { user_id: null }] }
-				: { user_id: user.id }; // default: "assigned"
+				? {} // no filter — see all tasks
+				: { user_id: user.id }; // default: "assigned" — only own tasks
 
 		const where: any = isAdmin
 			? { ...(statusFilter ? { status: statusFilter } : {}), ...searchFilter }
@@ -118,6 +119,25 @@ export async function POST(request: NextRequest) {
 				assignee: { select: { id: true, name: true, email: true } },
 			},
 		});
+
+		if (assigned_to) {
+			// Notify the specific assignee
+			createNotification({
+				user_id: assigned_to,
+				type: "task_assigned",
+				title: "New task assigned",
+				body: `"${entry.title}" has been assigned to you.`,
+				link: `/dashboard/tasks/${entry.id}`,
+			}).catch(() => {});
+		} else {
+			// Notify all employees that a new task is available to claim
+			notifyEmployees({
+				type: "task_available",
+				title: "New task available",
+				body: `"${entry.title}" is available to claim.`,
+				link: `/dashboard/tasks/${entry.id}`,
+			}).catch(() => {});
+		}
 
 		return ok(entry, 201);
 	} catch (err) {

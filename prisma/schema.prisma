@@ -48,9 +48,10 @@ model User {
   role          String?
 
   TimeEntries    TimeEntry[]
-  createdTasks   Task[]        @relation("TaskCreatedBy")
-  assignedTasks  Task[]        @relation("TaskAssignedTo")
+  createdTasks   Task[]         @relation("TaskCreatedBy")
+  assignedTasks  Task[]         @relation("TaskAssignedTo")
   taskComments   TaskComment[]
+  notifications  Notification[]
   meta           UserMetaData?
   leave          Leave[]
 
@@ -174,4 +175,22 @@ model Leave {
   @@index([user_id])
   @@index([status])
   @@index([start])
+}
+
+model Notification {
+  id         String   @id @default(cuid())
+  user_id    String
+  type       String   // task_assigned | task_reassigned | task_claimed | task_completed | transfer_requested | comment_added
+  title      String
+  body       String
+  link       String?  // e.g. /dashboard/tasks/[id]
+  read       Boolean  @default(false)
+
+  created_at DateTime @default(now())
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id, read])
+  @@index([created_at])
+  @@map("notifications")
 }

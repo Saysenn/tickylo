@@ -187,6 +187,18 @@ class APIService {
 	};
 
 	// ---------------------------------------------------------------------------
+	// Notifications
+	// ---------------------------------------------------------------------------
+	public notifications = {
+		list: (page = 1, limit = 20, unread_only = false) =>
+			axiosService.get(`${apiVersion}/notifications`, { page, limit, unread_only }),
+		readAll: () =>
+			axiosService.patch(`${apiVersion}/notifications/read-all`, {}),
+		read: (id: string) =>
+			axiosService.patch(`${apiVersion}/notifications/${id}/read`, {}),
+	};
+
+	// ---------------------------------------------------------------------------
 	// Dashboard (role-aware)
 	// ---------------------------------------------------------------------------
 	public dashboard = {

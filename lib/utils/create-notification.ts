@@ -1,0 +1,46 @@
+import { prisma } from "@/lib/infra/prisma";
+
+interface NotificationData {
+	user_id: string;
+	type: string;
+	title: string;
+	body: string;
+	link?: string;
+}
+
+/**
+ * Creates a notification for a user. Fire-and-forget safe —
+ * wrap in a separate try/catch so notification failures never
+ * break the primary operation.
+ */
+export async function createNotification(data: NotificationData) {
+	return prisma.notification.create({ data });
+}
+
+/**
+ * Notify all admin users. Looks up admins from the users table.
+ */
+export async function notifyAdmins(data: Omit<NotificationData, "user_id">) {
+	const admins = await prisma.user.findMany({
+		where: { role: "admin" },
+		select: { id: true },
+	});
+	if (admins.length === 0) return;
+	await prisma.notification.createMany({
+		data: admins.map((a) => ({ ...data, user_id: a.id })),
+	});
+}
+
+/**
+ * Notify all non-admin users (employees).
+ */
+export async function notifyEmployees(data: Omit<NotificationData, "user_id">) {
+	const employees = await prisma.user.findMany({
+		where: { role: { not: "admin" } },
+		select: { id: true },
+	});
+	if (employees.length === 0) return;
+	await prisma.notification.createMany({
+		data: employees.map((e) => ({ ...data, user_id: e.id })),
+	});
+}

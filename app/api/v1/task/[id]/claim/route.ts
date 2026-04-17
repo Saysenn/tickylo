@@ -3,6 +3,7 @@ import { errorResponse, ok } from "@/lib/utils/response";
 import { prisma } from "@/lib/infra/prisma";
 import { requireUser } from "@/lib/auth/require-user";
 import { ROLES } from "@/configs/rbac.config";
+import { notifyAdmins } from "@/lib/utils/create-notification";
 
 /**
  * PATCH /api/v1/task/[id]/claim
@@ -38,6 +39,15 @@ export async function PATCH(
 				assigned_at: new Date(),
 			},
 		});
+
+		// Notify admins (fire-and-forget)
+		const claimerName = user.user_metadata?.name ?? user.email ?? "An employee";
+		notifyAdmins({
+			type: "task_claimed",
+			title: "Task claimed",
+			body: `${claimerName} claimed "${task.title}".`,
+			link: `/dashboard/tasks/${id}`,
+		}).catch(() => {});
 
 		return ok(updated);
 	} catch (error) {
