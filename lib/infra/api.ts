@@ -51,6 +51,8 @@ class APIService {
 	public employees = {
 		list: (page = 1, limit = 10) =>
 			axiosService.get(`${apiVersion}/employees`, { page, limit }),
+		workload: () =>
+			axiosService.get<Record<string, number>>(`${apiVersion}/employees/workload`),
 		get: (id: string) => axiosService.get(`${apiVersion}/employees/${id}`),
 		create: (data: {
 			name: string;
@@ -110,8 +112,8 @@ class APIService {
 	// Tasks
 	// ---------------------------------------------------------------------------
 	public tasks = {
-		list: (page = 1, limit = 10, status?: string, search?: string) =>
-			axiosService.get(`${apiVersion}/task`, { page, limit, status, search }),
+		list: (page = 1, limit = 10, status?: string, search?: string, view?: string) =>
+			axiosService.get(`${apiVersion}/task`, { page, limit, status, search, view }),
 		create: (data: {
 			title: string;
 			description?: string;
@@ -131,6 +133,18 @@ class APIService {
 			axiosService.patch(`${apiVersion}/task/${id}/start`, {}),
 		complete: (id: string) =>
 			axiosService.patch(`${apiVersion}/task/${id}/complete`, {}),
+		requestTransfer: (id: string, requested_to?: string) =>
+			axiosService.post(`${apiVersion}/task/${id}/request-transfer`, { requested_to }),
+		comments: {
+			list: (taskId: string) =>
+				axiosService.get(`${apiVersion}/task/${taskId}/comments`),
+			post: (taskId: string, body: string) =>
+				axiosService.post(`${apiVersion}/task/${taskId}/comments`, { body }),
+			remove: (taskId: string, commentId: string) =>
+				axiosService.delete(`${apiVersion}/task/${taskId}/comments/${commentId}`),
+			clear: (taskId: string) =>
+				axiosService.delete(`${apiVersion}/task/${taskId}/comments/clear`),
+		},
 	};
 
 	// ---------------------------------------------------------------------------

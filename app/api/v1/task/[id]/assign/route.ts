@@ -5,58 +5,78 @@ import { prisma } from "@/lib/infra/prisma";
 import { requireAdmin } from "@/lib/auth/require-admin";
 
 const updateTaskSchema = z.object({
-	user_id: z.string().uuid(), // the worker id
+	user_id: z.string().uuid(),
 });
 
-// PATCH /api/v1/tasks/:id/assign
+/**
+ * PATCH /api/v1/task/[id]/assign
+ * Admin only. Assigns or reassigns a task to any worker at any status
+ * (pending, assigned, in_progress). Completed tasks cannot be reassigned.
+ * On reassign mid-progress, status resets to "assigned" and started_at clears.
+ * A system comment is auto-posted to the thread as an audit trail.
+ */
 export async function PATCH(
 	request: NextRequest,
 	{ params }: { params: Promise<{ id: string }> },
 ) {
 	try {
-		// only admin is allowed to assign
 		const caller = await requireAdmin();
 		if (!caller) return errorResponse("Forbidden", 403);
 
-		// get task id from parms
 		const { id } = await params;
 
-		// validate body datas
 		const body = await request.json();
 		const validated = updateTaskSchema.safeParse(body);
 		if (!validated.success) {
-			return errorResponse(
-				validated.error.issues[0]?.message ?? "Invalid input",
-				400,
-			);
+			return errorResponse(validated.error.issues[0]?.message ?? "Invalid input", 400);
 		}
 
-		// get user_id from body response
 		const { user_id } = validated.data;
 
-		// check if the task reall y exist
-		const task = await prisma.task.findUnique({ where: { id } });
+		const task = await prisma.task.findUnique({
+			where: { id },
+			include: { assignee: { select: { name: true, email: true } } },
+		});
 		if (!task) return errorResponse("Task not found", 404);
 
-		// Only assign if task is pending
-		if (task.status !== "pending") {
-			return errorResponse("Task is already assigned or in progress", 400);
+		if (task.status === "completed") {
+			return errorResponse("Completed tasks cannot be reassigned", 400);
 		}
 
-		// assign the task to the user
-		const updated = await prisma.task.update({
-			where: { id },
-			data: {
-				user_id: user_id,
-				status: "assigned",
-				started_at: null,
-				assigned_at: new Date(),
-			},
+		const newAssignee = await prisma.user.findUnique({
+			where: { id: user_id },
+			select: { name: true, email: true },
 		});
+		if (!newAssignee) return errorResponse("User not found", 404);
+
+		// Build system comment body for audit trail
+		const oldName = task.assignee?.name ?? task.assignee?.email ?? "Unassigned";
+		const newName = newAssignee.name ?? newAssignee.email;
+		const systemBody = `Task reassigned from ${oldName} to ${newName} by admin.`;
+
+		const [updated] = await prisma.$transaction([
+			prisma.task.update({
+				where: { id },
+				data: {
+					user_id,
+					status: "assigned",
+					started_at: null,
+					assigned_at: new Date(),
+				},
+			}),
+			prisma.taskComment.create({
+				data: {
+					task_id: id,
+					user_id: null,
+					body: systemBody,
+					is_system: true,
+				},
+			}),
+		]);
 
 		return ok(updated);
 	} catch (error) {
-		console.error("[tasks:PATCH]", error);
+		console.error("[tasks:assign:PATCH]", error);
 		return errorResponse("Failed to assign the task", 500);
 	}
 }

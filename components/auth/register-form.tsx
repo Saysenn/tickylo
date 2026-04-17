@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Mail, Lock, User } from "lucide-react";
+import { PasswordInput } from "@/components/ui/password-input";
 import { createClient } from "@/lib/supabase/client";
 import { authError } from "@/lib/auth/auth-errors";
 import { isAxiosError } from "axios";
@@ -170,19 +171,15 @@ export function RegisterForm() {
 						<Label htmlFor="password" className="text-ink-2 text-sm">
 							Password
 						</Label>
-						<div className="relative">
-							<Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-3 pointer-events-none" />
-							<Input
-								id="password"
-								name="password"
-								type="password"
-								placeholder="Create a strong password"
-								value={formData.password}
-								onChange={handleChange}
-								className="pl-9"
-								autoComplete="new-password"
-							/>
-						</div>
+						<PasswordInput
+							id="password"
+							name="password"
+							placeholder="Create a strong password"
+							value={formData.password}
+							onChange={handleChange}
+							leftIcon={<Lock className="w-4 h-4 text-ink-3" />}
+							autoComplete="new-password"
+						/>
 						{fieldErrors.password && (
 							<p className="text-xs text-destructive">{fieldErrors.password}</p>
 						)}
@@ -192,19 +189,15 @@ export function RegisterForm() {
 						<Label htmlFor="confirmPassword" className="text-ink-2 text-sm">
 							Confirm Password
 						</Label>
-						<div className="relative">
-							<Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-3 pointer-events-none" />
-							<Input
-								id="confirmPassword"
-								name="confirmPassword"
-								type="password"
-								placeholder="Confirm your password"
-								value={formData.confirmPassword}
-								onChange={handleChange}
-								className="pl-9"
-								autoComplete="new-password"
-							/>
-						</div>
+						<PasswordInput
+							id="confirmPassword"
+							name="confirmPassword"
+							placeholder="Confirm your password"
+							value={formData.confirmPassword}
+							onChange={handleChange}
+							leftIcon={<Lock className="w-4 h-4 text-ink-3" />}
+							autoComplete="new-password"
+						/>
 						{fieldErrors.confirmPassword && (
 							<p className="text-xs text-destructive">
 								{fieldErrors.confirmPassword}

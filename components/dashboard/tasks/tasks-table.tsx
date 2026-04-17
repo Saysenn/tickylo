@@ -50,6 +50,7 @@ export function TasksTable() {
 
 	const [searchInput, setSearchInput] = useState(search);
 	const [pendingCompleteTask, setPendingCompleteTask] = useState<Task | null>(null);
+	const [viewFilter, setViewFilter] = useState<"assigned" | "unassigned" | "all">("assigned");
 	const user = useAppSelector((s) => s.auth.user);
 	const isAdmin = user?.role === "admin";
 
@@ -77,8 +78,14 @@ export function TasksTable() {
 	};
 
 	const { data: result, isLoading, isError } = useQuery<TaskPage>({
-		queryKey: ["tasks", page, statusFilter, search],
-		queryFn: () => APIService.tasks.list(page, ROWS_PER_PAGE, statusFilter || undefined, search || undefined),
+		queryKey: ["tasks", page, statusFilter, search, viewFilter],
+		queryFn: () => APIService.tasks.list(
+			page,
+			ROWS_PER_PAGE,
+			statusFilter || undefined,
+			search || undefined,
+			isAdmin ? undefined : viewFilter,
+		),
 	});
 
 	// Track active timer so we can stop it when completing a task
@@ -179,6 +186,14 @@ export function TasksTable() {
 	const list = result?.data ?? [];
 	const totalPages = result?.totalPages ?? 1;
 
+	const emptyStateCopy = isAdmin
+		? "Create a task and optionally assign it to a team member."
+		: viewFilter === "assigned"
+		? "No tasks are assigned to you yet."
+		: viewFilter === "unassigned"
+		? "There are no unassigned tasks available to claim."
+		: "No tasks found matching your filters.";
+
 	return (
 		<div className="space-y-3">
 			{/* Toolbar */}
@@ -195,18 +210,34 @@ export function TasksTable() {
 					<Button size="sm" variant="outline" className="h-8" onClick={submitSearch}>
 						Search
 					</Button>
-					<select
-						value={statusFilter}
-						onChange={(e) => updateParam("status", e.target.value)}
-						className="h-8 rounded-md border border-border bg-background px-2 text-sm focus:outline-none focus:ring-1 focus:ring-mint"
-					>
-						<option value="">All statuses</option>
-						{ALL_STATUSES.map((s) => (
-							<option key={s} value={s}>
-								{STATUS_LABEL[s] ?? s}
-							</option>
-						))}
-					</select>
+					{!isAdmin && (
+						<select
+							value={viewFilter}
+							onChange={(e) => {
+								setViewFilter(e.target.value as typeof viewFilter);
+								resetPage();
+							}}
+							className="h-8 rounded-md border border-border bg-background px-2 text-sm focus:outline-none focus:ring-1 focus:ring-mint"
+						>
+							<option value="assigned">My Tasks</option>
+							<option value="unassigned">Unassigned</option>
+							<option value="all">All Tasks</option>
+						</select>
+					)}
+					{isAdmin && (
+						<select
+							value={statusFilter}
+							onChange={(e) => updateParam("status", e.target.value)}
+							className="h-8 rounded-md border border-border bg-background px-2 text-sm focus:outline-none focus:ring-1 focus:ring-mint"
+						>
+							<option value="">All statuses</option>
+							{ALL_STATUSES.map((s) => (
+								<option key={s} value={s}>
+									{STATUS_LABEL[s] ?? s}
+								</option>
+							))}
+						</select>
+					)}
 				</div>
 
 				<div className="flex items-center gap-2">
@@ -235,11 +266,7 @@ export function TasksTable() {
 						<ClipboardList className="w-6 h-6 text-ink-2" strokeWidth={1.8} />
 					</div>
 					<h3 className="font-semibold text-ink mb-1">No tasks found</h3>
-					<p className="text-sm text-ink-3 max-w-xs">
-						{isAdmin
-							? "Create a task and optionally assign it to a team member."
-							: "Tasks assigned to you will appear here. You can also claim unassigned tasks."}
-					</p>
+					<p className="text-sm text-ink-3 max-w-xs">{emptyStateCopy}</p>
 				</div>
 			)}
 

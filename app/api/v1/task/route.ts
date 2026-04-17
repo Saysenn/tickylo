@@ -35,6 +35,8 @@ export async function GET(request: NextRequest) {
 		const isAdmin = user.app_metadata?.role === ROLES.ADMIN;
 		const statusFilter = searchParams.get("status");
 		const search = searchParams.get("search")?.trim();
+		// view param is for employees only: "assigned" (default) | "unassigned" | "all"
+		const view = searchParams.get("view") ?? "assigned";
 
 		const searchFilter = search
 			? {
@@ -45,11 +47,17 @@ export async function GET(request: NextRequest) {
 			  }
 			: {};
 
-		// Employee sees: tasks assigned to them + unassigned pool (user_id null)
+		const employeeVisibilityFilter =
+			view === "unassigned"
+				? { user_id: null }
+				: view === "all"
+				? { OR: [{ user_id: user.id }, { user_id: null }] }
+				: { user_id: user.id }; // default: "assigned"
+
 		const where: any = isAdmin
 			? { ...(statusFilter ? { status: statusFilter } : {}), ...searchFilter }
 			: {
-					OR: [{ user_id: user.id }, { user_id: null }],
+					...employeeVisibilityFilter,
 					...(statusFilter ? { status: statusFilter } : {}),
 					...searchFilter,
 			  };

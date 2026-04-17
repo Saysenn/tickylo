@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Mail, Lock, ShieldCheck } from "lucide-react";
+import { PasswordInput } from "@/components/ui/password-input";
 import { createClient } from "@/lib/supabase/client";
 import { authError } from "@/lib/auth/auth-errors";
 import { Button } from "@/components/ui/button";
@@ -205,19 +206,15 @@ export function LoginForm() {
 										Forgot password?
 									</Link>
 								</div>
-								<div className="relative">
-									<Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-3 pointer-events-none" />
-									<Input
-										id="password"
-										name="password"
-										type="password"
-										placeholder="Enter your password"
-										value={formData.password}
-										onChange={handleChange}
-										className="pl-9"
-										autoComplete="current-password"
-									/>
-								</div>
+								<PasswordInput
+									id="password"
+									name="password"
+									placeholder="Enter your password"
+									value={formData.password}
+									onChange={handleChange}
+									leftIcon={<Lock className="w-4 h-4 text-ink-3" />}
+									autoComplete="current-password"
+								/>
 								{fieldErrors.password && (
 									<p className="text-xs text-destructive">
 										{fieldErrors.password}
