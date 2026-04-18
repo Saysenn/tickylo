@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import APIService from "@/lib/infra/api";
@@ -28,6 +29,7 @@ export function EmployeesTable() {
 	const searchParams = useSearchParams();
 	const page = Math.max(1, parseInt(searchParams.get("page") ?? "1", 10));
 	const queryClient = useQueryClient();
+	const [search, setSearch] = useState("");
 
 	const goToPage = (p: number) => router.push(`?page=${p}`);
 	const resetPage = () => router.replace("?page=1");
@@ -99,13 +101,31 @@ export function EmployeesTable() {
 	const list = result?.data ?? [];
 	const totalPages = result?.totalPages ?? 1;
 
+	const filtered = list.filter((e) => {
+		if (!search.trim()) return true;
+		const q = search.toLowerCase();
+		return (
+			(e.name ?? "").toLowerCase().includes(q) ||
+			e.email.toLowerCase().includes(q)
+		);
+	});
+
 	return (
 		<div className="space-y-4">
 			{/* Header row */}
-			<div className="flex items-center justify-between">
-				<p className="text-sm text-ink-3">
-					{list.length} {list.length === 1 ? "member" : "members"}
-				</p>
+			<div className="flex flex-wrap items-center justify-between gap-3">
+				<div className="flex items-center gap-3">
+					<input
+						type="text"
+						placeholder="Search employees..."
+						value={search}
+						onChange={(e) => setSearch(e.target.value)}
+						className="h-8 rounded-md border border-border bg-background px-3 text-sm focus:outline-none focus:ring-1 focus:ring-mint w-44"
+					/>
+					<p className="text-sm text-ink-3 whitespace-nowrap">
+						{filtered.length} {filtered.length === 1 ? "member" : "members"}
+					</p>
+				</div>
 				<EmployeeFormDialog
 					mode="create"
 					isPending={isCreating}
@@ -164,7 +184,13 @@ export function EmployeesTable() {
 								</tr>
 							</thead>
 							<tbody className="divide-y">
-								{list.map((employee: Employee) => (
+								{filtered.length === 0 ? (
+									<tr>
+										<td colSpan={5} className="px-4 py-8 text-center text-xs text-ink-3">
+											No employees match your search.
+										</td>
+									</tr>
+								) : filtered.map((employee: Employee) => (
 									<tr
 										key={employee.id}
 										className="hover:bg-accent/20 transition-colors cursor-pointer"
