@@ -81,7 +81,7 @@ export function TimeEmployeeTable({ employees, onSelect }: Props) {
 					<tbody className="divide-y">
 						{paginated.length === 0 ? (
 							<tr>
-								<td colSpan={5} className="px-4 py-8 text-center text-sm text-ink-3">
+								<td colSpan={5} className="px-4 py-8 text-center text-xs text-ink-3">
 									No employees found.
 								</td>
 							</tr>
@@ -92,22 +92,22 @@ export function TimeEmployeeTable({ employees, onSelect }: Props) {
 									className="hover:bg-accent/20 cursor-pointer transition-colors"
 									onClick={() => onSelect(emp.id, emp.name ?? emp.email)}
 								>
-									<td className="px-4 py-3">
-										<p className="font-medium text-ink">{emp.name ?? "—"}</p>
+									<td className="px-4 py-2">
+										<p className="text-xs font-medium text-ink">{emp.name ?? "—"}</p>
 										<p className="text-xs text-ink-3">{emp.email}</p>
 									</td>
-									<td className="px-4 py-3 text-right font-mono tabular-nums">
+									<td className="px-4 py-2 text-right font-mono tabular-nums">
 										<span className={emp.totalMs === 0 ? "text-ink-3" : "text-ink font-medium"}>
 											{formatDurationMs(emp.totalMs)}
 										</span>
 									</td>
-									<td className="px-4 py-3 text-right text-ink-3 hidden sm:table-cell">
+									<td className="px-4 py-2 text-right text-ink-3 hidden sm:table-cell">
 										{emp.daysWorked}
 									</td>
-									<td className="px-4 py-3 text-right text-ink-3 hidden sm:table-cell">
+									<td className="px-4 py-2 text-right text-ink-3 hidden sm:table-cell">
 										{formatDurationMs(emp.daysWorked > 0 ? Math.round(emp.totalMs / emp.daysWorked) : 0)}
 									</td>
-									<td className="px-4 py-3 text-ink-3">
+									<td className="px-4 py-2 text-ink-3">
 										<ChevronRight className="w-4 h-4" />
 									</td>
 								</tr>

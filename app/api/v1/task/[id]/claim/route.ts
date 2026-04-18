@@ -31,23 +31,30 @@ export async function PATCH(
 			return errorResponse("Task is already assigned", 409);
 		}
 
-		const updated = await prisma.task.update({
-			where: { id },
-			data: {
-				user_id: user.id,
-				status: "assigned",
-				assigned_at: new Date(),
-			},
-		});
+		const claimerName = (user.user_metadata?.name as string | undefined) ?? user.email ?? "An employee";
+
+		const [updated] = await prisma.$transaction([
+			prisma.task.update({
+				where: { id },
+				data: { user_id: user.id, status: "assigned", assigned_at: new Date() },
+			}),
+			prisma.taskComment.create({
+				data: {
+					task_id: id,
+					user_id: user.id,
+					body: `${claimerName} claimed this ticket.`,
+					is_system: true,
+				},
+			}),
+		]);
 
 		// Notify admins (fire-and-forget)
-		const claimerName = user.user_metadata?.name ?? user.email ?? "An employee";
 		notifyAdmins({
 			type: "task_claimed",
-			title: "Task claimed",
+			title: "Ticket claimed",
 			body: `${claimerName} claimed "${task.title}".`,
-			link: `/dashboard/tasks/${id}`,
-		}).catch(() => {});
+			link: `/dashboard/tickets/${id}`,
+		}).catch((err) => console.error("[task:CLAIM] notify failed", err));
 
 		return ok(updated);
 	} catch (error) {

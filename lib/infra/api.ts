@@ -87,7 +87,7 @@ class APIService {
 	// Time Tracker
 	// ---------------------------------------------------------------------------
 	public time = {
-		start: (data?: { title?: string }) => axiosService.post(`${apiVersion}/time`, data ?? {}),
+		start: (data?: { title?: string; ticket_id?: string }) => axiosService.post(`${apiVersion}/time`, data ?? {}),
 		active: () => axiosService.get(`${apiVersion}/time/active`),
 		stop: (id: string, data: { title?: string; description?: string }) =>
 			axiosService.patch(`${apiVersion}/time/${id}`, data),
@@ -109,68 +109,87 @@ class APIService {
 	};
 
 	// ---------------------------------------------------------------------------
-	// Tasks
+	// Tickets (canonical — old /task routes kept for backward compat)
 	// ---------------------------------------------------------------------------
 	public tasks = {
-		list: (page = 1, limit = 10, status?: string, search?: string, view?: string) =>
-			axiosService.get(`${apiVersion}/task`, { page, limit, status, search, view }),
+		list: (page = 1, limit = 10, status?: string, search?: string, view?: string, filters?: {
+			type?: string; priority?: string; assignee?: string; due?: string;
+		}) =>
+			axiosService.get(`${apiVersion}/ticket`, { page, limit, status, search, view, ...filters }),
 		create: (data: {
 			title: string;
 			description?: string;
 			priority?: string;
 			due_date?: string;
 			assigned_to?: string;
-		}) => axiosService.post(`${apiVersion}/task`, data),
+			ticket_type?: string;
+			client_name?: string;
+			estimated_hours?: number;
+			billable_hours?: number;
+			implementation_plan?: string;
+			rollback_plan?: string;
+			links?: { url: string; label?: string }[];
+		}) => axiosService.post(`${apiVersion}/ticket`, data),
 		update: (id: string, data: object) =>
-			axiosService.patch(`${apiVersion}/task/${id}`, data),
-		remove: (id: string) => axiosService.delete(`${apiVersion}/task/${id}`),
-		get: (id: string) => axiosService.get(`${apiVersion}/task/${id}`),
+			axiosService.patch(`${apiVersion}/ticket/${id}`, data),
+		remove: (id: string) => axiosService.delete(`${apiVersion}/ticket/${id}`),
+		get: (id: string) => axiosService.get(`${apiVersion}/ticket/${id}`),
 		assign: (id: string, user_id: string) =>
-			axiosService.patch(`${apiVersion}/task/${id}/assign`, { user_id }),
+			axiosService.patch(`${apiVersion}/ticket/${id}/assign`, { user_id }),
 		claim: (id: string) =>
-			axiosService.patch(`${apiVersion}/task/${id}/claim`, {}),
+			axiosService.patch(`${apiVersion}/ticket/${id}/claim`, {}),
 		start: (id: string) =>
-			axiosService.patch(`${apiVersion}/task/${id}/start`, {}),
+			axiosService.patch(`${apiVersion}/ticket/${id}/start`, {}),
 		complete: (id: string) =>
-			axiosService.patch(`${apiVersion}/task/${id}/complete`, {}),
+			axiosService.patch(`${apiVersion}/ticket/${id}/complete`, {}),
+		reopen: (id: string) =>
+			axiosService.patch(`${apiVersion}/ticket/${id}/reopen`, {}),
+		hold: (id: string) =>
+			axiosService.patch(`${apiVersion}/ticket/${id}/hold`, {}),
+		stale: (id: string) =>
+			axiosService.patch(`${apiVersion}/ticket/${id}/stale`, {}),
 		requestTransfer: (id: string, requested_to?: string) =>
-			axiosService.post(`${apiVersion}/task/${id}/request-transfer`, { requested_to }),
+			axiosService.post(`${apiVersion}/ticket/${id}/request-transfer`, { requested_to }),
 		comments: {
 			list: (taskId: string) =>
-				axiosService.get(`${apiVersion}/task/${taskId}/comments`),
+				axiosService.get(`${apiVersion}/ticket/${taskId}/comments`),
 			post: (taskId: string, body: string) =>
-				axiosService.post(`${apiVersion}/task/${taskId}/comments`, { body }),
+				axiosService.post(`${apiVersion}/ticket/${taskId}/comments`, { body }),
 			remove: (taskId: string, commentId: string) =>
-				axiosService.delete(`${apiVersion}/task/${taskId}/comments/${commentId}`),
+				axiosService.delete(`${apiVersion}/ticket/${taskId}/comments/${commentId}`),
 			clear: (taskId: string) =>
-				axiosService.delete(`${apiVersion}/task/${taskId}/comments/clear`),
+				axiosService.delete(`${apiVersion}/ticket/${taskId}/comments/clear`),
 		},
 		reactions: {
 			list: (taskId: string, commentId: string) =>
-				axiosService.get(`${apiVersion}/task/${taskId}/comments/${commentId}/reactions`),
+				axiosService.get(`${apiVersion}/ticket/${taskId}/comments/${commentId}/reactions`),
 			toggle: (taskId: string, commentId: string, emoji: string) =>
-				axiosService.post(`${apiVersion}/task/${taskId}/comments/${commentId}/reactions`, { emoji }),
+				axiosService.post(`${apiVersion}/ticket/${taskId}/comments/${commentId}/reactions`, { emoji }),
 		},
 		watchers: {
 			list: (taskId: string) =>
-				axiosService.get(`${apiVersion}/task/${taskId}/watchers`),
+				axiosService.get(`${apiVersion}/ticket/${taskId}/watchers`),
 			watch: (taskId: string) =>
-				axiosService.post(`${apiVersion}/task/${taskId}/watchers`, {}),
+				axiosService.post(`${apiVersion}/ticket/${taskId}/watchers`, {}),
 			unwatch: (taskId: string) =>
-				axiosService.delete(`${apiVersion}/task/${taskId}/watchers`),
+				axiosService.delete(`${apiVersion}/ticket/${taskId}/watchers`),
 		},
 		subtasks: {
 			list: (taskId: string) =>
-				axiosService.get(`${apiVersion}/task/${taskId}/subtasks`),
+				axiosService.get(`${apiVersion}/ticket/${taskId}/subtasks`),
 			create: (taskId: string, title: string) =>
-				axiosService.post(`${apiVersion}/task/${taskId}/subtasks`, { title }),
+				axiosService.post(`${apiVersion}/ticket/${taskId}/subtasks`, { title }),
 			update: (taskId: string, subtaskId: string, data: { title?: string; completed?: boolean; position?: number }) =>
-				axiosService.patch(`${apiVersion}/task/${taskId}/subtasks/${subtaskId}`, data),
+				axiosService.patch(`${apiVersion}/ticket/${taskId}/subtasks/${subtaskId}`, data),
 			remove: (taskId: string, subtaskId: string) =>
-				axiosService.delete(`${apiVersion}/task/${taskId}/subtasks/${subtaskId}`),
+				axiosService.delete(`${apiVersion}/ticket/${taskId}/subtasks/${subtaskId}`),
 		},
+		approve: (id: string) =>
+			axiosService.patch(`${apiVersion}/ticket/${id}/approve`, {}),
+		reject: (id: string, reason?: string) =>
+			axiosService.patch(`${apiVersion}/ticket/${id}/reject`, { reason }),
 		bulk: (action: "assign" | "complete" | "delete", ids: string[], user_id?: string) =>
-			axiosService.post(`${apiVersion}/task/bulk`, { action, ids, user_id }),
+			axiosService.post(`${apiVersion}/ticket/bulk`, { action, ids, user_id }),
 	};
 
 	// ---------------------------------------------------------------------------
@@ -222,6 +241,10 @@ class APIService {
 			axiosService.patch(`${apiVersion}/notifications/read-all`, {}),
 		read: (id: string) =>
 			axiosService.patch(`${apiVersion}/notifications/${id}/read`, {}),
+		bulkRead: (ids: string[]) =>
+			axiosService.patch(`${apiVersion}/notifications`, { ids }),
+		bulkDelete: (ids: string[]) =>
+			axiosService.delete(`${apiVersion}/notifications`, undefined, { ids }),
 	};
 
 	// ---------------------------------------------------------------------------

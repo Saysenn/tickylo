@@ -14,6 +14,9 @@ export async function GET() {
 		const entry = await prisma.timeEntry.findFirst({
 			where: { user_id: user.id, end_time: null },
 			orderBy: { start_time: "desc" },
+			include: {
+				ticket: { select: { id: true, title: true, ticket_type: true } },
+			},
 		});
 
 		/** this will return the left time in seconds and will make sure whatever happens your timer continues */

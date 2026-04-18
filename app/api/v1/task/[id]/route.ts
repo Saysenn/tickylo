@@ -43,9 +43,16 @@ export async function GET(
 const adminUpdateSchema = z.object({
 	title: z.string().min(1).max(200).optional(),
 	description: z.string().max(1000).optional(),
-	status: z.enum(["pending", "assigned", "in_progress", "completed"]).optional(),
-	priority: z.enum(["low", "medium", "high"]).optional(),
-	due_date: z.coerce.date().optional(),
+	status: z.enum(["pending", "assigned", "in_progress", "on_hold", "completed", "closed"]).optional(),
+	priority: z.enum(["low", "medium", "high", "critical"]).optional(),
+	due_date: z.coerce.date().nullable().optional(),
+	ticket_type: z.enum(["internal_task", "request", "incident", "change"]).optional(),
+	client_name: z.string().max(200).nullable().optional(),
+	estimated_hours: z.number().positive().nullable().optional(),
+	billable_hours: z.number().nonnegative().nullable().optional(),
+	implementation_plan: z.string().max(5000).nullable().optional(),
+	rollback_plan: z.string().max(5000).nullable().optional(),
+	links: z.array(z.object({ url: z.string().url().max(2000), label: z.string().max(100).optional() })).max(20).nullable().optional(),
 });
 
 /**
@@ -73,9 +80,31 @@ export async function PATCH(
 		const validated = adminUpdateSchema.safeParse(body);
 		if (!validated.success) return errorResponse("Invalid request body", 400);
 
+		const { links, status, ...rest } = validated.data;
+
+		// Auto-clear timestamp fields when status changes away from their trigger
+		const statusOverrides: Record<string, unknown> = {};
+		if (status !== undefined && status !== task.status) {
+			if (status !== "completed" && status !== "closed") {
+				statusOverrides.completed_at = null;
+			}
+			if (status === "pending" || status === "assigned") {
+				statusOverrides.started_at = null;
+			}
+			if (status === "pending") {
+				statusOverrides.assigned_at = null;
+			}
+		}
+
 		const updatedTask = await prisma.task.update({
 			where: { id },
-			data: validated.data,
+			data: {
+				...rest,
+				...(status !== undefined ? { status } : {}),
+				...statusOverrides,
+				// Prisma Json field: null → empty array, undefined → unchanged
+				...(links !== undefined ? { links: links ?? [] } : {}),
+			},
 			include: {
 				assignee: { select: { id: true, name: true, email: true } },
 			},
@@ -86,9 +115,9 @@ export async function PATCH(
 			createNotification({
 				user_id: updatedTask.user_id,
 				type: "task_updated",
-				title: "Task updated",
+				title: "Ticket updated",
 				body: `"${updatedTask.title}" has been updated by admin.`,
-				link: `/dashboard/tasks/${id}`,
+				link: `/dashboard/tickets/${id}`,
 			}).catch(() => {});
 		}
 
@@ -117,20 +146,18 @@ export async function DELETE(
 
 		await prisma.task.delete({ where: { id } });
 
-		// Notify whoever was affected (fire-and-forget)
-		if (task.user_id) {
-			// Assigned task — notify the assignee
+		// Notify whoever was affected — skip the admin who performed the action
+		if (task.user_id && task.user_id !== admin.id) {
 			createNotification({
 				user_id: task.user_id,
 				type: "task_deleted",
-				title: "Task removed",
+				title: "Ticket deleted",
 				body: `"${task.title}" has been deleted by admin.`,
 			}).catch(() => {});
-		} else {
-			// Unassigned task — notify all employees (mirrors the task_available notification)
+		} else if (!task.user_id) {
 			notifyEmployees({
 				type: "task_deleted",
-				title: "Task removed",
+				title: "Ticket deleted",
 				body: `"${task.title}" has been removed by admin.`,
 			}).catch(() => {});
 		}

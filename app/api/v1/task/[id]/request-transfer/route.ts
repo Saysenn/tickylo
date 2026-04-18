@@ -3,7 +3,7 @@ import { ok, errorResponse } from "@/lib/utils/response";
 import { z } from "zod";
 import { prisma } from "@/lib/infra/prisma";
 import { requireUser } from "@/lib/auth/require-user";
-import { notifyAdmins } from "@/lib/utils/create-notification";
+import { createNotification, notifyAdmins } from "@/lib/utils/create-notification";
 
 const schema = z.object({
 	requested_to: z.string().uuid().optional(), // null = let admin decide
@@ -71,12 +71,22 @@ export async function POST(
 			},
 		});
 
-		// Notify all admins (fire-and-forget)
+		// Notify the ticket creator directly (most reliable — they're always the responsible admin)
+		createNotification({
+			user_id: task.created_by,
+			type: "transfer_requested",
+			title: "Transfer request",
+			body: `${requesterName} requested to transfer "${task.title}" to ${targetName}.`,
+			link: `/dashboard/tickets/${id}`,
+		}).catch(() => {});
+
+		// Also broadcast to all other admins (skips creator to avoid duplicate)
 		notifyAdmins({
 			type: "transfer_requested",
 			title: "Transfer request",
 			body: `${requesterName} requested to transfer "${task.title}" to ${targetName}.`,
-			link: `/dashboard/tasks/${id}`,
+			link: `/dashboard/tickets/${id}`,
+			excludeId: task.created_by,
 		}).catch(() => {});
 
 		return ok(comment);

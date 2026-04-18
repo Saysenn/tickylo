@@ -80,7 +80,7 @@ export function AdminDashboard() {
 					value={openTasks}
 					subtext={`${data.tasks.in_progress} in progress`}
 					icon={CheckSquare}
-					href="/dashboard/tasks"
+					href="/dashboard/tickets"
 				/>
 				<StatCard
 					label="Pending Approvals"

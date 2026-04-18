@@ -7,6 +7,7 @@ import { notifyAdmins } from "@/lib/utils/create-notification";
 
 const startSchema = z.object({
 	title: z.string().max(200).optional(),
+	ticket_id: z.string().optional(),
 });
 
 // GET /api/v1/time?page=1&limit=10&from=YYYY-MM-DD&to=YYYY-MM-DD&tz_offset=<min>
@@ -78,13 +79,46 @@ export async function POST(request: NextRequest) {
 		if (active) return errorResponse("You already have an active session", 409);
 
 		const body = await request.json().catch(() => ({}));
-		const { title } = startSchema.parse(body);
+		const { title, ticket_id } = startSchema.parse(body);
+
+		// If ticket_id supplied, resolve its title as fallback label; also guard stale tickets
+		let resolvedTitle = title ?? null;
+		if (ticket_id) {
+			const ticket = await prisma.task.findUnique({ where: { id: ticket_id }, select: { title: true, status: true } });
+			if (ticket?.status === "stale") {
+				return errorResponse("Cannot start a timer on a stale ticket", 403);
+			}
+			if (!resolvedTitle) resolvedTitle = ticket?.title ?? null;
+		}
 
 		const entry = await prisma.timeEntry.create({
-			data: { user_id: user.id, start_time: new Date(), title: title ?? null },
+			data: {
+				user_id: user.id,
+				start_time: new Date(),
+				title: resolvedTitle,
+				ticket_id: ticket_id ?? null,
+			},
 		});
 
-		const name = user.user_metadata?.name ?? user.email ?? "An employee";
+		// If linked to a ticket in "assigned" or "on_hold" state, auto-transition to in_progress
+		if (ticket_id) {
+			const ticket = await prisma.task.findUnique({ where: { id: ticket_id }, select: { id: true, status: true, user_id: true } });
+			if (ticket && ticket.user_id === user.id && (ticket.status === "assigned" || ticket.status === "on_hold")) {
+				await prisma.$transaction([
+					prisma.task.update({ where: { id: ticket_id }, data: { status: "in_progress" } }),
+					prisma.taskComment.create({
+						data: {
+							task_id: ticket_id,
+							user_id: user.id,
+							body: `${user.user_metadata?.name ?? user.email ?? "Employee"} started the timer — ticket is now in progress.`,
+							is_system: true,
+						},
+					}),
+				]);
+			}
+		}
+
+		const name = (user.user_metadata?.name as string | undefined) ?? user.email ?? "An employee";
 		notifyAdmins({
 			type: "time_clock_in",
 			title: "Employee clocked in",

@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { ok, errorResponse } from "@/lib/utils/response";
 import { prisma } from "@/lib/infra/prisma";
 import { requireUser } from "@/lib/auth/require-user";
+import { createNotification, notifyAdmins } from "@/lib/utils/create-notification";
 
 /**
  * GET /api/v1/task/[id]/watchers
@@ -53,6 +54,25 @@ export async function POST(
 			create: { task_id: id, user_id: user.id },
 			update: {},
 		});
+
+		const watcherName = user.user_metadata?.name ?? user.email ?? "Someone";
+		const notifPayload = {
+			type: "task_watched",
+			title: "New watcher",
+			body: `${watcherName} is now watching "${task.title}".`,
+			link: `/dashboard/tickets/${id}`,
+		};
+
+		// Notify creator if they're not the one watching
+		if (task.created_by !== user.id) {
+			createNotification({ user_id: task.created_by, ...notifPayload }).catch(() => {});
+		}
+		// Notify assignee if they're not the one watching and not the creator
+		if (task.user_id && task.user_id !== user.id && task.user_id !== task.created_by) {
+			createNotification({ user_id: task.user_id, ...notifPayload }).catch(() => {});
+		}
+		// Notify other admins (skip if the watcher is already the creator, to avoid duplicates)
+		notifyAdmins({ ...notifPayload, excludeId: task.created_by }).catch(() => {});
 
 		return ok(watcher);
 	} catch (err) {

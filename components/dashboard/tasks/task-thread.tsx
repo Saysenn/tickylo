@@ -3,7 +3,7 @@
 import { useRef, useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { isAxiosError } from "axios";
-import { Trash2, AlertCircle, Info, MessageSquare, Eraser, ArrowRightLeft, Smile } from "lucide-react";
+import { Trash2, AlertCircle, Info, Eraser, ArrowRightLeft, Smile } from "lucide-react";
 import APIService from "@/lib/infra/api";
 import { useAppSelector } from "@/store/hooks";
 import { formatInitials, formatDate, formatTime } from "@/lib/utils/format";
@@ -38,6 +38,8 @@ interface TaskThreadProps {
 	taskCreatedBy: string;
 	/** "thread" = user comments only, "activity" = system events only, undefined = all */
 	view?: "thread" | "activity";
+	/** When true the compose box is hidden — used for stale/locked tickets */
+	readOnly?: boolean;
 }
 
 interface ReactionGroup {
@@ -131,7 +133,7 @@ function getSystemEventMeta(body: string): {
 	};
 }
 
-export function TaskThread({ taskId, taskCreatedBy, view }: TaskThreadProps) {
+export function TaskThread({ taskId, taskCreatedBy, view, readOnly = false }: TaskThreadProps) {
 	const queryClient = useQueryClient();
 	const user = useAppSelector((s) => s.auth.user);
 	const isAdmin = user?.role === ROLES.ADMIN;
@@ -257,53 +259,22 @@ export function TaskThread({ taskId, taskCreatedBy, view }: TaskThreadProps) {
 	};
 
 	return (
-		<div className="space-y-5">
-			{/* Header */}
-			<div className="flex items-center gap-2">
-				<MessageSquare className="w-4 h-4 text-ink-3" />
-				<h3 className="text-sm font-semibold text-ink">Thread</h3>
-				{userCommentCount > 0 && (
-					<Badge
-						variant="outline"
-						className="text-[10px] px-1.5 py-0 h-4 bg-ink/5 text-ink-3 border-border/40"
-					>
-						{userCommentCount}
-					</Badge>
-				)}
-				{canClearAll && userCommentCount > 0 && view !== "activity" && (
-					<button
-						type="button"
-						onClick={() => clearAll()}
-						disabled={isClearing}
-						className="ml-auto flex items-center gap-1 text-[11px] text-ink-3 hover:text-red-500 transition-colors disabled:opacity-50"
-					>
-						<Eraser className="w-3 h-3" />
-						Clear all
-					</button>
-				)}
-			</div>
-
+		<div className="space-y-3">
 			{/* Timeline */}
-			<div className="space-y-1">
+			<div className="space-y-0.5">
 				{isLoading ? (
-					<div className="flex items-center justify-center py-10">
+					<div className="flex items-center justify-center py-8">
 						<div className="w-4 h-4 border-2 border-mint/40 border-t-mint rounded-full animate-spin" />
 					</div>
 				) : comments.length === 0 ? (
-					<div className="flex flex-col items-center justify-center py-10 text-center">
-						<div className="w-8 h-8 rounded-full bg-ink/5 flex items-center justify-center mb-2">
-							<MessageSquare className="w-4 h-4 text-ink-3" />
-						</div>
+					<div className="flex flex-col items-center justify-center py-8 text-center">
 						{view === "activity" ? (
 							<>
 								<p className="text-xs text-ink-3">No activity yet.</p>
 								<p className="text-[11px] text-ink-3/60 mt-0.5">System events like assignments and transfers will appear here.</p>
 							</>
 						) : (
-							<>
-								<p className="text-xs text-ink-3">No comments yet.</p>
-								<p className="text-[11px] text-ink-3/60 mt-0.5">Be the first to add context to this task.</p>
-							</>
+							<p className="text-xs text-ink-3">No comments yet. Be the first to add context.</p>
 						)}
 					</div>
 				) : (
@@ -311,13 +282,13 @@ export function TaskThread({ taskId, taskCreatedBy, view }: TaskThreadProps) {
 						if (c.is_system) {
 							const { icon, dotClass, labelClass } = getSystemEventMeta(c.body);
 							return (
-								<div key={c.id} className="flex items-center gap-3 py-1.5 px-1">
-									<div className={cn("w-2 h-2 rounded-full shrink-0 ml-2.5", dotClass)} />
-									<span className={cn("text-xs font-medium flex items-center gap-1.5", labelClass)}>
+								<div key={c.id} className="flex items-center gap-2.5 py-1 px-1">
+									<div className={cn("w-1.5 h-1.5 rounded-full shrink-0 ml-1", dotClass)} />
+									<span className={cn("text-xs flex items-center gap-1", labelClass)}>
 										{icon}
 										{c.body}
 									</span>
-									<span className="text-[10px] text-ink-3 ml-auto whitespace-nowrap">
+									<span className="text-[10px] text-ink-3/60 ml-auto whitespace-nowrap">
 										{formatDate(c.created_at)} · {formatTime(c.created_at)}
 									</span>
 								</div>
@@ -330,10 +301,10 @@ export function TaskThread({ taskId, taskCreatedBy, view }: TaskThreadProps) {
 						const authorRole = c.author?.role ?? ROLES.EMPLOYEE;
 
 						return (
-							<div key={c.id} className="group flex items-start gap-3 py-2 px-1">
+							<div key={c.id} className="group flex items-start gap-2.5 py-1.5">
 								<div
 									className={cn(
-										"w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5",
+										"w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-bold shrink-0 mt-0.5",
 										isOwn ? "bg-mint/20 text-mint" : "bg-ink/8 text-ink-3",
 									)}
 								>
@@ -341,14 +312,14 @@ export function TaskThread({ taskId, taskCreatedBy, view }: TaskThreadProps) {
 								</div>
 
 								<div className="flex-1 min-w-0">
-									<div className="flex items-center gap-2 mb-1.5">
+									<div className="flex items-center gap-1.5 mb-1">
 										<span className="text-xs font-semibold text-ink leading-none">
 											{isOwn ? "You" : name}
 										</span>
 										<Badge
 											variant="outline"
 											className={cn(
-												"text-[9px] px-1.5 py-0 h-3.5 leading-none uppercase tracking-wide",
+												"text-[9px] px-1 py-0 h-3.5 leading-none uppercase tracking-wide",
 												authorRole === ROLES.ADMIN
 													? "bg-mint/10 text-mint border-mint/20"
 													: "bg-ink/5 text-ink-3 border-border/30",
@@ -356,13 +327,24 @@ export function TaskThread({ taskId, taskCreatedBy, view }: TaskThreadProps) {
 										>
 											{authorRole === ROLES.ADMIN ? "Admin" : "Employee"}
 										</Badge>
-										<span className="text-[10px] text-ink-3 ml-0.5">
+										<span className="text-[10px] text-ink-3/60">
 											{formatDate(c.created_at)} · {formatTime(c.created_at)}
 										</span>
+										{canClearAll && userCommentCount > 0 && view !== "activity" && isOwn && comments[comments.length - 1]?.id === c.id && (
+											<button
+												type="button"
+												onClick={() => clearAll()}
+												disabled={isClearing}
+												className="ml-auto flex items-center gap-1 text-[10px] text-ink-3/50 hover:text-red-500 transition-colors disabled:opacity-50"
+											>
+												<Eraser className="w-2.5 h-2.5" />
+												Clear all
+											</button>
+										)}
 									</div>
 
-									<div className="relative rounded-lg border border-border/50 bg-accent/30 px-3 py-2.5">
-										<p className="text-sm text-ink-2 whitespace-pre-wrap wrap-break-word leading-relaxed">
+									<div className="relative rounded-lg border border-border/40 bg-accent/30 px-3 py-2">
+										<p className="text-xs text-ink-2 whitespace-pre-wrap wrap-break-word leading-relaxed">
 											{c.body}
 										</p>
 										{canDeleteComment(c) && (
@@ -384,18 +366,16 @@ export function TaskThread({ taskId, taskCreatedBy, view }: TaskThreadProps) {
 				)}
 			</div>
 
-			{view !== "activity" && comments.length > 0 && <div className="border-t border-border/30" />}
-
 			{/* Compose */}
-			{view !== "activity" && (
-				<form onSubmit={handleSubmit}>
+			{view !== "activity" && !readOnly && (
+				<form onSubmit={handleSubmit} className="pt-2 border-t border-border/30">
 					{error && <p className="text-xs text-destructive mb-2">{error}</p>}
-					<div className="flex items-start gap-3">
-						<div className="w-7 h-7 rounded-full bg-mint/20 flex items-center justify-center text-[10px] font-bold text-mint shrink-0 mt-1">
+					<div className="flex items-start gap-2.5">
+						<div className="w-6 h-6 rounded-full bg-mint/20 flex items-center justify-center text-[9px] font-bold text-mint shrink-0 mt-1">
 							{formatInitials(user?.name ?? null, user?.email ?? "")}
 						</div>
 
-						<div className="flex-1 space-y-2">
+						<div className="flex-1 space-y-1.5">
 							<div className="relative">
 								<textarea
 									ref={textareaRef}
@@ -406,18 +386,18 @@ export function TaskThread({ taskId, taskCreatedBy, view }: TaskThreadProps) {
 									maxLength={2000}
 									rows={2}
 									className={cn(
-										"w-full resize-none rounded-lg border border-border/50 bg-background px-3 py-2 text-sm text-ink placeholder:text-ink-3",
+										"w-full resize-none rounded-lg border border-border/40 bg-background px-3 py-2 text-xs text-ink placeholder:text-ink-3/50",
 										"focus:outline-none focus:ring-1 focus:ring-mint/50 focus:border-mint/40 transition-colors",
 									)}
 								/>
 								{mentionQuery !== null && mentionSuggestions.length > 0 && (
-									<div className="absolute bottom-full left-0 mb-1 z-20 min-w-[180px] rounded-lg border bg-background shadow-md overflow-hidden">
+									<div className="absolute bottom-full left-0 mb-1 z-20 min-w-[160px] rounded-lg border bg-background shadow-md overflow-hidden">
 										{mentionSuggestions.map((e) => (
 											<button
 												key={e.id}
 												type="button"
 												onMouseDown={(ev) => { ev.preventDefault(); insertMention(e.name ?? e.email); }}
-												className="w-full text-left px-3 py-1.5 text-sm text-ink hover:bg-accent/50 transition-colors"
+												className="w-full text-left px-3 py-1.5 text-xs text-ink hover:bg-accent/50 transition-colors"
 											>
 												{e.name ?? e.email}
 											</button>
@@ -426,7 +406,7 @@ export function TaskThread({ taskId, taskCreatedBy, view }: TaskThreadProps) {
 								)}
 							</div>
 							<div className="flex items-center justify-between">
-								<span className="text-[10px] text-ink-3">
+								<span className="text-[10px] text-ink-3/60">
 									{draft.length > 0 ? `${draft.length}/2000` : "⌘↵ to send"}
 								</span>
 								<Button
@@ -434,7 +414,7 @@ export function TaskThread({ taskId, taskCreatedBy, view }: TaskThreadProps) {
 									size="sm"
 									disabled={!draft.trim() || isPosting}
 									isLoading={isPosting}
-									className="bg-mint hover:bg-mint/90 text-ink font-semibold h-7 px-3 text-xs"
+									className="h-7 px-3 text-xs"
 								>
 									Post
 								</Button>

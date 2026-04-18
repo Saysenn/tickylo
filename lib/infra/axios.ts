@@ -72,9 +72,9 @@ class AxiosService {
 		return this.validateResponse(response);
 	}
 
-	/** DELETE request */
-	public async delete<T = any>(url: string, params?: any): Promise<T> {
-		const response = await this.axiosInstance.delete(url, { params });
+	/** DELETE request — params go to query string, data goes to request body */
+	public async delete<T = any>(url: string, params?: any, data?: any): Promise<T> {
+		const response = await this.axiosInstance.delete(url, { params, data });
 		return this.validateResponse(response);
 	}
 

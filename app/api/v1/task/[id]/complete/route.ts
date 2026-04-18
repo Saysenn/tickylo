@@ -19,8 +19,9 @@ export async function PATCH(
 		const task = await prisma.task.findUnique({ where: { id } });
 		if (!task) return errorResponse("Task not found", 404);
 
-		// Only assigned worker can complete
+		// Only assigned worker can complete; stale tickets are locked
 		if (task.user_id !== user.id) return errorResponse("Not allowed", 403);
+		if (task.status === "stale") return errorResponse("Stale tickets cannot be completed by employees", 403);
 
 		// mark task as completed
 		const updated = await prisma.task.update({
@@ -36,24 +37,24 @@ export async function PATCH(
 			createNotification({
 				user_id: task.created_by,
 				type: "task_completed",
-				title: "Task completed",
+				title: "Ticket resolved",
 				body: completionBody,
-				link: `/dashboard/tasks/${id}`,
+				link: `/dashboard/tickets/${id}`,
 			}).catch(() => {});
 		}
 		// Notify all admins
 		notifyAdmins({
 			type: "task_completed",
-			title: "Task completed",
+			title: "Ticket resolved",
 			body: completionBody,
-			link: `/dashboard/tasks/${id}`,
+			link: `/dashboard/tickets/${id}`,
 		}).catch(() => {});
 		// Notify watchers (exclude completer, creator, admins already covered above)
 		notifyWatchers(id, {
 			type: "task_completed",
-			title: "Task completed",
+			title: "Ticket resolved",
 			body: completionBody,
-			link: `/dashboard/tasks/${id}`,
+			link: `/dashboard/tickets/${id}`,
 		}, [user.id, task.created_by]).catch(() => {});
 
 		return ok(updated);

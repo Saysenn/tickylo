@@ -54,6 +54,28 @@ export async function PATCH(
 			},
 		});
 
+		// If this entry was linked to a ticket, revert it from in_progress → assigned
+		if (entry.ticket_id) {
+			const ticket = await prisma.task.findUnique({
+				where: { id: entry.ticket_id },
+				select: { id: true, status: true, user_id: true },
+			});
+			if (ticket && ticket.user_id === user.id && ticket.status === "in_progress") {
+				const actorName = (user.user_metadata?.name as string | undefined) ?? user.email ?? "Employee";
+				await prisma.$transaction([
+					prisma.task.update({ where: { id: entry.ticket_id }, data: { status: "assigned" } }),
+					prisma.taskComment.create({
+						data: {
+							task_id: entry.ticket_id,
+							user_id: user.id,
+							body: `${actorName} stopped the timer — ticket reverted to assigned.`,
+							is_system: true,
+						},
+					}),
+				]);
+			}
+		}
+
 		const name = user.user_metadata?.name ?? user.email ?? "An employee";
 		const durationMs = endTime.getTime() - entry.start_time.getTime();
 		const duration = formatDurationMs(durationMs);

@@ -36,7 +36,7 @@ export function TaskDeleteDialog({
 			<DialogTrigger asChild>{trigger}</DialogTrigger>
 			<DialogContent className="sm:max-w-sm">
 				<DialogHeader>
-					<DialogTitle>Delete task</DialogTitle>
+					<DialogTitle>Delete ticket</DialogTitle>
 				</DialogHeader>
 				<p className="text-sm text-ink-3 pt-1">
 					Are you sure you want to delete{" "}

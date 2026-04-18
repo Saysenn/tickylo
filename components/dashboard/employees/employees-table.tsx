@@ -146,19 +146,19 @@ export function EmployeesTable() {
 						<table className="w-full min-w-[600px] text-sm">
 							<thead>
 								<tr className="border-b bg-accent/30">
-									<th className="text-left px-4 py-3 text-xs font-semibold text-ink-3 uppercase tracking-wider">
+									<th className="text-left px-4 py-2 text-xs font-semibold text-ink-3 uppercase tracking-wider">
 										Member
 									</th>
-									<th className="text-left px-4 py-3 text-xs font-semibold text-ink-3 uppercase tracking-wider hidden sm:table-cell">
+									<th className="text-left px-4 py-2 text-xs font-semibold text-ink-3 uppercase tracking-wider hidden sm:table-cell">
 										Role
 									</th>
-									<th className="text-left px-4 py-3 text-xs font-semibold text-ink-3 uppercase tracking-wider hidden md:table-cell">
+									<th className="text-left px-4 py-2 text-xs font-semibold text-ink-3 uppercase tracking-wider hidden md:table-cell">
 										Joined
 									</th>
-									<th className="text-left px-4 py-3 text-xs font-semibold text-ink-3 uppercase tracking-wider hidden md:table-cell">
+									<th className="text-left px-4 py-2 text-xs font-semibold text-ink-3 uppercase tracking-wider hidden md:table-cell">
 										Last seen
 									</th>
-									<th className="px-4 py-3" />
+									<th className="px-4 py-2" />
 								</tr>
 							</thead>
 							<tbody className="divide-y">
@@ -169,7 +169,7 @@ export function EmployeesTable() {
 										onClick={() => router.push(`/dashboard/employees/${employee.id}`)}
 									>
 										{/* Avatar + name + email */}
-										<td className="px-4 py-3">
+										<td className="px-4 py-2">
 											<div className="flex items-center gap-3">
 												<Avatar className="w-8 h-8 shrink-0">
 													<AvatarImage src={employee.avatar_url ?? undefined} />
@@ -178,7 +178,7 @@ export function EmployeesTable() {
 													</AvatarFallback>
 												</Avatar>
 												<div className="min-w-0">
-													<p className="font-medium text-ink truncate">
+													<p className="text-xs font-medium text-ink truncate">
 														{employee.name ?? "—"}
 													</p>
 													<p className="text-xs text-ink-3 truncate">
@@ -189,7 +189,7 @@ export function EmployeesTable() {
 										</td>
 
 										{/* Role badge */}
-										<td className="px-4 py-3 hidden sm:table-cell">
+										<td className="px-4 py-2 hidden sm:table-cell">
 											<Badge
 												variant="outline"
 												className={cn(
@@ -204,17 +204,17 @@ export function EmployeesTable() {
 										</td>
 
 										{/* Joined */}
-										<td className="px-4 py-3 text-ink-3 hidden md:table-cell">
+										<td className="px-4 py-2 text-ink-3 hidden md:table-cell">
 											{formatDate(employee.created_at)}
 										</td>
 
 										{/* Last sign in */}
-										<td className="px-4 py-3 text-ink-3 hidden md:table-cell">
+										<td className="px-4 py-2 text-ink-3 hidden md:table-cell">
 											{formatDate(employee.last_sign_in_at)}
 										</td>
 
 										{/* Actions */}
-										<td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+										<td className="px-4 py-2" onClick={(e) => e.stopPropagation()}>
 											<div className="flex items-center justify-end gap-1">
 												<EmployeeFormDialog
 													mode="edit"

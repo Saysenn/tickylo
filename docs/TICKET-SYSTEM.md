@@ -163,12 +163,52 @@ The notifications page currently shows all notifications with All/Unread tabs. A
 
 ---
 
+## Additional Design Considerations
+
+### Human-Readable Ticket IDs
+Tickets should be referenceable in conversation, Slack, email — not by cuid. Derive a display ID from the record: `#${id.slice(-8).toUpperCase()}` (e.g., `#A3F7C1B2`). In a future phase, introduce a true auto-increment sequence per type: `INC-042`, `CHG-007`, `REQ-019`.
+
+### Auto-Watcher Subscription
+The current watcher system is fully manual. Add auto-subscription rules:
+- **Creator** is auto-added as a watcher on ticket creation
+- **Assignee** is auto-added as a watcher on assignment/claim
+- These should be upserted silently (no notification for the auto-subscription itself)
+
+### Escalation: High → Critical
+The cron job currently escalates overdue tickets from any priority to `high`. With `critical` added:
+- 24h overdue + non-high → escalate to `high`
+- 48h+ overdue + high → escalate to `critical` + `notifyAdmins` immediately (don't wait for next cron run)
+
+### TimeEntry ↔ Ticket Linking — Timer UI
+The plan computes `actual_time_spent` from `TimeEntry.aggregate`. This requires adding an optional `ticket_id` FK on `TimeEntry`. The timer widget should be startable directly from the ticket detail page (pre-links the entry). The global timer still works standalone but the ticket context is optional.
+
+### Data Migration for Existing Rows
+When adding new fields via `prisma db push`:
+- `ticket_type` defaults to `'internal_task'` for all existing rows ✓ (handled by `@default`)
+- `status` remapping (`completed → resolved`) requires a one-time SQL: `UPDATE tasks SET status = 'resolved' WHERE status = 'completed'`
+- New nullable fields (`client_name`, `estimated_hours`, etc.) default to NULL — no action needed
+
+### Linked / Related Tickets
+Add a self-relation to support "blocks" and "related to" relationships:
+```prisma
+related_to    String?
+relatedTicket Task?   @relation("RelatedTickets", fields: [related_to], references: [id], onDelete: SetNull)
+relatedFrom   Task[]  @relation("RelatedTickets")
+```
+UI: show a "Related ticket" field on the detail page. Incidents can link to the Change that caused them.
+
+### Backward Compatibility During Migration
+Keep `/api/v1/task` routes as thin re-exports of the new `/api/v1/ticket` handlers during the transition period. Remove them in the next major version. Add a deprecation comment to each old route file. This ensures existing saved API clients / bookmarks don't break on rename day.
+
+---
+
 ## Migration Order
 
-1. **Schema** — add new fields to existing `Task` model first (no rename yet), run `prisma db push`
-2. **API** — extend existing routes with new fields; add `/api/v1/ticket` aliases that proxy to existing logic
-3. **Frontend** — update form dialogs, detail pages, tables
-4. **Rename** — atomic rename of `Task` → `Ticket` in schema + routes + UI (final step, minimizes conflicts)
-5. **Status vocabulary** — update all status strings and filters
+1. **Schema** — add new fields to existing `Task` model (no rename yet), run `prisma db push`
+2. **API** — create `/api/v1/ticket` routes (re-export from `/api/v1/task` handlers); update notification messages to say "ticket"
+3. **APIService** — point all client calls at `/v1/ticket`
+4. **Frontend** — create `/dashboard/tickets` pages; update sidebar; update components with new fields + layout
+5. **Rename** — atomic rename of model/table/routes/components in final cleanup pass
+6. **Status vocabulary** — run one-time SQL migration for existing rows; update all UI labels
 
-> Rename last to minimize merge conflicts. New fields can ship independently on the existing task system first.
+> Rename last to minimize merge conflicts. New fields and the new URL path can ship independently first.

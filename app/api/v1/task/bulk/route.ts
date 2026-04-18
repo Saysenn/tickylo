@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
 							data: {
 								task_id: id,
 								user_id: null,
-								body: `Task reassigned from ${oldName} to ${newAssignee.name ?? newAssignee.email} by admin.`,
+								body: `Ticket reassigned from ${oldName} to ${newAssignee.name ?? newAssignee.email} by admin.`,
 								is_system: true,
 							},
 						}),
@@ -70,9 +70,9 @@ export async function POST(request: NextRequest) {
 					createNotification({
 						user_id: user_id!,
 						type: task.user_id ? "task_reassigned" : "task_assigned",
-						title: task.user_id ? "Task reassigned to you" : "New task assigned",
+						title: task.user_id ? "Ticket reassigned to you" : "New ticket assigned",
 						body: `"${task.title}" has been assigned to you.`,
-						link: `/dashboard/tasks/${id}`,
+						link: `/dashboard/tickets/${id}`,
 					}).catch(() => {});
 
 				} else if (action === "complete") {
@@ -85,25 +85,25 @@ export async function POST(request: NextRequest) {
 						createNotification({
 							user_id: task.created_by,
 							type: "task_completed",
-							title: "Task completed",
+							title: "Ticket resolved",
 							body: `"${task.title}" has been marked complete.`,
-							link: `/dashboard/tasks/${id}`,
+							link: `/dashboard/tickets/${id}`,
 						}).catch(() => {});
 					}
 
 				} else if (action === "delete") {
 					await prisma.task.delete({ where: { id } });
-					if (task.user_id) {
+					if (task.user_id && task.user_id !== admin.id) {
 						createNotification({
 							user_id: task.user_id,
 							type: "task_deleted",
-							title: "Task removed",
+							title: "Ticket deleted",
 							body: `"${task.title}" has been deleted by admin.`,
 						}).catch(() => {});
-					} else {
+					} else if (!task.user_id) {
 						notifyEmployees({
 							type: "task_deleted",
-							title: "Task removed",
+							title: "Ticket deleted",
 							body: `"${task.title}" has been removed by admin.`,
 						}).catch(() => {});
 					}

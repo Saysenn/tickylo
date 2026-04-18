@@ -139,22 +139,22 @@ export function PerformanceTable() {
 										key={entry.user.id}
 										className="hover:bg-accent/20 transition-colors"
 									>
-										<td className="px-4 py-3">
-											<p className="font-medium text-ink">{name}</p>
+										<td className="px-4 py-2">
+											<p className="text-xs font-medium text-ink">{name}</p>
 											{entry.user.name && (
 												<p className="text-xs text-ink-3">{entry.user.email}</p>
 											)}
 										</td>
-										<td className="px-4 py-3 text-right font-medium text-mint">
+										<td className="px-4 py-2 text-right font-medium text-mint">
 											{entry.tasks_completed}
 										</td>
-										<td className="px-4 py-3 text-right text-mint/60">
+										<td className="px-4 py-2 text-right text-mint/60">
 											{entry.tasks_in_progress}
 										</td>
-										<td className="px-4 py-3 text-right text-ink-3">
+										<td className="px-4 py-2 text-right text-ink-3">
 											{entry.tasks_total}
 										</td>
-										<td className="px-4 py-3 text-right">
+										<td className="px-4 py-2 text-right">
 											<div className="flex items-center justify-end gap-2">
 												<div className="w-16 h-1.5 rounded-full bg-accent overflow-hidden">
 													<div
@@ -167,12 +167,12 @@ export function PerformanceTable() {
 												</span>
 											</div>
 										</td>
-										<td className="px-4 py-3 text-right text-ink-3 text-xs hidden lg:table-cell">
+										<td className="px-4 py-2 text-right text-ink-3 text-xs hidden lg:table-cell">
 											{entry.avg_days_to_complete > 0
 												? `${entry.avg_days_to_complete}d`
 												: "—"}
 										</td>
-										<td className="px-4 py-3 text-right text-ink-3 text-xs">
+										<td className="px-4 py-2 text-right text-ink-3 text-xs">
 											{entry.time_this_period_ms > 0
 												? formatDurationMs(entry.time_this_period_ms)
 												: "—"}

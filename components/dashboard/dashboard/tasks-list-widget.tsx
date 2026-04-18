@@ -25,14 +25,18 @@ const STATUS_STYLES: Record<string, string> = {
 	pending: "bg-accent text-ink-3 border-border/40",
 	assigned: "bg-mint/10 text-mint border-mint/20",
 	in_progress: "bg-mint/20 text-mint border-mint/30",
+	on_hold: "bg-yellow-500/15 text-yellow-700 border-yellow-500/20",
 	completed: "bg-mint/30 text-mint border-mint/40",
+	closed: "bg-accent text-ink-3 border-border/40",
 };
 
 const STATUS_LABEL: Record<string, string> = {
 	pending: "Unassigned",
 	assigned: "Assigned",
 	in_progress: "In Progress",
+	on_hold: "On Hold",
 	completed: "Done",
+	closed: "Closed",
 };
 
 // Deterministic dot color per task id — green family only
@@ -59,7 +63,7 @@ export function TasksListWidget({
 				</p>
 				{showNewButton && (
 					<Link
-						href="/dashboard/tasks"
+						href="/dashboard/tickets"
 						className="text-xs border border-mint/25 rounded-full px-3 py-1 text-ink-3 hover:bg-mint/10 hover:border-mint/50 hover:text-mint transition-colors"
 					>
 						+ New
@@ -79,7 +83,7 @@ export function TasksListWidget({
 						return (
 							<li key={task.id}>
 								<Link
-									href={`/dashboard/tasks/${task.id}`}
+									href={`/dashboard/tickets/${task.id}`}
 									className="flex items-start gap-3 group"
 								>
 									<span
@@ -119,7 +123,7 @@ export function TasksListWidget({
 			)}
 
 			<Link
-				href="/dashboard/tasks"
+				href="/dashboard/tickets"
 				className="mt-4 text-xs text-ink-3 hover:text-mint transition-colors text-center"
 			>
 				View all tasks →

@@ -57,18 +57,26 @@ export function TimeTrackerButton() {
 	if (isLoading) return null;
 
 	if (activeEntry) {
+		const ticketName = activeEntry.ticket?.title ?? activeEntry.title;
 		return (
 			<>
 				<div className="flex items-center gap-2">
 					{/* Pulsing red dot */}
-					<span className="relative flex h-2 w-2">
+					<span className="relative flex h-2 w-2 shrink-0">
 						<span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-destructive opacity-75" />
 						<span className="relative inline-flex rounded-full h-2 w-2 bg-destructive" />
 					</span>
 
-					<span className="text-xs font-mono font-medium text-ink-2 tabular-nums">
-						{elapsed}
-					</span>
+					<div className="flex flex-col items-start leading-none">
+						<span className="text-xs font-mono font-medium text-ink-2 tabular-nums">
+							{elapsed}
+						</span>
+						{ticketName && (
+							<span className="text-[10px] text-ink-3 truncate max-w-[120px] hidden sm:block">
+								{ticketName}
+							</span>
+						)}
+					</div>
 
 					<Button
 						size="sm"
@@ -78,7 +86,7 @@ export function TimeTrackerButton() {
 						isLoading={isStopping}
 					>
 						<Square className="w-3 h-3 fill-current" />
-						Time Out
+						Stop
 					</Button>
 				</div>
 

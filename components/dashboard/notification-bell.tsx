@@ -16,6 +16,11 @@ import {
 	CalendarCheck,
 	CalendarX,
 	CalendarClock,
+	LogIn,
+	LogOut,
+	AtSign,
+	AlertTriangle,
+	Eye,
 } from "lucide-react";
 import APIService from "@/lib/infra/api";
 import { formatRelativeTime } from "@/lib/utils/format";
@@ -68,6 +73,16 @@ function notificationIcon(type: string) {
 			return <CalendarCheck className="w-3.5 h-3.5 text-green-500" />;
 		case "leave_rejected":
 			return <CalendarX className="w-3.5 h-3.5 text-red-500" />;
+		case "time_clock_in":
+			return <LogIn className="w-3.5 h-3.5 text-mint" />;
+		case "time_clock_out":
+			return <LogOut className="w-3.5 h-3.5 text-blue-500" />;
+		case "comment_mention":
+			return <AtSign className="w-3.5 h-3.5 text-purple-500" />;
+		case "due_date_reminder":
+			return <AlertTriangle className="w-3.5 h-3.5 text-yellow-500" />;
+		case "task_watched":
+			return <Eye className="w-3.5 h-3.5 text-mint" />;
 		default:
 			return <Info className="w-3.5 h-3.5 text-ink-3" />;
 	}

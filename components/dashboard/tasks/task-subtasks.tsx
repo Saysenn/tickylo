@@ -18,9 +18,10 @@ interface Subtask {
 
 interface TaskSubtasksProps {
 	taskId: string;
+	enabled?: boolean;
 }
 
-export function TaskSubtasks({ taskId }: TaskSubtasksProps) {
+export function TaskSubtasks({ taskId, enabled = true }: TaskSubtasksProps) {
 	const queryClient = useQueryClient();
 	const [newTitle, setNewTitle] = useState("");
 	const [addError, setAddError] = useState<string | null>(null);
@@ -31,7 +32,7 @@ export function TaskSubtasks({ taskId }: TaskSubtasksProps) {
 	const { data: subtasks = [], isLoading } = useQuery<Subtask[]>({
 		queryKey: ["task-subtasks", taskId],
 		queryFn: () => APIService.tasks.subtasks.list(taskId),
-		enabled: !!taskId,
+		enabled: !!taskId && enabled,
 	});
 
 	const { mutateAsync: addSubtask, isPending: isAdding } = useMutation({

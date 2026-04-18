@@ -96,16 +96,11 @@ export function TimeEntriesTable() {
 											{formatDate(entry.start_time)}
 										</td>
 										<td className="px-4 py-2">
-											<p className="font-medium text-ink truncate max-w-[160px]">
+											<p className="text-xs font-medium text-ink truncate max-w-[160px]">
 												{entry.title ?? (
 													<span className="text-ink-3 font-normal italic">No title</span>
 												)}
 											</p>
-											{entry.description && (
-												<p className="text-xs text-ink-3 truncate max-w-[160px]">
-													{entry.description}
-												</p>
-											)}
 										</td>
 										<td className="px-4 py-2 text-ink-3 hidden sm:table-cell whitespace-nowrap">
 											{formatTime(entry.start_time)}

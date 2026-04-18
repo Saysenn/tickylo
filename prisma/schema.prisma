@@ -12,17 +12,25 @@ datasource db {
 }
 
 enum TaskStatus {
+  needs_approval
   pending
   assigned
   in_progress
+  on_hold
+  stale
   completed
+  closed
+  rejected
 }
 
 enum TaskPriority {
   low
   medium
   high
+  critical
 }
+
+// TicketType enum removed — ticket types are now dynamic via TicketTypeConfig
 
 enum LeaveType {
   sick
@@ -76,6 +84,7 @@ model Department {
 model TimeEntry {
   id          String    @id @default(cuid())
   user_id     String
+  ticket_id   String?
   start_time  DateTime
   end_time    DateTime?
   title       String?
@@ -84,9 +93,11 @@ model TimeEntry {
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
-  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  user   User  @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  ticket Task? @relation("TicketTimeEntries", fields: [ticket_id], references: [id], onDelete: SetNull)
 
   @@index([user_id])
+  @@index([ticket_id])
   @@index([start_time])
   @@map("time_entries")
 }
@@ -129,19 +140,33 @@ model Task {
   started_at   DateTime?
   assigned_at  DateTime?
 
+  // Ticket fields — type is a free string keyed to TicketTypeConfig.key
+  ticket_type         String @default("internal_task")
+  client_name         String?
+  estimated_hours     Float?
+  billable_hours      Float?
+  implementation_plan String?
+  rollback_plan       String?
+  related_to          String?
+  links               Json     @default("[]")
+
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
-  creator   User          @relation("TaskCreatedBy",  fields: [created_by], references: [id])
-  assignee  User?         @relation("TaskAssignedTo", fields: [user_id],    references: [id])
-  comments  TaskComment[]
-  watchers  TaskWatcher[]
-  subtasks  TaskSubtask[]
+  creator       User          @relation("TaskCreatedBy",  fields: [created_by], references: [id])
+  assignee      User?         @relation("TaskAssignedTo", fields: [user_id],    references: [id])
+  comments      TaskComment[]
+  watchers      TaskWatcher[]
+  subtasks      TaskSubtask[]
+  relatedTicket Task?         @relation("RelatedTickets", fields: [related_to], references: [id], onDelete: SetNull)
+  relatedFrom   Task[]        @relation("RelatedTickets")
+  timeEntries   TimeEntry[]   @relation("TicketTimeEntries")
 
   @@index([created_by])
   @@index([user_id])
   @@index([status])
   @@index([due_date])
+  @@index([ticket_type])
   @@map("tasks")
 }
 
@@ -244,4 +269,19 @@ model Notification {
   @@index([user_id, read])
   @@index([created_at])
   @@map("notifications")
+}
+
+model TicketTypeConfig {
+  id         String   @id @default(cuid())
+  key        String   @unique  // stored in Task.ticket_type; e.g. "internal_task", "change"
+  name       String            // "Internal Task", "Request for Change"
+  prefix     String            // "TASK", "RFC"
+  color      String   @default("gray") // "gray" | "blue" | "red" | "orange" | "purple" | "green" | "yellow"
+  active     Boolean  @default(true)
+  position   Int      @default(0)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@index([active])
+  @@map("ticket_type_configs")
 }

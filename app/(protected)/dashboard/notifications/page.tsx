@@ -18,6 +18,11 @@ import {
 	CalendarCheck,
 	CalendarX,
 	CalendarClock,
+	LogIn,
+	LogOut,
+	AtSign,
+	AlertTriangle,
+	Eye,
 } from "lucide-react";
 import APIService from "@/lib/infra/api";
 import { formatRelativeTime, formatDate, formatTime } from "@/lib/utils/format";
@@ -69,6 +74,22 @@ function notificationIcon(type: string) {
 			return <CalendarCheck className="w-4 h-4 text-green-500" />;
 		case "leave_rejected":
 			return <CalendarX className="w-4 h-4 text-red-500" />;
+		case "time_clock_in":
+			return <LogIn className="w-4 h-4 text-mint" />;
+		case "time_clock_out":
+			return <LogOut className="w-4 h-4 text-blue-500" />;
+		case "comment_mention":
+			return <AtSign className="w-4 h-4 text-purple-500" />;
+		case "due_date_reminder":
+			return <AlertTriangle className="w-4 h-4 text-yellow-500" />;
+		case "task_watched":
+			return <Eye className="w-4 h-4 text-mint" />;
+		case "ticket_needs_approval":
+			return <ClipboardList className="w-4 h-4 text-purple-500" />;
+		case "ticket_approved":
+			return <CheckCircle2 className="w-4 h-4 text-green-500" />;
+		case "ticket_rejected":
+			return <CalendarX className="w-4 h-4 text-red-500" />;
 		default:
 			return <Info className="w-4 h-4 text-ink-3" />;
 	}
@@ -80,13 +101,13 @@ export default function NotificationsPage() {
 
 	const [tab, setTab] = useState<"all" | "unread">("all");
 	const [page, setPage] = useState(1);
+	const [selected, setSelected] = useState<Set<string>>(new Set());
 
 	const queryKey = ["notifications-page", tab, page];
 
 	const { data, isLoading } = useQuery<NotificationsResponse>({
 		queryKey,
-		queryFn: () =>
-			APIService.notifications.list(page, LIMIT, tab === "unread"),
+		queryFn: () => APIService.notifications.list(page, LIMIT, tab === "unread"),
 	});
 
 	const notifications = data?.data ?? [];
@@ -108,6 +129,18 @@ export default function NotificationsPage() {
 		onSuccess: invalidate,
 	});
 
+	const { mutate: bulkRead, isPending: isBulkReading } = useMutation({
+		mutationFn: (ids: string[]) => APIService.notifications.bulkRead(ids),
+		onSuccess: () => { setSelected(new Set()); invalidate(); },
+	});
+
+	const { mutate: bulkDelete, isPending: isBulkDeleting } = useMutation({
+		mutationFn: (ids: string[]) => APIService.notifications.bulkDelete(ids),
+		onSuccess: () => { setSelected(new Set()); invalidate(); },
+	});
+
+	const isBulkPending = isBulkReading || isBulkDeleting;
+
 	const handleClick = (n: Notification) => {
 		if (!n.read) readOne(n.id);
 		if (n.link) router.push(n.link);
@@ -116,13 +149,33 @@ export default function NotificationsPage() {
 	const handleTabChange = (t: "all" | "unread") => {
 		setTab(t);
 		setPage(1);
+		setSelected(new Set());
 	};
 
+	const toggleOne = (id: string) => {
+		setSelected((prev) => {
+			const next = new Set(prev);
+			if (next.has(id)) next.delete(id);
+			else next.add(id);
+			return next;
+		});
+	};
+
+	const toggleAll = () => {
+		if (selected.size === notifications.length) setSelected(new Set());
+		else setSelected(new Set(notifications.map((n) => n.id)));
+	};
+
+	const selectedIds = [...selected];
+	const allSelected = notifications.length > 0 && selected.size === notifications.length;
+	const someSelected = selected.size > 0;
+	const selectedUnread = notifications.filter((n) => selected.has(n.id) && !n.read);
+
 	return (
-		<div className="w-full space-y-6">
+		<div className="w-full space-y-5">
 			{/* Page header */}
 			<div className="flex items-center justify-between">
-				<div className="flex items-center gap-2">
+				<div className="flex items-center gap-2.5">
 					<Bell className="w-5 h-5 text-ink-3" />
 					<h1 className="text-lg font-bold text-ink">Notifications</h1>
 					{unreadCount > 0 && (
@@ -166,6 +219,21 @@ export default function NotificationsPage() {
 
 			{/* List */}
 			<div className="rounded-xl border bg-background overflow-hidden">
+				{/* Select-all header — only shown when there are items */}
+				{notifications.length > 0 && (
+					<div className="flex items-center gap-3 px-5 py-2.5 border-b bg-accent/20">
+						<input
+							type="checkbox"
+							checked={allSelected}
+							onChange={toggleAll}
+							className="accent-mint cursor-pointer"
+						/>
+						<span className="text-xs text-ink-3">
+							{someSelected ? `${selected.size} selected` : "Select all"}
+						</span>
+					</div>
+				)}
+
 				{isLoading ? (
 					<div className="flex items-center justify-center py-16">
 						<div className="w-5 h-5 border-2 border-mint/40 border-t-mint rounded-full animate-spin" />
@@ -179,32 +247,47 @@ export default function NotificationsPage() {
 					</div>
 				) : (
 					notifications.map((n) => (
-						<button
+						<div
 							key={n.id}
-							type="button"
-							onClick={() => handleClick(n)}
 							className={cn(
-								"w-full flex items-start gap-4 px-5 py-4 text-left transition-colors hover:bg-accent/50 border-b border-border/30 last:border-0",
+								"flex items-start gap-3 px-5 py-4 border-b border-border/30 last:border-0 transition-colors",
 								!n.read && "bg-mint/5",
+								selected.has(n.id) && "bg-mint/8",
 							)}
 						>
-							<div className="w-8 h-8 rounded-full bg-accent flex items-center justify-center shrink-0 mt-0.5">
-								{notificationIcon(n.type)}
-							</div>
-							<div className="flex-1 min-w-0">
-								<p className={cn("text-sm text-ink", !n.read && "font-semibold")}>
-									{n.title}
-								</p>
-								<p className="text-xs text-ink-3 mt-0.5 leading-relaxed">{n.body}</p>
-								<p className="text-[11px] text-ink-3/60 mt-1.5">
-									{formatRelativeTime(n.created_at)} · {formatDate(n.created_at)}{" "}
-									{formatTime(n.created_at)}
-								</p>
-							</div>
-							{!n.read && (
-								<span className="w-2 h-2 rounded-full bg-mint shrink-0 mt-1.5" />
-							)}
-						</button>
+							{/* Checkbox */}
+							<input
+								type="checkbox"
+								checked={selected.has(n.id)}
+								onChange={() => toggleOne(n.id)}
+								onClick={(e) => e.stopPropagation()}
+								className="accent-mint cursor-pointer mt-1 shrink-0"
+							/>
+
+							{/* Clickable content */}
+							<button
+								type="button"
+								className="flex items-start gap-3 flex-1 text-left min-w-0"
+								onClick={() => handleClick(n)}
+							>
+								<div className="w-8 h-8 rounded-full bg-accent flex items-center justify-center shrink-0 mt-0.5">
+									{notificationIcon(n.type)}
+								</div>
+								<div className="flex-1 min-w-0">
+									<p className={cn("text-sm text-ink", !n.read && "font-semibold")}>
+										{n.title}
+									</p>
+									<p className="text-xs text-ink-3 mt-0.5 leading-relaxed">{n.body}</p>
+									<p className="text-[11px] text-ink-3/60 mt-1.5">
+										{formatRelativeTime(n.created_at)} · {formatDate(n.created_at)}{" "}
+										{formatTime(n.created_at)}
+									</p>
+								</div>
+								{!n.read && (
+									<span className="w-2 h-2 rounded-full bg-mint shrink-0 mt-1.5" />
+								)}
+							</button>
+						</div>
 					))
 				)}
 			</div>
@@ -233,6 +316,45 @@ export default function NotificationsPage() {
 							Next
 						</Button>
 					</div>
+				</div>
+			)}
+
+			{/* Bulk action bar */}
+			{someSelected && (
+				<div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 rounded-xl border bg-background shadow-lg px-4 py-2.5 animate-fade-in">
+					<span className="text-xs font-medium text-ink-3 mr-1">
+						{selected.size} selected
+					</span>
+					{selectedUnread.length > 0 && (
+						<Button
+							size="sm"
+							variant="outline"
+							className="h-7 text-xs gap-1.5"
+							disabled={isBulkPending}
+							onClick={() => bulkRead(selectedIds)}
+						>
+							<CheckCheck className="w-3.5 h-3.5" />
+							Mark read
+						</Button>
+					)}
+					<Button
+						size="sm"
+						variant="outline"
+						className="h-7 text-xs gap-1.5 text-destructive hover:text-destructive"
+						disabled={isBulkPending}
+						onClick={() => bulkDelete(selectedIds)}
+					>
+						<Trash2 className="w-3.5 h-3.5" />
+						Delete
+					</Button>
+					<Button
+						size="sm"
+						variant="ghost"
+						className="h-7 text-xs text-ink-3"
+						onClick={() => setSelected(new Set())}
+					>
+						Cancel
+					</Button>
 				</div>
 			)}
 		</div>

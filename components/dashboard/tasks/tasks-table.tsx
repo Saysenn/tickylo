@@ -13,7 +13,7 @@ import { TimeOutDialog } from "@/components/dashboard/time-tracker/time-out-dial
 import { useAppSelector } from "@/store/hooks";
 import { formatDate } from "@/lib/utils/format";
 import { cn } from "@/lib/utils/cn";
-import { ClipboardList, Plus, Trash2, CheckCheck, UserCog } from "lucide-react";
+import { ClipboardList, Plus, Trash2, CheckCheck, UserCog, X, SlidersHorizontal } from "lucide-react";
 import { ROWS_PER_PAGE } from "@/configs/pagination.config";
 import {
 	SelectRoot,
@@ -26,26 +26,53 @@ import type { Task, TaskPage } from "./types";
 import type { TimeEntry } from "@/components/dashboard/time-tracker/types";
 
 const STATUS_STYLES: Record<string, string> = {
-	pending: "bg-accent text-ink-3 border-border/40",
-	assigned: "bg-blue-500/15 text-blue-700 border-blue-500/20",
-	in_progress: "bg-yellow-500/15 text-yellow-700 border-yellow-500/20",
-	completed: "bg-green-500/15 text-green-700 border-green-500/20",
+	needs_approval: "bg-purple-500/15 text-purple-700 border-purple-500/20",
+	pending:        "bg-accent text-ink-3 border-border/40",
+	assigned:       "bg-blue-500/15 text-blue-700 border-blue-500/20",
+	in_progress:    "bg-yellow-500/15 text-yellow-700 border-yellow-500/20",
+	on_hold:        "bg-orange-500/15 text-orange-700 border-orange-500/20",
+	stale:          "bg-yellow-500/15 text-yellow-700 border-yellow-500/20",
+	completed:      "bg-green-500/15 text-green-700 border-green-500/20",
+	closed:         "bg-accent text-ink-3/60 border-border/30",
+	rejected:       "bg-zinc-500/15 text-zinc-500 border-zinc-500/20",
 };
 
 const STATUS_LABEL: Record<string, string> = {
-	pending: "Unassigned",
-	assigned: "Assigned",
-	in_progress: "In Progress",
-	completed: "Completed",
+	needs_approval: "Needs Approval",
+	pending:        "Open",
+	assigned:       "Assigned",
+	in_progress:    "In Progress",
+	on_hold:        "On Hold",
+	stale:          "Stale",
+	completed:      "Resolved",
+	closed:         "Closed",
+	rejected:       "Rejected",
 };
 
 const PRIORITY_STYLES: Record<string, string> = {
 	low: "bg-accent text-ink-3 border-border/40",
 	medium: "bg-yellow-500/15 text-yellow-700 border-yellow-500/20",
 	high: "bg-red-500/15 text-red-700 border-red-500/20",
+	critical: "bg-red-900/20 text-red-700 border-red-700/30",
 };
 
-const ALL_STATUSES = ["pending", "assigned", "in_progress", "completed", "overdue"];
+const TICKET_TYPE_STYLES: Record<string, string> = {
+	incident:      "bg-red-500/10 text-red-600 border-red-500/20",
+	change:        "bg-orange-500/10 text-orange-600 border-orange-500/20",
+	request:       "bg-blue-500/10 text-blue-600 border-blue-500/20",
+	internal_task: "bg-accent text-ink-3 border-border/40",
+};
+
+const TICKET_TYPE_LABEL: Record<string, string> = {
+	incident:      "Incident",
+	change:        "RFC",
+	request:       "Request",
+	internal_task: "Internal",
+};
+
+const ALL_STATUSES = ["needs_approval", "pending", "assigned", "in_progress", "on_hold", "stale", "completed", "closed", "rejected", "overdue"];
+
+export { TasksTable as TicketsTable };
 
 export function TasksTable() {
 	const router = useRouter();
@@ -61,6 +88,22 @@ export function TasksTable() {
 	const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 	const [bulkAssignTo, setBulkAssignTo] = useState("");
 	const [bulkAssignOpen, setBulkAssignOpen] = useState(false);
+
+	// Filter state — synced to URL params
+	const typeFilter     = searchParams.get("type")     ?? "";
+	const priorityFilter = searchParams.get("priority") ?? "";
+	const assigneeFilter = searchParams.get("assignee") ?? "";
+	const dueFilter      = searchParams.get("due")      ?? "";
+
+	const activeFilterCount = [typeFilter, priorityFilter, assigneeFilter, dueFilter, statusFilter, search]
+		.filter(Boolean).length;
+
+	const clearAllFilters = () => {
+		const params = new URLSearchParams();
+		params.set("page", "1");
+		router.push(`?${params.toString()}`);
+		setSearchInput("");
+	};
 	const user = useAppSelector((s) => s.auth.user);
 	const isAdmin = user?.role === "admin";
 
@@ -88,14 +131,28 @@ export function TasksTable() {
 	};
 
 	const { data: result, isLoading, isError } = useQuery<TaskPage>({
-		queryKey: ["tasks", page, statusFilter, search, viewFilter],
+		queryKey: ["tasks", page, statusFilter, search, viewFilter, typeFilter, priorityFilter, assigneeFilter, dueFilter],
 		queryFn: () => APIService.tasks.list(
 			page,
 			ROWS_PER_PAGE,
 			statusFilter || undefined,
 			search || undefined,
 			isAdmin ? undefined : viewFilter,
+			{
+				type:     typeFilter     || undefined,
+				priority: priorityFilter || undefined,
+				assignee: assigneeFilter || undefined,
+				due:      dueFilter      || undefined,
+			},
 		),
+	});
+
+	// Employees list for assignee filter (admin only)
+	const { data: assigneeOptions } = useQuery<{ data: { id: string; name: string | null; email: string }[] }>({
+		queryKey: ["employees-list-filter"],
+		queryFn: () => APIService.employees.list(1, 100),
+		enabled: isAdmin,
+		staleTime: 60_000,
 	});
 
 	// Track active timer so we can stop it when completing a task
@@ -115,6 +172,12 @@ export function TasksTable() {
 			priority?: string;
 			due_date?: string;
 			assigned_to?: string;
+			ticket_type?: string;
+			client_name?: string;
+			estimated_hours?: number;
+			billable_hours?: number;
+			implementation_plan?: string;
+			rollback_plan?: string;
 		}) => APIService.tasks.create(data),
 		onSuccess: () => { invalidateAll(); resetPage(); },
 	});
@@ -135,7 +198,7 @@ export function TasksTable() {
 	});
 
 	const { mutateAsync: startTimer, isPending: isStartingTimer } = useMutation({
-		mutationFn: (data: { title?: string }) => APIService.time.start(data),
+		mutationFn: (data: { title?: string; ticket_id?: string }) => APIService.time.start(data),
 		onSuccess: () => queryClient.invalidateQueries({ queryKey: ["time", "active"] }),
 	});
 
@@ -175,7 +238,7 @@ export function TasksTable() {
 	const handleStart = async (task: Task) => {
 		await Promise.all([
 			startTask(task.id),
-			startTimer({ title: task.title }),
+			startTimer({ title: task.title, ticket_id: task.id }),
 		]);
 	};
 
@@ -216,74 +279,112 @@ export function TasksTable() {
 	const totalPages = result?.totalPages ?? 1;
 
 	const emptyStateCopy = isAdmin
-		? "Create a task and optionally assign it to a team member."
+		? "Create a ticket and optionally assign it to a team member."
 		: viewFilter === "assigned"
-		? "No tasks are assigned to you yet."
+		? "No tickets are assigned to you yet."
 		: viewFilter === "unassigned"
-		? "There are no unassigned tasks available to claim."
-		: "No tasks found matching your filters.";
+		? "There are no unassigned tickets available to claim."
+		: "No tickets found matching your filters.";
+
+	const filterSelect = "h-8 rounded-md border border-border bg-background px-2 text-sm focus:outline-none focus:ring-1 focus:ring-mint text-ink";
 
 	return (
 		<div className="space-y-3">
 			{/* Toolbar */}
-			<div className="flex flex-wrap items-center gap-2 justify-between">
-				<div className="flex items-center gap-2 flex-wrap">
-					<input
-						type="text"
-						placeholder="Search tasks…"
-						value={searchInput}
-						onChange={(e) => setSearchInput(e.target.value)}
-						onKeyDown={(e) => e.key === "Enter" && submitSearch()}
-						className="h-8 rounded-md border border-border bg-background px-3 text-sm focus:outline-none focus:ring-1 focus:ring-mint w-48"
-					/>
-					<Button size="sm" variant="outline" className="h-8" onClick={submitSearch}>
-						Search
-					</Button>
-					{!isAdmin && (
-						<select
-							value={viewFilter}
-							onChange={(e) => {
-								setViewFilter(e.target.value as typeof viewFilter);
-								resetPage();
-							}}
-							className="h-8 rounded-md border border-border bg-background px-2 text-sm focus:outline-none focus:ring-1 focus:ring-mint"
-						>
-							<option value="assigned">My Tasks</option>
-							<option value="unassigned">Unassigned</option>
-							<option value="all">All Tasks</option>
-						</select>
-					)}
-					{isAdmin && (
-						<select
-							value={statusFilter}
-							onChange={(e) => updateParam("status", e.target.value)}
-							className="h-8 rounded-md border border-border bg-background px-2 text-sm focus:outline-none focus:ring-1 focus:ring-mint"
-						>
-							<option value="">All statuses</option>
-							{ALL_STATUSES.map((s) => (
-								<option key={s} value={s}>
-									{s === "overdue" ? "Overdue" : (STATUS_LABEL[s] ?? s)}
-								</option>
-							))}
-						</select>
-					)}
-				</div>
-
-				<div className="flex items-center gap-2">
-					<p className="text-sm text-ink-3">
-						{list.length} {list.length === 1 ? "task" : "tasks"}
-					</p>
-					{isAdmin && (
+			<div className="space-y-2">
+				{/* Row 1: search + new ticket */}
+				<div className="flex items-center gap-2 justify-between flex-wrap">
+					<div className="flex items-center gap-2">
+						<input
+							type="text"
+							placeholder="Search by title, description, client…"
+							value={searchInput}
+							onChange={(e) => setSearchInput(e.target.value)}
+							onKeyDown={(e) => e.key === "Enter" && submitSearch()}
+							className="h-8 rounded-md border border-border bg-background px-3 text-sm focus:outline-none focus:ring-1 focus:ring-mint w-64"
+						/>
+						<Button size="sm" variant="outline" className="h-8" onClick={submitSearch}>Search</Button>
+						{activeFilterCount > 0 && (
+							<button
+								type="button"
+								onClick={clearAllFilters}
+								className="flex items-center gap-1 h-8 px-2 text-xs text-ink-3 hover:text-destructive transition-colors"
+							>
+								<X className="w-3.5 h-3.5" />
+								Clear {activeFilterCount > 1 ? `${activeFilterCount} filters` : "filter"}
+							</button>
+						)}
+					</div>
+					<div className="flex items-center gap-2">
+						<p className="text-sm text-ink-3">{result?.data.length ?? 0} {(result?.data.length ?? 0) === 1 ? "ticket" : "tickets"}</p>
 						<TaskFormDialog
 							isPending={isCreating}
 							onSubmit={async (data) => { await createTask(data); }}
-							trigger={
-								<Button size="sm">
-									<Plus className="w-4 h-4" />
-									New task
-								</Button>
-							}
+							trigger={<Button size="sm"><Plus className="w-4 h-4" />New ticket</Button>}
 						/>
+					</div>
+				</div>
+
+				{/* Row 2: category filters */}
+				<div className="flex items-center gap-2 flex-wrap">
+					<SlidersHorizontal className="w-3.5 h-3.5 text-ink-3/60 shrink-0" />
+
+					{/* View toggle (employee only) */}
+					{!isAdmin && (
+						<select
+							value={viewFilter}
+							onChange={(e) => { setViewFilter(e.target.value as typeof viewFilter); resetPage(); }}
+							className={filterSelect}
+						>
+							<option value="assigned">My Tickets</option>
+							<option value="unassigned">Unassigned</option>
+							<option value="all">All Tickets</option>
+						</select>
+					)}
+
+					{/* Status */}
+					<select value={statusFilter} onChange={(e) => updateParam("status", e.target.value)} className={filterSelect}>
+						<option value="">All statuses</option>
+						{ALL_STATUSES.map((s) => (
+							<option key={s} value={s}>{s === "overdue" ? "Overdue" : (STATUS_LABEL[s] ?? s)}</option>
+						))}
+					</select>
+
+					{/* Type */}
+					<select value={typeFilter} onChange={(e) => updateParam("type", e.target.value)} className={filterSelect}>
+						<option value="">All types</option>
+						<option value="internal_task">Internal Task</option>
+						<option value="request">Request</option>
+						<option value="incident">Incident</option>
+						<option value="change">Request for Change</option>
+					</select>
+
+					{/* Priority */}
+					<select value={priorityFilter} onChange={(e) => updateParam("priority", e.target.value)} className={filterSelect}>
+						<option value="">All priorities</option>
+						<option value="low">Low</option>
+						<option value="medium">Medium</option>
+						<option value="high">High</option>
+						<option value="critical">Critical</option>
+					</select>
+
+					{/* Due */}
+					<select value={dueFilter} onChange={(e) => updateParam("due", e.target.value)} className={filterSelect}>
+						<option value="">Any due date</option>
+						<option value="overdue">Overdue</option>
+						<option value="today">Due today</option>
+						<option value="week">Due this week</option>
+					</select>
+
+					{/* Assignee (admin only) */}
+					{isAdmin && (
+						<select value={assigneeFilter} onChange={(e) => updateParam("assignee", e.target.value)} className={filterSelect}>
+							<option value="">All assignees</option>
+							<option value="unassigned">Unassigned</option>
+							{(assigneeOptions?.data ?? []).map((e) => (
+								<option key={e.id} value={e.id}>{e.name ?? e.email}</option>
+							))}
+						</select>
 					)}
 				</div>
 			</div>
@@ -294,7 +395,7 @@ export function TasksTable() {
 					<div className="w-12 h-12 rounded-xl bg-mint/15 flex items-center justify-center mb-4">
 						<ClipboardList className="w-6 h-6 text-ink-2" strokeWidth={1.8} />
 					</div>
-					<h3 className="font-semibold text-ink mb-1">No tasks found</h3>
+					<h3 className="font-semibold text-ink mb-1">No tickets found</h3>
 					<p className="text-sm text-ink-3 max-w-xs">{emptyStateCopy}</p>
 				</div>
 			)}
@@ -322,6 +423,9 @@ export function TasksTable() {
 									<th className="text-left px-4 py-2 text-xs font-semibold text-ink-3 uppercase tracking-wider">
 										Title
 									</th>
+									<th className="text-left px-4 py-2 text-xs font-semibold text-ink-3 uppercase tracking-wider hidden lg:table-cell">
+										Type
+									</th>
 									<th className="text-left px-4 py-2 text-xs font-semibold text-ink-3 uppercase tracking-wider hidden md:table-cell">
 										Assignee
 									</th>
@@ -342,7 +446,7 @@ export function TasksTable() {
 									<tr
 										key={task.id}
 										className={cn("hover:bg-accent/20 transition-colors cursor-pointer", selectedIds.has(task.id) && "bg-mint/5")}
-										onClick={() => router.push(`/dashboard/tasks/${task.id}`)}
+										onClick={() => router.push(`/dashboard/tickets/${task.id}`)}
 									>
 										{isAdmin && (
 											<td className="w-8 px-3 py-2" onClick={(e) => e.stopPropagation()}>
@@ -360,23 +464,27 @@ export function TasksTable() {
 											</td>
 										)}
 										<td className="px-4 py-2">
-											<p className="font-medium text-ink truncate max-w-[200px]">
+											<p className="text-xs font-medium text-ink truncate max-w-[200px]">
 												{task.title}
 											</p>
-											{task.description && (
-												<p className="text-xs text-ink-3 truncate max-w-[200px]">
-													{task.description}
-												</p>
-											)}
+										</td>
+
+										<td className="px-4 py-2 hidden lg:table-cell">
+											<Badge
+												variant="outline"
+												className={cn("text-[10px]", TICKET_TYPE_STYLES[task.ticket_type ?? "internal_task"])}
+											>
+												{TICKET_TYPE_LABEL[task.ticket_type ?? "internal_task"] ?? task.ticket_type}
+											</Badge>
 										</td>
 
 										<td className="px-4 py-2 hidden md:table-cell">
 											{task.assignee ? (
-												<p className="text-ink truncate text-sm">
+												<p className="text-xs text-ink truncate">
 													{task.assignee.name ?? task.assignee.email}
 												</p>
 											) : (
-												<span className="text-ink-3 text-xs">Unassigned</span>
+												<span className="text-xs text-ink-3">Unassigned</span>
 											)}
 										</td>
 
@@ -555,7 +663,7 @@ export function TasksTable() {
 					{bulkAssignOpen && (
 						<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
 							<div className="bg-background rounded-xl border shadow-xl p-5 w-72 space-y-4">
-								<h3 className="text-sm font-semibold text-ink">Reassign {selectedIds.size} task{selectedIds.size !== 1 ? "s" : ""}</h3>
+								<h3 className="text-sm font-semibold text-ink">Reassign {selectedIds.size} ticket{selectedIds.size !== 1 ? "s" : ""}</h3>
 								<SelectRoot value={bulkAssignTo} onValueChange={setBulkAssignTo}>
 									<SelectTrigger className="w-full">
 										<SelectValue placeholder="Select employee…" />

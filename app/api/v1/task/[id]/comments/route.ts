@@ -88,16 +88,16 @@ export async function POST(
 			createNotification({
 				user_id: recipientId,
 				type: "comment_added",
-				title: `${commenterName} commented on a task`,
+				title: `${commenterName} commented on a ticket`,
 				body: `"${task.title}": ${snippet}`,
-				link: `/dashboard/tasks/${id}`,
+				link: `/dashboard/tickets/${id}`,
 			}).catch(() => {});
 		}
 		notifyWatchers(id, {
 			type: "comment_added",
-			title: `${commenterName} commented on a task`,
+			title: `${commenterName} commented on a ticket`,
 			body: `"${task.title}": ${snippet}`,
-			link: `/dashboard/tasks/${id}`,
+			link: `/dashboard/tickets/${id}`,
 		}, [...recipientIds, user.id]).catch(() => {});
 
 		return ok(comment);

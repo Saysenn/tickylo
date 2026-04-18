@@ -19,15 +19,19 @@ export async function createNotification(data: NotificationData) {
 
 /**
  * Notify all admin users. Looks up admins from the users table.
+ * Optional excludeId skips one admin (e.g. the one who triggered the action).
  */
-export async function notifyAdmins(data: Omit<NotificationData, "user_id">) {
+export async function notifyAdmins(
+	data: Omit<NotificationData, "user_id"> & { excludeId?: string },
+) {
+	const { excludeId, ...notifData } = data;
 	const admins = await prisma.user.findMany({
-		where: { role: "admin" },
+		where: { role: "admin", ...(excludeId ? { id: { not: excludeId } } : {}) },
 		select: { id: true },
 	});
 	if (admins.length === 0) return;
 	await prisma.notification.createMany({
-		data: admins.map((a) => ({ ...data, user_id: a.id })),
+		data: admins.map((a) => ({ ...notifData, user_id: a.id })),
 	});
 }
 

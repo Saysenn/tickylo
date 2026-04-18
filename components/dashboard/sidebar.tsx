@@ -76,7 +76,7 @@ const navGroups: NavGroup[] = [
 				href: "/dashboard/time-tracker",
 				icon: AlarmClock,
 			},
-			{ label: "Tasks", href: "/dashboard/tasks", icon: ClipboardList },
+			{ label: "Tickets", href: "/dashboard/tickets", icon: ClipboardList },
 			{ label: "Requests", href: "/dashboard/requests", icon: Inbox },
 		],
 	},

@@ -31,9 +31,9 @@ export async function PATCH(
 		const starterName = user.user_metadata?.name ?? user.email ?? "An employee";
 		notifyAdmins({
 			type: "task_started",
-			title: "Task started",
+			title: "Ticket started",
 			body: `${starterName} started working on "${task.title}".`,
-			link: `/dashboard/tasks/${id}`,
+			link: `/dashboard/tickets/${id}`,
 		}).catch(() => {});
 
 		return ok(updated);

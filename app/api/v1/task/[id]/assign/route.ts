@@ -81,25 +81,25 @@ export async function PATCH(
 		createNotification({
 			user_id,
 			type: isReassign ? "task_reassigned" : "task_assigned",
-			title: isReassign ? "Task reassigned to you" : "New task assigned",
+			title: isReassign ? "Ticket reassigned to you" : "New ticket assigned",
 			body: `"${task.title}" has been ${isReassign ? "reassigned" : "assigned"} to you.`,
-			link: `/dashboard/tasks/${id}`,
+			link: `/dashboard/tickets/${id}`,
 		}).catch(() => {});
 		// Notify the old assignee when task is taken away from them
 		if (isReassign && task.user_id && task.user_id !== user_id) {
 			createNotification({
 				user_id: task.user_id,
 				type: "task_reassigned",
-				title: "Task reassigned",
+				title: "Ticket reassigned",
 				body: `"${task.title}" has been reassigned to ${newName}.`,
-				link: `/dashboard/tasks/${id}`,
+				link: `/dashboard/tickets/${id}`,
 			}).catch(() => {});
 		}
 		notifyWatchers(id, {
 			type: isReassign ? "task_reassigned" : "task_assigned",
-			title: isReassign ? "Task reassigned" : "Task assigned",
+			title: isReassign ? "Ticket reassigned" : "Ticket assigned",
 			body: eventBody,
-			link: `/dashboard/tasks/${id}`,
+			link: `/dashboard/tickets/${id}`,
 		}, [user_id, ...(task.user_id ? [task.user_id] : [])]).catch(() => {});
 
 		return ok(updated);
