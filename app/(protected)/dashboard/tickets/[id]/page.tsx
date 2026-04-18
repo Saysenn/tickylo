@@ -310,14 +310,6 @@ export default function TicketDetailPage() {
 				<h1 className="text-base font-bold text-ink leading-snug flex-1 min-w-0 truncate">
 					{ticket.title}
 				</h1>
-				<Button
-					size="sm" variant="ghost"
-					className="h-7 gap-1.5 text-xs text-ink-3 hover:text-ink shrink-0"
-					onClick={() => setSubtasksOpen(true)}
-				>
-					<CheckSquare className="w-3.5 h-3.5" />
-					Subtasks{subtaskTotal > 0 && <span className="opacity-60">({subtaskDone}/{subtaskTotal})</span>}
-				</Button>
 				{/* Admin quick actions */}
 				{isAdmin && (
 					<div className="ml-auto flex items-center gap-2">
@@ -395,24 +387,34 @@ export default function TicketDetailPage() {
 
 					{/* Badges + description card */}
 					<div className="rounded-xl border bg-background shadow-sm p-6 space-y-4">
-						<div className="flex flex-wrap items-center gap-2">
-							<Badge variant="outline" className={cn("text-xs font-medium", typeConfig.badgeCls)}>
-								{typeConfig.label}
-							</Badge>
-							<Badge variant="outline" className={cn("text-xs", STATUS_STYLES[ticket.status])}>
-								{STATUS_LABEL[ticket.status] ?? ticket.status}
-							</Badge>
-							{ticket.priority && (
-								<Badge variant="outline" className={cn("text-xs capitalize", PRIORITY_STYLES[ticket.priority])}>
-									{ticket.priority === "critical" && <AlertTriangle className="w-2.5 h-2.5 mr-1" />}
-									{ticket.priority}
+						<div className="flex items-start justify-between gap-2">
+							<div className="flex flex-wrap items-center gap-2">
+								<Badge variant="outline" className={cn("text-xs font-medium", typeConfig.badgeCls)}>
+									{typeConfig.label}
 								</Badge>
-							)}
-							{isOverdue && (
-								<Badge variant="outline" className="text-xs bg-red-500/10 text-red-600 border-red-500/20">
-									Overdue
+								<Badge variant="outline" className={cn("text-xs", STATUS_STYLES[ticket.status])}>
+									{STATUS_LABEL[ticket.status] ?? ticket.status}
 								</Badge>
-							)}
+								{ticket.priority && (
+									<Badge variant="outline" className={cn("text-xs capitalize", PRIORITY_STYLES[ticket.priority])}>
+										{ticket.priority === "critical" && <AlertTriangle className="w-2.5 h-2.5 mr-1" />}
+										{ticket.priority}
+									</Badge>
+								)}
+								{isOverdue && (
+									<Badge variant="outline" className="text-xs bg-red-500/10 text-red-600 border-red-500/20">
+										Overdue
+									</Badge>
+								)}
+							</div>
+							<Button
+								size="sm" variant="ghost"
+								className="h-7 gap-1.5 text-xs text-ink-3 hover:text-ink shrink-0"
+								onClick={() => setSubtasksOpen(true)}
+							>
+								<CheckSquare className="w-3.5 h-3.5" />
+								Subtasks{subtaskTotal > 0 && <span className="opacity-60">({subtaskDone}/{subtaskTotal})</span>}
+							</Button>
 						</div>
 						{ticket.description ? (
 							<div className={PROSE_CLS}>

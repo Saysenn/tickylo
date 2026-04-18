@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { isAxiosError } from "axios";
-import { Plus, Trash2, CheckSquare } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import APIService from "@/lib/infra/api";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils/cn";
@@ -75,17 +75,6 @@ export function TaskSubtasks({ taskId, enabled = true }: TaskSubtasksProps) {
 
 	return (
 		<div className="space-y-3">
-			{/* Header */}
-			<div className="flex items-center gap-2">
-				<CheckSquare className="w-4 h-4 text-ink-3" />
-				<h3 className="text-sm font-semibold text-ink">Subtasks</h3>
-				{total > 0 && (
-					<span className="text-xs text-ink-3 ml-1">
-						{completedCount}/{total}
-					</span>
-				)}
-			</div>
-
 			{/* Progress bar */}
 			{total > 0 && (
 				<div className="h-1.5 rounded-full bg-border/50 overflow-hidden">
