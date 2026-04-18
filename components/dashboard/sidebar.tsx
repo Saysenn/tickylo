@@ -62,9 +62,10 @@ const navGroups: NavGroup[] = [
 				roles: ["admin"],
 			},
 			{
-				label: "Time Manager",
+				label: "Team Overview",
 				href: "/dashboard/time-manager",
 				icon: Clock,
+				roles: ["admin"],
 			},
 		],
 	},

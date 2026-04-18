@@ -33,50 +33,34 @@ export async function GET(request: Request) {
 
 		// Provision role for new OAuth users — only needs SUPABASE_SERVICE_ROLE_KEY, no DB
 		const { user } = sessionData;
-		if (!user.app_metadata?.role) {
-			try {
-				const admin = createAdminClient();
+		try {
+			const admin = createAdminClient();
+			let role = user.app_metadata?.role as string | undefined;
 
-				// Count existing users to determine first-admin
-				const { data: usersData } = await admin.auth.admin.listUsers({
-					perPage: 2,
-				});
-				const role =
-					(usersData?.users?.length ?? 2) <= 1 ? ROLES.ADMIN : DEFAULT_ROLE;
-
-				await admin.auth.admin.updateUserById(user.id, {
-					app_metadata: { role },
-				});
-
-				/** create public user. ( replication of auth user ) */
-				/** create public user full ATOMICITY */
-				console.log("user: ", user);
-				try {
-					await prisma.user.upsert({
-						where: { id: user.id },
-						create: {
-							id: user.id,
-							email: user.email!,
-							name: user.user_metadata?.full_name ?? "Unknown",
-							role: user.app_metadata?.role ?? DEFAULT_ROLE,
-						},
-						update: {
-							email: user.email!,
-							name: user.user_metadata?.full_name ?? "Unknown",
-							role: user.app_metadata?.role ?? DEFAULT_ROLE,
-						},
-					});
-				} catch (error) {
-					await admin.auth.admin.deleteUser(user.id);
-					console.error("[register] Failed to create public user:", error);
-					return NextResponse.json(
-						{ error: "Failed to create user. Please try again." },
-						{ status: 500 },
-					);
-				}
-			} catch (err) {
-				console.error("[callback] Role provisioning failed:", err);
+			// First-time OAuth user — no role yet, provision one
+			if (!role) {
+				const { data: usersData } = await admin.auth.admin.listUsers({ perPage: 2 });
+				role = (usersData?.users?.length ?? 2) <= 1 ? ROLES.ADMIN : DEFAULT_ROLE;
+				await admin.auth.admin.updateUserById(user.id, { app_metadata: { role } });
 			}
+
+			// Always upsert the public User row so role stays in sync
+			await prisma.user.upsert({
+				where: { id: user.id },
+				create: {
+					id: user.id,
+					email: user.email!,
+					name: user.user_metadata?.full_name ?? user.email ?? "Unknown",
+					role,
+				},
+				update: {
+					email: user.email!,
+					name: user.user_metadata?.full_name ?? user.email ?? "Unknown",
+					role,
+				},
+			});
+		} catch (err) {
+			console.error("[callback] User provisioning failed:", err);
 		}
 
 		return NextResponse.redirect(`${origin}${redirectTo}`);

@@ -10,12 +10,15 @@ const startSchema = z.object({
 	ticket_id: z.string().optional(),
 });
 
-// GET /api/v1/time?page=1&limit=10&from=YYYY-MM-DD&to=YYYY-MM-DD&tz_offset=<min>
+// GET /api/v1/time?page=1&limit=10&from=YYYY-MM-DD&to=YYYY-MM-DD&tz_offset=<min>&user_id=<id>
 // Paginated list of completed entries, optionally filtered by local date range.
+// Admins can pass user_id to view a specific employee's entries.
 export async function GET(request: NextRequest) {
 	try {
 		const user = await requireUser();
 		if (!user) return errorResponse("Unauthorized", 401);
+
+		const isAdmin = user.app_metadata?.role === "admin";
 
 		const { searchParams } = new URL(request.url);
 		const page = Math.max(1, parseInt(searchParams.get("page") ?? "1", 10));
@@ -28,12 +31,13 @@ export async function GET(request: NextRequest) {
 		const fromParam = searchParams.get("from");
 		const toParam = searchParams.get("to");
 		const tzOffset = parseInt(searchParams.get("tz_offset") ?? "0", 10);
+		const filterUserId = isAdmin ? (searchParams.get("user_id") ?? null) : null;
 
 		const localMidnightUTC = (d: string) =>
 			new Date(new Date(d + "T00:00:00Z").getTime() + tzOffset * 60000);
 
 		const where = {
-			user_id: user.id,
+			user_id: filterUserId ?? user.id,
 			end_time: { not: null as null },
 			...(fromParam && toParam
 				? {
@@ -51,6 +55,9 @@ export async function GET(request: NextRequest) {
 				orderBy: { start_time: "desc" },
 				take: limit,
 				skip,
+				include: {
+					ticket: { select: { id: true, title: true, ticket_type: true } },
+				},
 			}),
 			prisma.timeEntry.count({ where }),
 		]);

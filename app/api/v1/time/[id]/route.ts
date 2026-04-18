@@ -5,6 +5,7 @@ import { ok, errorResponse } from "@/lib/utils/response";
 import { z } from "zod";
 import { notifyAdmins } from "@/lib/utils/create-notification";
 import { formatDurationMs } from "@/lib/utils/format";
+import { ROLES } from "@/configs/rbac.config";
 
 const stopSchema = z.object({
 	title: z.string().max(200).optional(),
@@ -89,6 +90,87 @@ export async function PATCH(
 		return ok(updated);
 	} catch (err) {
 		console.error("[time/:id:PATCH]", err);
+		return errorResponse("Internal server error", 500);
+	}
+}
+
+const editSchema = z.object({
+	title: z.string().max(200).optional(),
+	description: z.string().max(1000).optional(),
+	start_time: z.string().datetime({ offset: true }).optional(),
+	end_time: z.string().datetime({ offset: true }).optional(),
+});
+
+// PUT /api/v1/time/:id — edit a completed entry (title, description, start/end times)
+export async function PUT(
+	request: NextRequest,
+	{ params }: { params: Promise<{ id: string }> },
+) {
+	try {
+		const { id } = await params;
+		const supabase = await createClient();
+		const { data: { user } } = await supabase.auth.getUser();
+		if (!user) return errorResponse("Unauthorized", 401);
+
+		const isAdmin = user.app_metadata?.role === ROLES.ADMIN;
+
+		const entry = await prisma.timeEntry.findFirst({
+			where: {
+				id,
+				end_time: { not: null }, // only completed entries
+				...(isAdmin ? {} : { user_id: user.id }),
+			},
+		});
+		if (!entry) return errorResponse("Entry not found", 404);
+
+		const body = await request.json().catch(() => ({}));
+		const validated = editSchema.safeParse(body);
+		if (!validated.success) return errorResponse(validated.error.issues[0]?.message ?? "Invalid input", 400);
+
+		const newStart = validated.data.start_time ? new Date(validated.data.start_time) : entry.start_time;
+		const newEnd   = validated.data.end_time   ? new Date(validated.data.end_time)   : entry.end_time!;
+
+		if (newEnd <= newStart) return errorResponse("End time must be after start time", 400);
+
+		const updated = await prisma.timeEntry.update({
+			where: { id },
+			data: {
+				...(validated.data.title !== undefined ? { title: validated.data.title } : {}),
+				...(validated.data.description !== undefined ? { description: validated.data.description } : {}),
+				start_time: newStart,
+				end_time: newEnd,
+			},
+		});
+		return ok(updated);
+	} catch (err) {
+		console.error("[time/:id:PUT]", err);
+		return errorResponse("Internal server error", 500);
+	}
+}
+
+// DELETE /api/v1/time/:id — delete a time entry (owner or admin)
+export async function DELETE(
+	_request: NextRequest,
+	{ params }: { params: Promise<{ id: string }> },
+) {
+	try {
+		const { id } = await params;
+		const supabase = await createClient();
+		const { data: { user } } = await supabase.auth.getUser();
+		if (!user) return errorResponse("Unauthorized", 401);
+
+		const isAdmin = user.app_metadata?.role === ROLES.ADMIN;
+
+		const entry = await prisma.timeEntry.findFirst({
+			where: { id, ...(isAdmin ? {} : { user_id: user.id }) },
+		});
+		if (!entry) return errorResponse("Entry not found", 404);
+		if (!entry.end_time) return errorResponse("Cannot delete an active timer", 400);
+
+		await prisma.timeEntry.delete({ where: { id } });
+		return ok({ deleted: true });
+	} catch (err) {
+		console.error("[time/:id:DELETE]", err);
 		return errorResponse("Internal server error", 500);
 	}
 }

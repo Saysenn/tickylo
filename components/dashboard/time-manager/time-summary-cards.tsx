@@ -5,9 +5,10 @@ import type { TimeSummary } from "./types";
 
 interface TimeSummaryCardsProps {
 	summary: TimeSummary;
+	rangeLabel?: string;
 }
 
-export function TimeSummaryCards({ summary }: TimeSummaryCardsProps) {
+export function TimeSummaryCards({ summary, rangeLabel }: TimeSummaryCardsProps) {
 	const avgMs = summary.daysWorked > 0 ? Math.round(summary.totalMs / summary.daysWorked) : 0;
 
 	return (
@@ -23,6 +24,9 @@ export function TimeSummaryCards({ summary }: TimeSummaryCardsProps) {
 				/>
 				<p className="relative text-xs font-medium text-white/60 uppercase tracking-wider mb-2">
 					Total time
+					{rangeLabel && (
+						<span className="normal-case font-normal ml-1 opacity-70">({rangeLabel})</span>
+					)}
 				</p>
 				<p className="relative text-3xl font-bold text-white">
 					{formatDurationMs(summary.totalMs)}

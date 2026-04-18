@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils/cn";
 import { formatInitials, formatDate } from "@/lib/utils/format";
 import type { Employee } from "./types";
 import { ROWS_PER_PAGE } from "@/configs/pagination.config";
+import { useAppSelector } from "@/store/hooks";
 
 interface EmployeePage {
 	data: Employee[];
@@ -22,6 +23,7 @@ interface EmployeePage {
 }
 
 export function EmployeesTable() {
+	const currentUserId = useAppSelector((s) => s.auth.user?.id);
 	const router = useRouter();
 	const searchParams = useSearchParams();
 	const page = Math.max(1, parseInt(searchParams.get("page") ?? "1", 10));
@@ -180,6 +182,9 @@ export function EmployeesTable() {
 												<div className="min-w-0">
 													<p className="text-xs font-medium text-ink truncate">
 														{employee.name ?? "—"}
+														{employee.id === currentUserId && (
+															<span className="ml-1.5 text-[10px] font-normal text-ink-3">(You)</span>
+														)}
 													</p>
 													<p className="text-xs text-ink-3 truncate">
 														{employee.email}

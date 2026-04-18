@@ -8,9 +8,9 @@ import {
 	Tooltip,
 	ResponsiveContainer,
 	Cell,
-	LabelList,
+	CartesianGrid,
 } from "recharts";
-import { formatDurationMs, formatDayLabel } from "@/lib/utils/format";
+import { formatDurationMs } from "@/lib/utils/format";
 import type { TimeSummaryDay } from "./types";
 
 interface TimeDayBarsProps {
@@ -30,13 +30,33 @@ function CustomTooltip({
 	payload?: TooltipPayloadItem[];
 	label?: string;
 }) {
-	if (!active || !payload?.length || !payload[0].value) return null;
+	if (!active || !payload?.length) return null;
+	const ms = payload[0].value ?? 0;
 	return (
-		<div className="bg-white/90 backdrop-blur-sm border border-mint/30 text-[11px] font-medium text-ink-2 px-2.5 py-1.5 rounded-lg shadow-sm space-y-0.5">
+		<div className="bg-background border border-border text-[11px] font-medium px-2.5 py-1.5 rounded-lg shadow-md space-y-0.5">
 			<p className="text-ink-3">{label}</p>
-			<p className="text-ink">{formatDurationMs(payload[0].value)}</p>
+			<p className="text-ink font-semibold">{ms > 0 ? formatDurationMs(ms) : "No sessions"}</p>
 		</div>
 	);
+}
+
+function shortDayLabel(dateStr: string, total: number): string {
+	const d = new Date(dateStr + "T00:00:00");
+	// For wider ranges show just month+day; for 7-day show weekday abbr
+	if (total <= 10) {
+		return d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+	}
+	return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
+
+function msToHoursFloat(ms: number): number {
+	return ms / 1000 / 60 / 60;
+}
+
+function hoursTickFormatter(value: number): string {
+	if (value === 0) return "0";
+	if (value < 1) return `${Math.round(value * 60)}m`;
+	return `${value}h`;
 }
 
 export function TimeDayBars({ days }: TimeDayBarsProps) {
@@ -49,53 +69,53 @@ export function TimeDayBars({ days }: TimeDayBarsProps) {
 	}
 
 	const data = days.map((d) => ({
-		label: formatDayLabel(d.date),
+		label: shortDayLabel(d.date, days.length),
 		totalMs: d.totalMs,
+		hours: msToHoursFloat(d.totalMs),
 	}));
 
-	const chartHeight = days.length * 38 + 16;
+	const maxHours = Math.max(...data.map((d) => d.hours), 0.5);
+	// Round up to nearest 0.5h for a clean Y axis
+	const yMax = Math.ceil(maxHours * 2) / 2;
 
 	return (
 		<div className="rounded-lg border bg-background p-5">
 			<p className="text-xs font-semibold text-ink-3 uppercase tracking-wider mb-4">
 				Daily breakdown
 			</p>
-			<ResponsiveContainer width="100%" height={chartHeight}>
+			<ResponsiveContainer width="100%" height={200}>
 				<BarChart
-					layout="vertical"
 					data={data}
-					margin={{ top: 0, right: 72, bottom: 0, left: 0 }}
-					barSize={16}
+					margin={{ top: 4, right: 4, bottom: 0, left: -8 }}
+					barSize={days.length <= 10 ? 28 : 14}
 				>
-					<XAxis type="number" hide domain={[0, "dataMax"]} />
-					<YAxis
-						type="category"
+					<CartesianGrid vertical={false} stroke="rgba(0,0,0,0.05)" strokeDasharray="3 3" />
+					<XAxis
 						dataKey="label"
 						axisLine={false}
 						tickLine={false}
-						width={120}
-						tick={{ fontSize: 11, fill: "#9ca3af", fontFamily: "system-ui,sans-serif" }}
+						tick={{ fontSize: 10, fill: "#9ca3af", fontFamily: "system-ui,sans-serif" }}
+						interval={days.length > 20 ? Math.floor(days.length / 10) : 0}
+					/>
+					<YAxis
+						tickFormatter={hoursTickFormatter}
+						axisLine={false}
+						tickLine={false}
+						tick={{ fontSize: 10, fill: "#9ca3af", fontFamily: "system-ui,sans-serif" }}
+						domain={[0, yMax]}
+						width={32}
 					/>
 					<Tooltip
 						content={<CustomTooltip />}
-						cursor={{ fill: "rgba(128,237,153,0.06)" }}
+						cursor={{ fill: "rgba(128,237,153,0.08)", radius: 4 }}
 					/>
-					<Bar dataKey="totalMs" radius={[0, 4, 4, 0]} isAnimationActive animationDuration={700}>
+					<Bar dataKey="hours" radius={[4, 4, 0, 0]} isAnimationActive animationDuration={600}>
 						{data.map((entry, i) => (
 							<Cell
 								key={i}
-								fill={entry.totalMs > 0 ? "rgba(128,237,153,0.6)" : "rgba(128,237,153,0.12)"}
+								fill={entry.hours > 0 ? "rgba(128,237,153,0.75)" : "rgba(128,237,153,0.12)"}
 							/>
 						))}
-						<LabelList
-							dataKey="totalMs"
-							position="right"
-							formatter={(value) => {
-								const ms = typeof value === "number" ? value : 0;
-								return ms > 0 ? formatDurationMs(ms) : "—";
-							}}
-							style={{ fontSize: 11, fill: "#9ca3af", fontFamily: "system-ui,sans-serif" }}
-						/>
 					</Bar>
 				</BarChart>
 			</ResponsiveContainer>

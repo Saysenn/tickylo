@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ChevronRight } from "lucide-react";
 import { formatDurationMs } from "@/lib/utils/format";
 
@@ -15,13 +15,16 @@ export interface EmployeeStat {
 interface Props {
 	employees: EmployeeStat[];
 	onSelect: (id: string, name: string) => void;
+	currentUserId?: string;
+	search?: string;
+	onSearchChange?: (value: string) => void;
 }
 
 const PAGE_SIZE = 10;
 
-export function TimeEmployeeTable({ employees, onSelect }: Props) {
-	const [search, setSearch] = useState("");
+export function TimeEmployeeTable({ employees, onSelect, currentUserId, search = "", onSearchChange }: Props) {
 	const [page, setPage] = useState(1);
+	useEffect(() => { setPage(1); }, [search]);
 
 	const filtered = employees.filter((e) => {
 		if (!search.trim()) return true;
@@ -39,25 +42,8 @@ export function TimeEmployeeTable({ employees, onSelect }: Props) {
 		currentPage * PAGE_SIZE,
 	);
 
-	const handleSearch = (value: string) => {
-		setSearch(value);
-		setPage(1);
-	};
-
 	return (
 		<div className="space-y-3">
-			<div className="flex items-center gap-3">
-				<input
-					type="text"
-					placeholder="Search employees..."
-					value={search}
-					onChange={(e) => handleSearch(e.target.value)}
-					className="h-8 rounded-md border border-border bg-background px-3 text-sm focus:outline-none focus:ring-1 focus:ring-mint w-full max-w-xs"
-				/>
-				<p className="text-xs text-ink-3 whitespace-nowrap">
-					{filtered.length} employee{filtered.length !== 1 ? "s" : ""}
-				</p>
-			</div>
 
 			<div className="rounded-lg border overflow-x-auto">
 				<table className="w-full text-sm min-w-[480px]">
@@ -93,7 +79,12 @@ export function TimeEmployeeTable({ employees, onSelect }: Props) {
 									onClick={() => onSelect(emp.id, emp.name ?? emp.email)}
 								>
 									<td className="px-4 py-2">
-										<p className="text-xs font-medium text-ink">{emp.name ?? "—"}</p>
+										<p className="text-xs font-medium text-ink">
+											{emp.name ?? "—"}
+											{emp.id === currentUserId && (
+												<span className="ml-1.5 text-[10px] font-normal text-ink-3">(You)</span>
+											)}
+										</p>
 										<p className="text-xs text-ink-3">{emp.email}</p>
 									</td>
 									<td className="px-4 py-2 text-right font-mono tabular-nums">

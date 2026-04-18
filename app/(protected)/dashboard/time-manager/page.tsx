@@ -4,62 +4,60 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ChevronLeft } from "lucide-react";
 import APIService from "@/lib/infra/api";
+import { Button } from "@/components/ui/button";
 import { TimeDateRange } from "@/components/dashboard/time-manager/time-date-range";
 import { TimeSummaryCards } from "@/components/dashboard/time-manager/time-summary-cards";
 import { TimeDayBars } from "@/components/dashboard/time-manager/time-day-bars";
 import { TimeEmployeeTable } from "@/components/dashboard/time-manager/time-employee-table";
 import type { TimeSummary } from "@/components/dashboard/time-manager/types";
-import { todayDateStr, daysAgoDateStr, formatDurationMs } from "@/lib/utils/format";
+import {
+	todayDateStr, daysAgoDateStr, formatDurationMs,
+	startOfMonthDateStr, startOfLastMonthDateStr, endOfLastMonthDateStr,
+} from "@/lib/utils/format";
 import { useAppSelector } from "@/store/hooks";
-import { Button } from "@/components/ui/button";
+
+const DATE_PRESETS = [
+	{ label: "Today",        from: () => todayDateStr(),            to: () => todayDateStr() },
+	{ label: "Last 7 days",  from: () => daysAgoDateStr(6),         to: () => todayDateStr() },
+	{ label: "Last 14 days", from: () => daysAgoDateStr(13),        to: () => todayDateStr() },
+	{ label: "This month",   from: () => startOfMonthDateStr(),     to: () => todayDateStr() },
+	{ label: "Last month",   from: () => startOfLastMonthDateStr(), to: () => endOfLastMonthDateStr() },
+	{ label: "Last 30 days", from: () => daysAgoDateStr(29),        to: () => todayDateStr() },
+	{ label: "Last 90 days", from: () => daysAgoDateStr(89),        to: () => todayDateStr() },
+];
+
+function getPresetLabel(from: string, to: string): string {
+	const match = DATE_PRESETS.find((p) => p.from() === from && p.to() === to);
+	return match ? match.label : "Custom range";
+}
 
 export default function TimeManagerPage() {
-	const [from, setFrom] = useState(daysAgoDateStr(6));
-	const [to, setTo] = useState(todayDateStr());
+	const user     = useAppSelector((s) => s.auth.user);
+	const tzOffset = new Date().getTimezoneOffset();
 
-	// selectedEmployee = "" means "team view" (admin), or current user (employee)
-	const [selectedEmployee, setSelectedEmployee] = useState<string>("");
-	const [selectedName, setSelectedName] = useState<string>("");
+	const [from, setFrom]   = useState(daysAgoDateStr(6));
+	const [to,   setTo]     = useState(todayDateStr());
+	const [search, setSearch] = useState("");
+	const [selectedEmployee, setSelectedEmployee] = useState("");
+	const [selectedName,     setSelectedName]     = useState("");
 
-	const user = useAppSelector((s) => s.auth.user);
-	const isAdmin = user?.role === "admin";
-	const tzOffset = new Date().getTimezoneOffset(); // in minutes
-	// Admin: fetch team summary for the employee table
 	const { data: teamData, isLoading: teamLoading } = useQuery<any>({
 		queryKey: ["time-team-summary", from, to],
 		queryFn: () => APIService.time.teamSummary(from, to, tzOffset),
-		enabled: isAdmin && !selectedEmployee,
+		enabled: !selectedEmployee,
 	});
 
-	// Individual time breakdown (always for non-admin; for admin when employee is selected)
 	const { data: summary, isLoading: summaryLoading } = useQuery<TimeSummary>({
 		queryKey: ["time-summary", from, to, selectedEmployee],
-		queryFn: () =>
-			APIService.time.summary(
-				from,
-				to,
-				selectedEmployee || undefined,
-				tzOffset,
-			),
-		enabled: !!from && !!to && (!isAdmin || !!selectedEmployee),
+		queryFn: () => APIService.time.summary(from, to, selectedEmployee, tzOffset),
+		enabled: !!selectedEmployee,
 	});
 
-	const handleSelectEmployee = (id: string, name: string) => {
-		setSelectedEmployee(id);
-		setSelectedName(name);
-	};
-
-	const handleBackToTeam = () => {
-		setSelectedEmployee("");
-		setSelectedName("");
-	};
-
-	const showTeamView = isAdmin && !selectedEmployee;
-	const isLoading = showTeamView ? teamLoading : summaryLoading;
+	const showEmployee = !!selectedEmployee;
+	const isLoading    = showEmployee ? summaryLoading : teamLoading;
 
 	return (
 		<div className="relative w-full space-y-6">
-			{/* Mint mesh gradient background */}
 			<div
 				className="fixed inset-0 -z-10 pointer-events-none"
 				style={{
@@ -71,107 +69,82 @@ export default function TimeManagerPage() {
 			/>
 
 			<div>
-				<h1 className="text-2xl font-bold text-ink">Time Manager</h1>
-				<p className="text-ink-3 mt-1 text-sm">
-					{isAdmin
-						? "View time breakdown by employee and date range."
-						: "View your time breakdown for any date range."}
-				</p>
+				<h1 className="text-2xl font-bold text-ink">Team Overview</h1>
+				<p className="text-ink-3 mt-1 text-sm">Team time analytics and per-employee session breakdowns.</p>
 			</div>
 
-			{/* Header controls */}
 			<div className="flex flex-wrap items-end gap-3">
-				{/* Admin individual view: back button */}
-				{isAdmin && selectedEmployee && (
-					<Button
-						size="sm"
-						variant="ghost"
-						className="h-8 gap-1.5 text-ink-3"
-						onClick={handleBackToTeam}
-					>
+				{showEmployee && (
+					<Button size="sm" variant="ghost" className="h-8 gap-1.5 text-ink-3"
+						onClick={() => { setSelectedEmployee(""); setSelectedName(""); setSearch(""); }}>
 						<ChevronLeft className="w-4 h-4" />
-						Team Overview
+						All Employees
 					</Button>
 				)}
-
-				<TimeDateRange
-					from={from}
-					to={to}
-					onChange={(f, t) => {
-						setFrom(f);
-						setTo(t);
-					}}
-				/>
+				<TimeDateRange from={from} to={to} onChange={(f, t) => { setFrom(f); setTo(t); }} />
+				{!showEmployee && (
+					<input
+						type="text"
+						placeholder="Search employees..."
+						value={search}
+						onChange={(e) => setSearch(e.target.value)}
+						className="h-8 rounded-md border border-border bg-background px-3 text-sm focus:outline-none focus:ring-1 focus:ring-mint w-44"
+					/>
+				)}
 			</div>
 
-			{/* Employee name when viewing individual */}
-			{isAdmin && selectedEmployee && (
+			{showEmployee && (
 				<p className="text-sm font-medium text-ink">
-					Showing:{" "}
-					<span className="text-mint font-semibold">{selectedName}</span>
+					Showing: <span className="text-mint font-semibold">{selectedName}</span>
 				</p>
 			)}
 
 			{isLoading ? (
-				<div className="flex items-center justify-center py-24">
+				<div className="flex items-center justify-center py-16">
 					<div className="w-5 h-5 border-2 border-mint/40 border-t-mint rounded-full animate-spin" />
 				</div>
-			) : showTeamView ? (
-				/* ─── Admin: Team View ─── */
+			) : !showEmployee && teamData ? (
 				<div className="space-y-6">
-					{/* Team summary cards */}
-					{teamData && (
-						<div className="grid grid-cols-2 gap-4">
-							{/* Featured — dark gradient */}
-							<div
-								className="rounded-xl border border-mint/30 p-5 relative overflow-hidden shadow-[0_0_40px_rgba(128,237,153,0.22)] hover:shadow-[0_0_60px_rgba(128,237,153,0.35)] transition-shadow"
-								style={{ background: "linear-gradient(135deg, #1c3a1c 0%, #143018 50%, #0d200d 100%)" }}
-							>
-								<div
-									className="absolute inset-0 pointer-events-none"
-									style={{ background: "radial-gradient(ellipse at 80% 20%, rgba(128, 237, 153, 0.15) 0%, transparent 60%)" }}
-								/>
-								<p className="relative text-xs font-medium text-white/60 uppercase tracking-wider mb-2">
-									Total team hours
-								</p>
-								<p className="relative text-3xl font-bold text-white">
-									{formatDurationMs(teamData.totalTeamMs)}
-								</p>
-							</div>
-							{/* Glass card */}
-							<div className="glass rounded-xl border-mint/25 p-5 hover:shadow-[0_4px_20px_rgba(128,237,153,0.12)] transition-shadow">
-								<p className="text-xs font-medium text-ink-3 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-									<span className="relative flex h-2 w-2 shrink-0">
-										<span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-mint opacity-75" />
-										<span className="relative inline-flex rounded-full h-2 w-2 bg-mint" />
-									</span>
-									Active members
-								</p>
-								<p className="text-3xl font-bold text-ink">
-									{teamData.activeCount}
-									<span className="text-base font-normal text-ink-3 ml-1">
-										/ {teamData.employees?.length ?? 0}
-									</span>
-								</p>
-							</div>
+					<div className="grid grid-cols-2 gap-4">
+						<div
+							className="rounded-xl border border-mint/30 p-5 relative overflow-hidden shadow-[0_0_40px_rgba(128,237,153,0.22)]"
+							style={{ background: "linear-gradient(135deg, #1c3a1c 0%, #143018 50%, #0d200d 100%)" }}
+						>
+							<div className="absolute inset-0 pointer-events-none"
+								style={{ background: "radial-gradient(ellipse at 80% 20%, rgba(128, 237, 153, 0.15) 0%, transparent 60%)" }} />
+							<p className="relative text-xs font-medium text-white/60 uppercase tracking-wider mb-2">
+								Total team hours
+								<span className="normal-case font-normal ml-1 opacity-70">({getPresetLabel(from, to)})</span>
+							</p>
+							<p className="relative text-3xl font-bold text-white">{formatDurationMs(teamData.totalTeamMs)}</p>
 						</div>
-					)}
-
-					{/* Employee list */}
+						<div className="glass rounded-xl border-mint/25 p-5">
+							<p className="text-xs font-medium text-ink-3 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+								<span className="relative flex h-2 w-2 shrink-0">
+									<span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-mint opacity-75" />
+									<span className="relative inline-flex rounded-full h-2 w-2 bg-mint" />
+								</span>
+								Active members
+							</p>
+							<p className="text-3xl font-bold text-ink">
+								{teamData.activeCount}
+								<span className="text-base font-normal text-ink-3 ml-1">/ {teamData.employees?.length ?? 0}</span>
+							</p>
+						</div>
+					</div>
 					<div className="space-y-2">
-						<h2 className="text-sm font-semibold text-ink">
-							Employee Breakdown
-						</h2>
+						<h2 className="text-sm font-semibold text-ink">Employee Breakdown</h2>
 						<TimeEmployeeTable
-							employees={teamData?.employees ?? []}
-							onSelect={handleSelectEmployee}
+							employees={teamData.employees ?? []}
+							onSelect={(id, name) => { setSelectedEmployee(id); setSelectedName(name); }}
+							currentUserId={user?.id}
+							search={search}
 						/>
 					</div>
 				</div>
-			) : summary ? (
-				/* ─── Individual View ─── */
+			) : showEmployee && summary ? (
 				<div className="space-y-4">
-					<TimeSummaryCards summary={summary} />
+					<TimeSummaryCards summary={summary} rangeLabel={getPresetLabel(from, to)} />
 					<TimeDayBars days={summary.days} />
 				</div>
 			) : null}

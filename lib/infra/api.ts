@@ -91,8 +91,8 @@ class APIService {
 		active: () => axiosService.get(`${apiVersion}/time/active`),
 		stop: (id: string, data: { title?: string; description?: string }) =>
 			axiosService.patch(`${apiVersion}/time/${id}`, data),
-		list: (page = 1, limit = 10, from?: string, to?: string, tzOffset?: number) =>
-			axiosService.get(`${apiVersion}/time`, { page, limit, from, to, tz_offset: tzOffset }),
+		list: (page = 1, limit = 10, from?: string, to?: string, tzOffset?: number, userId?: string) =>
+			axiosService.get(`${apiVersion}/time`, { page, limit, from, to, tz_offset: tzOffset, user_id: userId || undefined }),
 		summary: (from: string, to: string, userId?: string, tzOffset?: number) =>
 			axiosService.get(`${apiVersion}/time/summary`, {
 				from,
@@ -106,6 +106,14 @@ class APIService {
 				to,
 				tz_offset: tzOffset,
 			}),
+		update: (id: string, data: { title?: string; description?: string; start_time?: string; end_time?: string }) =>
+			axiosService.put(`${apiVersion}/time/${id}`, data),
+		remove: (id: string) =>
+			axiosService.delete(`${apiVersion}/time/${id}`),
+		bulkDelete: (ids: string[]) =>
+			axiosService.delete(`${apiVersion}/time/bulk`, undefined, { ids }),
+		merge: (ids: string[], title?: string) =>
+			axiosService.post(`${apiVersion}/time/merge`, { ids, title }),
 	};
 
 	// ---------------------------------------------------------------------------
