@@ -608,12 +608,15 @@ export default function TicketDetailPage() {
 												min="0"
 												step="0.5"
 												defaultValue={ticket.billable_hours ?? ""}
-												placeholder="Enter hours"
+												placeholder="— h"
 												onBlur={(e) => {
 													const val = e.target.value;
 													updateBillable(val === "" ? null : parseFloat(val));
 												}}
-												className="w-24 text-right text-sm font-semibold text-ink bg-accent/50 border border-border rounded-md px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-mint placeholder:text-ink-3/50 placeholder:font-normal placeholder:text-xs"
+												onKeyDown={(e) => {
+													if (e.key === "Enter") e.currentTarget.blur();
+												}}
+												className="w-20 text-right text-sm font-semibold text-ink bg-accent/50 border border-border rounded-md px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-mint placeholder:text-ink-3/40 placeholder:font-normal"
 											/>
 										)}
 									</div>
