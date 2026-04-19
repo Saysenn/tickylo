@@ -130,6 +130,8 @@ export default function TicketDetailPage() {
 	// Timer state
 	const [timerElapsed, setTimerElapsed] = useState("00:00:00");
 
+	const [billableDraft, setBillableDraft] = useState("");
+
 
 	// ── Data fetching ────────────────────────────────────────────────────
 
@@ -191,6 +193,10 @@ export default function TicketDetailPage() {
 		const iv = setInterval(tick, 1000);
 		return () => clearInterval(iv);
 	}, [activeOnThis, activeEntry]);
+
+	useEffect(() => {
+		if (ticket?.billable_hours != null) setBillableDraft(String(ticket.billable_hours));
+	}, [ticket?.billable_hours]);
 
 	// ── Mutations ────────────────────────────────────────────────────────
 
@@ -256,6 +262,9 @@ export default function TicketDetailPage() {
 	// Complete first so the ticket lands on "completed", then stop the timer
 	// (timer stop would otherwise revert in_progress → assigned before completion)
 	const handleComplete = async () => {
+		if (isAssignee && billableDraft !== "") {
+			await updateBillable(parseFloat(billableDraft));
+		}
 		await completeTask();
 		if (activeOnThis) await stopTimer();
 	};
@@ -607,11 +616,11 @@ export default function TicketDetailPage() {
 												type="number"
 												min="0"
 												step="0.5"
-												defaultValue={ticket.billable_hours ?? ""}
+												value={billableDraft}
+												onChange={(e) => setBillableDraft(e.target.value)}
 												placeholder="— h"
-												onBlur={(e) => {
-													const val = e.target.value;
-													updateBillable(val === "" ? null : parseFloat(val));
+												onBlur={() => {
+													updateBillable(billableDraft === "" ? null : parseFloat(billableDraft));
 												}}
 												onKeyDown={(e) => {
 													if (e.key === "Enter") e.currentTarget.blur();
