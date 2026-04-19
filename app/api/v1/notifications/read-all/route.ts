@@ -11,8 +11,9 @@ export async function PATCH() {
 		const user = await requireUser();
 		if (!user) return errorResponse("Unauthorized", 401);
 
+		const orgId = user.app_metadata?.org_id as string | undefined;
 		const { count } = await prisma.notification.updateMany({
-			where: { user_id: user.id, read: false },
+			where: { user_id: user.id, read: false, ...(orgId ? { org_id: orgId } : {}) },
 			data: { read: true },
 		});
 

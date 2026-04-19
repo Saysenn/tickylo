@@ -3,7 +3,6 @@ import { z } from "zod";
 import { prisma } from "@/lib/infra/prisma";
 import { ok, errorResponse } from "@/lib/utils/response";
 import { requireUser } from "@/lib/auth/require-user";
-import { notifyAdmins } from "@/lib/utils/create-notification";
 
 const startSchema = z.object({
 	title: z.string().max(200).optional(),
@@ -128,14 +127,6 @@ export async function POST(request: NextRequest) {
 				]);
 			}
 		}
-
-		const name = (user.user_metadata?.name as string | undefined) ?? user.email ?? "An employee";
-		notifyAdmins({
-			type: "time_clock_in",
-			title: "Employee clocked in",
-			body: `${name} clocked in${title ? ` — working on "${title}"` : ""}.`,
-			link: "/dashboard/time-manager",
-		}).catch(() => {});
 
 		return ok(entry, 201);
 	} catch (err) {

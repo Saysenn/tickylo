@@ -19,8 +19,10 @@ export async function GET(request: NextRequest) {
 		const limit = Math.min(50, Math.max(1, Number(searchParams.get("limit") ?? 20)));
 		const unreadOnly = searchParams.get("unread_only") === "true";
 
+		const orgId = user.app_metadata?.org_id as string | undefined;
 		const where = {
 			user_id: user.id,
+			...(orgId ? { org_id: orgId } : {}),
 			...(unreadOnly ? { read: false } : {}),
 		};
 
@@ -32,7 +34,7 @@ export async function GET(request: NextRequest) {
 				take: limit,
 			}),
 			prisma.notification.count({ where }),
-			prisma.notification.count({ where: { user_id: user.id, read: false } }),
+			prisma.notification.count({ where: { user_id: user.id, read: false, ...(orgId ? { org_id: orgId } : {}) } }),
 		]);
 
 		return ok({

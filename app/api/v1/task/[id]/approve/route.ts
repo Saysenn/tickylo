@@ -25,25 +25,39 @@ export async function PATCH(
 
 		const adminName = (admin.user_metadata?.name as string | undefined) ?? admin.email ?? "Admin";
 
+		const assigneeId = task.created_by ?? null;
+		const now = new Date();
+
 		const [updated] = await prisma.$transaction([
-			prisma.task.update({ where: { id }, data: { status: "pending" } }),
+			prisma.task.update({
+				where: { id },
+				data: assigneeId
+					? { status: "assigned", user_id: assigneeId, assigned_at: now }
+					: { status: "pending" },
+			}),
 			prisma.taskComment.create({
 				data: {
 					task_id: id,
 					user_id: admin.id,
-					body: `Ticket approved by ${adminName} — now open for assignment.`,
+					body: assigneeId
+						? `Ticket approved by ${adminName} — assigned to the requester.`
+						: `Ticket approved by ${adminName} — now open for assignment.`,
 					is_system: true,
 				},
 			}),
 		]);
 
-		createNotification({
-			user_id: task.created_by,
-			type: "ticket_approved",
-			title: "Ticket approved",
-			body: `Your ticket "${task.title}" has been approved and is now active.`,
-			link: `/dashboard/tickets/${id}`,
-		}).catch(() => {});
+		if (task.created_by) {
+			createNotification({
+				user_id: task.created_by,
+				type: "ticket_approved",
+				title: "Ticket approved",
+				body: assigneeId
+					? `Your ticket "${task.title}" has been approved and assigned to you.`
+					: `Your ticket "${task.title}" has been approved and is now open.`,
+				link: `/dashboard/tickets/${id}`,
+			}).catch(() => {});
+		}
 
 		return ok(updated);
 	} catch (err) {

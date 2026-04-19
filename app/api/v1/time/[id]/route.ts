@@ -3,7 +3,6 @@ import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/infra/prisma";
 import { ok, errorResponse } from "@/lib/utils/response";
 import { z } from "zod";
-import { notifyAdmins } from "@/lib/utils/create-notification";
 import { formatDurationMs } from "@/lib/utils/format";
 import { ROLES } from "@/configs/rbac.config";
 
@@ -76,16 +75,6 @@ export async function PATCH(
 				]);
 			}
 		}
-
-		const name = user.user_metadata?.name ?? user.email ?? "An employee";
-		const durationMs = endTime.getTime() - entry.start_time.getTime();
-		const duration = formatDurationMs(durationMs);
-		notifyAdmins({
-			type: "time_clock_out",
-			title: "Employee clocked out",
-			body: `${name} clocked out after ${duration}${updated.title ? ` — "${updated.title}"` : ""}.`,
-			link: "/dashboard/time-manager",
-		}).catch(() => {});
 
 		return ok(updated);
 	} catch (err) {
