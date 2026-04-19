@@ -31,11 +31,11 @@ function CustomTooltip({
 	label?: string;
 }) {
 	if (!active || !payload?.length) return null;
-	const ms = payload[0].value ?? 0;
+	const totalMs = (payload[0] as any)?.payload?.totalMs ?? 0;
 	return (
 		<div className="bg-background border border-border text-[11px] font-medium px-2.5 py-1.5 rounded-lg shadow-md space-y-0.5">
 			<p className="text-ink-3">{label}</p>
-			<p className="text-ink font-semibold">{ms > 0 ? formatDurationMs(ms) : "No sessions"}</p>
+			<p className="text-ink font-semibold">{totalMs > 0 ? formatDurationMs(totalMs) : "No sessions"}</p>
 		</div>
 	);
 }

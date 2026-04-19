@@ -177,6 +177,7 @@ export default function TicketDetailPage() {
 	});
 
 	const isDone           = DONE_STATUSES.includes(ticket?.status ?? "");
+	const needsApproval    = ticket?.status === "needs_approval";
 	const activeOnThis     = activeEntry?.ticket_id === id;
 	const activeOnOther    = !!activeEntry && !activeOnThis;
 
@@ -608,10 +609,12 @@ export default function TicketDetailPage() {
 
 					{/* Track time card — employees only, disabled on done or stale tickets */}
 					{!isAdmin && !isStale && (
-						<div className={cn("rounded-xl border bg-background shadow-sm p-5", isDone && "opacity-60")}>
+						<div className={cn("rounded-xl border bg-background shadow-sm p-5", (isDone || needsApproval) && "opacity-60")}>
 							<p className="text-[10px] font-semibold text-ink-3 uppercase tracking-widest mb-3">Track Time</p>
 
-							{isDone ? (
+							{needsApproval ? (
+								<p className="text-xs text-ink-3">Timer unavailable — ticket is pending approval.</p>
+							) : isDone ? (
 								<p className="text-xs text-ink-3">Timer unavailable — ticket is {STATUS_LABEL[ticket.status]?.toLowerCase()}.</p>
 							) : activeOnThis ? (
 								<div className="space-y-3">
@@ -633,7 +636,7 @@ export default function TicketDetailPage() {
 										Stop timer
 									</Button>
 								</div>
-							) : activeOnOther ? (
+							) : activeOnOther && !needsApproval ? (
 								<div className="space-y-2.5">
 									<div className="flex items-center gap-1.5 text-xs text-ink-3">
 										<Timer className="w-3.5 h-3.5 shrink-0" />

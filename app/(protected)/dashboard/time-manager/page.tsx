@@ -16,6 +16,7 @@ import {
 } from "@/lib/utils/format";
 import { useAppSelector } from "@/store/hooks";
 import { TeamActivityCards } from "@/components/dashboard/reports/team-activity-cards";
+import { EmployeeSessionLog } from "@/components/dashboard/time-manager/employee-session-log";
 
 const DATE_PRESETS = [
 	{ label: "Today",        from: () => todayDateStr(),            to: () => todayDateStr() },
@@ -148,6 +149,7 @@ export default function TimeManagerPage() {
 				<div className="space-y-4">
 					<TimeSummaryCards summary={summary} rangeLabel={getPresetLabel(from, to)} />
 					<TimeDayBars days={summary.days} />
+					<EmployeeSessionLog userId={selectedEmployee} from={from} to={to} />
 				</div>
 			) : null}
 		</div>
