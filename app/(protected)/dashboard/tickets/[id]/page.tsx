@@ -130,6 +130,7 @@ export default function TicketDetailPage() {
 	// Timer state
 	const [timerElapsed, setTimerElapsed] = useState("00:00:00");
 
+
 	// ── Data fetching ────────────────────────────────────────────────────
 
 	const { data: ticket, isLoading, isError } = useQuery<TicketDetail>({
@@ -225,6 +226,7 @@ export default function TicketDetailPage() {
 		onSuccess: () => { invalidate(); setRejectOpen(false); setRejectReason(""); },
 	});
 	const { mutateAsync: staleTicket,   isPending: isStaling }    = useMutation({ mutationFn: () => APIService.tasks.stale(id),   onSuccess: invalidate });
+	const { mutateAsync: updateBillable } = useMutation({ mutationFn: (h: number | null) => APIService.tasks.updateBillable(id, h), onSuccess: invalidate });
 	const { mutateAsync: adminHold,      isPending: isAdminHolding } = useMutation({
 		mutationFn: () => APIService.tasks.hold(id),
 		onSuccess: async () => { invalidate(); await refetchTimer(); },
@@ -520,7 +522,12 @@ export default function TicketDetailPage() {
 
 								{ticket.client_name && (
 									<MetaRow icon={Building2} label="Client">
-										<span className="font-medium text-ink">{ticket.client_name}</span>
+										<div className="space-y-0.5">
+											<span className="font-medium text-ink">{ticket.client_name}</span>
+											{(ticket as any).client_email && (
+												<p className="text-xs text-ink-3">{(ticket as any).client_email}</p>
+											)}
+										</div>
 									</MetaRow>
 								)}
 
@@ -572,7 +579,7 @@ export default function TicketDetailPage() {
 						</div>
 
 						{/* Hours block */}
-						{(ticket.estimated_hours || ticket.billable_hours != null) && (
+						{(ticket.estimated_hours || ticket.billable_hours != null || isAssignee) && (
 							<div className="px-5 py-4">
 								<p className="text-[10px] font-semibold text-ink-3 uppercase tracking-widest mb-3">Hours</p>
 								<div className="space-y-2.5">
@@ -585,15 +592,31 @@ export default function TicketDetailPage() {
 											<span className="text-sm font-semibold text-ink">{ticket.estimated_hours}h</span>
 										</div>
 									)}
-									{ticket.billable_hours != null && (
-										<div className="flex items-center justify-between">
-											<div className="flex items-center gap-2 text-sm text-ink-3">
-												<DollarSign className="w-3.5 h-3.5" />
-												Billable
-											</div>
-											<span className="text-sm font-semibold text-ink">{ticket.billable_hours}h</span>
+									{/* Billable hours — editable by assignee */}
+									<div className="flex items-center justify-between">
+										<div className="flex items-center gap-2 text-sm text-ink-3">
+											<DollarSign className="w-3.5 h-3.5" />
+											Billable
 										</div>
-									)}
+										{isAdmin || !isAssignee ? (
+											<span className="text-sm font-semibold text-ink">
+												{ticket.billable_hours != null ? `${ticket.billable_hours}h` : <span className="text-ink-3 font-normal italic text-xs">Not set</span>}
+											</span>
+										) : (
+											<input
+												type="number"
+												min="0"
+												step="0.5"
+												defaultValue={ticket.billable_hours ?? ""}
+												placeholder="Enter hours"
+												onBlur={(e) => {
+													const val = e.target.value;
+													updateBillable(val === "" ? null : parseFloat(val));
+												}}
+												className="w-24 text-right text-sm font-semibold text-ink bg-accent/50 border border-border rounded-md px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-mint placeholder:text-ink-3/50 placeholder:font-normal placeholder:text-xs"
+											/>
+										)}
+									</div>
 								</div>
 							</div>
 						)}
@@ -939,6 +962,7 @@ function EditTicketDialog({ ticket, open, onOpenChange, onSave }: EditTicketDial
 	const [priority,           setPriority]           = useState<string>(ticket.priority ?? "medium");
 	const [dueDate,            setDueDate]            = useState(ticket.due_date ? ticket.due_date.slice(0, 10) : "");
 	const [clientName,         setClientName]         = useState(ticket.client_name ?? "");
+	const [clientEmail,        setClientEmail]        = useState((ticket as any).client_email ?? "");
 	const [estimatedHours,     setEstimatedHours]     = useState(ticket.estimated_hours != null ? String(ticket.estimated_hours) : "");
 	const [billableHours,      setBillableHours]      = useState(ticket.billable_hours  != null ? String(ticket.billable_hours)  : "");
 	const [implementationPlan, setImplementationPlan] = useState(ticket.implementation_plan ?? "");
@@ -961,6 +985,7 @@ function EditTicketDialog({ ticket, open, onOpenChange, onSave }: EditTicketDial
 				priority,
 				due_date: dueDate || null,
 				client_name: clientName.trim() || null,
+				client_email: clientEmail.trim() || null,
 				estimated_hours: estimatedHours ? parseFloat(estimatedHours) : null,
 				billable_hours:  billableHours  ? parseFloat(billableHours)  : null,
 				implementation_plan: implementationPlan.trim() || null,
@@ -1045,9 +1070,13 @@ function EditTicketDialog({ ticket, open, onOpenChange, onSave }: EditTicketDial
 							<input id="edit-due" type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} className={inputCls} />
 						</div>
 						<div className="space-y-1.5">
-							<Label htmlFor="edit-client">{optLabel("Client")}</Label>
+							<Label htmlFor="edit-client">{optLabel("Client name")}</Label>
 							<input id="edit-client" type="text" value={clientName} onChange={(e) => setClientName(e.target.value)} maxLength={100} placeholder="e.g. Acme Corp" className={inputCls} />
 						</div>
+					</div>
+					<div className="space-y-1.5">
+						<Label htmlFor="edit-client-email">{optLabel("Client email")}</Label>
+						<input id="edit-client-email" type="email" value={clientEmail} onChange={(e) => setClientEmail(e.target.value)} maxLength={200} placeholder="client@example.com" className={inputCls} />
 					</div>
 					<div className="grid grid-cols-2 gap-4">
 						<div className="space-y-1.5">

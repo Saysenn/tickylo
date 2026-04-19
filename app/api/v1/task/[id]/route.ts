@@ -48,6 +48,7 @@ const adminUpdateSchema = z.object({
 	due_date: z.coerce.date().nullable().optional(),
 	ticket_type: z.enum(["internal_task", "request", "incident", "change"]).optional(),
 	client_name: z.string().max(200).nullable().optional(),
+	client_email: z.string().email().max(200).nullable().optional(),
 	estimated_hours: z.number().positive().nullable().optional(),
 	billable_hours: z.number().nonnegative().nullable().optional(),
 	implementation_plan: z.string().max(5000).nullable().optional(),

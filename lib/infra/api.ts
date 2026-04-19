@@ -158,6 +158,8 @@ class APIService {
 			axiosService.patch(`${apiVersion}/ticket/${id}/stale`, {}),
 		requestTransfer: (id: string, requested_to?: string) =>
 			axiosService.post(`${apiVersion}/ticket/${id}/request-transfer`, { requested_to }),
+		updateBillable: (id: string, billable_hours: number | null) =>
+			axiosService.patch(`${apiVersion}/ticket/${id}/billable`, { billable_hours }),
 		comments: {
 			list: (taskId: string) =>
 				axiosService.get(`${apiVersion}/ticket/${taskId}/comments`),

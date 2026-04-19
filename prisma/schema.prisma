@@ -203,6 +203,7 @@ model Task {
   // Ticket fields — type is a free string keyed to TicketTypeConfig.key
   ticket_type         String @default("internal_task")
   client_name         String?
+  client_email        String?
   estimated_hours     Float?
   billable_hours      Float?
   implementation_plan String?
