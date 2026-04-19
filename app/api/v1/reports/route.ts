@@ -13,6 +13,8 @@ export async function GET() {
 
 		const now = new Date();
 		const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+		const orgId = admin.app_metadata?.org_id as string | undefined;
+		const orgFilter = orgId ? { org_id: orgId } : {};
 
 		const [
 			leaveCounts,
@@ -24,16 +26,19 @@ export async function GET() {
 			// Leave counts by status
 			prisma.leave.groupBy({
 				by: ["status"],
+				where: orgFilter,
 				_count: { id: true },
 			}),
 			// Task counts by status
 			prisma.task.groupBy({
 				by: ["status"],
+				where: orgFilter,
 				_count: { id: true },
 			}),
-			// Total time worked this month (all users)
+			// Total time worked this month (all users in org)
 			prisma.timeEntry.findMany({
 				where: {
+					...orgFilter,
 					start_time: { gte: startOfMonth },
 					end_time: { not: null },
 				},
@@ -41,12 +46,14 @@ export async function GET() {
 			}),
 			// Recent leave requests (last 5)
 			prisma.leave.findMany({
+				where: orgFilter,
 				orderBy: { created_at: "desc" },
 				take: 5,
 				include: { user: { select: { id: true, name: true, email: true } } },
 			}),
 			// Recent tasks (last 5)
 			prisma.task.findMany({
+				where: orgFilter,
 				orderBy: { created_at: "desc" },
 				take: 5,
 				include: {

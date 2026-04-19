@@ -44,14 +44,19 @@ export async function GET(request: NextRequest) {
 			return errorResponse("Invalid date range", 400);
 		}
 
-		// Fetch all users in the system
+		const orgId = admin.app_metadata?.org_id as string | undefined;
+		const orgFilter = orgId ? { org_id: orgId } : {};
+
+		// Fetch all users in the org
 		const users = await prisma.user.findMany({
+			where: orgFilter,
 			select: { id: true, name: true, email: true },
 		});
 
-		// Fetch all completed time entries in the range
+		// Fetch all completed time entries in the range within the org
 		const entries = await prisma.timeEntry.findMany({
 			where: {
+				...orgFilter,
 				start_time: { gte: start },
 				end_time: { lte: end, not: null },
 			},

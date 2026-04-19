@@ -2,11 +2,12 @@ import { createMiddlewareClient } from "@/lib/supabase/middleware";
 import { NextRequest, NextResponse } from "next/server";
 import {
 	PROTECTED_ROUTES,
+	SUPER_ADMIN_ROUTES,
 	AUTH_ROUTES,
 	MFA_ROUTE,
 } from "@/configs/auth.config";
 import { checkRoutePermission } from "@/lib/middlewares/rbac.middleware";
-import { DEFAULT_ROLE, type Role } from "@/configs/rbac.config";
+import { DEFAULT_ROLE, ROLES, type Role } from "@/configs/rbac.config";
 
 export async function AuthMiddleware(request: NextRequest) {
 	const { supabase, supabaseResponse } = createMiddlewareClient(request);
@@ -27,12 +28,22 @@ export async function AuthMiddleware(request: NextRequest) {
 	}
 
 	if (!user) {
-		// Unauthenticated: block protected routes and MFA page
+		// Unauthenticated: block protected + super-admin routes and MFA page
 		if (
 			PROTECTED_ROUTES.some((r) => pathname.startsWith(r)) ||
+			SUPER_ADMIN_ROUTES.some((r) => pathname.startsWith(r)) ||
 			pathname.startsWith(MFA_ROUTE)
 		) {
 			return NextResponse.redirect(new URL("/login", request.url));
+		}
+		return supabaseResponse;
+	}
+
+	// Super-admin routes — only accessible to super_admin role
+	if (SUPER_ADMIN_ROUTES.some((r) => pathname.startsWith(r))) {
+		const role = user.app_metadata?.role as Role;
+		if (role !== ROLES.SUPER_ADMIN) {
+			return NextResponse.redirect(new URL("/dashboard", request.url));
 		}
 		return supabaseResponse;
 	}
@@ -55,11 +66,19 @@ export async function AuthMiddleware(request: NextRequest) {
 		AUTH_ROUTES.some((r) => pathname.startsWith(r)) ||
 		pathname.startsWith(MFA_ROUTE)
 	) {
-		return NextResponse.redirect(new URL("/dashboard", request.url));
+		const role = (user.app_metadata?.role ?? DEFAULT_ROLE) as Role;
+		const dest = role === ROLES.SUPER_ADMIN ? "/super-admin/dashboard" : "/dashboard";
+		return NextResponse.redirect(new URL(dest, request.url));
 	}
 
 	// RBAC — reads role from JWT, zero DB calls
 	const role = (user.app_metadata?.role ?? DEFAULT_ROLE) as Role;
+
+	// Super admin shouldn't access the regular dashboard
+	if (role === ROLES.SUPER_ADMIN && PROTECTED_ROUTES.some((r) => pathname.startsWith(r))) {
+		return NextResponse.redirect(new URL("/super-admin/dashboard", request.url));
+	}
+
 	const rbacResponse = checkRoutePermission(pathname, role, request);
 	if (rbacResponse) return rbacResponse;
 

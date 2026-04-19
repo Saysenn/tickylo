@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { formatInitials, formatDuration } from "@/lib/utils/format";
 import { cn } from "@/lib/utils/cn";
-import { UserRound } from "lucide-react";
+import { UserRound, TicketCheck, Timer } from "lucide-react";
 
 interface ClockedInUser {
 	id: string;
@@ -12,6 +12,7 @@ interface ClockedInUser {
 	email: string;
 	start_time: string;
 	active_task_title: string | null;
+	entry_title: string | null;
 }
 
 interface TeamActivityWidgetProps {
@@ -85,14 +86,20 @@ export function TeamActivityWidget({ users }: TeamActivityWidgetProps) {
 										{displayName}
 									</p>
 									{u.active_task_title ? (
-										<p className="text-xs text-ink-3 truncate">
-											Working on{" "}
-											<span className="font-medium text-ink-2">
-												{u.active_task_title}
-											</span>
+										<p className="text-xs text-ink-3 truncate flex items-center gap-1">
+											<TicketCheck className="w-3 h-3 shrink-0 text-mint" />
+											<span className="font-medium text-ink-2 truncate">{u.active_task_title}</span>
+										</p>
+									) : u.entry_title ? (
+										<p className="text-xs text-ink-3 truncate flex items-center gap-1">
+											<Timer className="w-3 h-3 shrink-0 text-ink-3" />
+											<span className="truncate">{u.entry_title}</span>
 										</p>
 									) : (
-										<p className="text-xs text-ink-3">No active task</p>
+										<p className="text-xs text-ink-3 flex items-center gap-1">
+											<Timer className="w-3 h-3 shrink-0 text-ink-3" />
+											General timer
+										</p>
 									)}
 								</div>
 

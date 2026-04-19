@@ -14,6 +14,8 @@ export async function GET(_req: NextRequest) {
 		if (!user) return errorResponse("Unauthorized", 401);
 
 		const isAdmin = (user.app_metadata?.role as string) === ROLES.ADMIN;
+		const orgId = user.app_metadata?.org_id as string | undefined;
+		const orgFilter = orgId ? { org_id: orgId } : {};
 
 		// Last 7 days date range.
 		// Use the client's local date (passed as ?date=YYYY-MM-DD) so the window
@@ -33,26 +35,28 @@ export async function GET(_req: NextRequest) {
 				recentTasks,
 				weeklyEntries,
 			] = await Promise.all([
-				// Total employee count (non-admin users)
-				prisma.user.count({ where: { role: "employee" } }),
-				// Who's currently clocked in
+				// Total employee count (non-admin users in org)
+				prisma.user.count({ where: { role: "employee", ...orgFilter } }),
+				// Who's currently clocked in (in org)
 				prisma.timeEntry.findMany({
-					where: { end_time: null },
+					where: { ...orgFilter, end_time: null },
 					include: { user: { select: { id: true, name: true, email: true } } },
 				}),
-				// Task counts by status
-				prisma.task.groupBy({ by: ["status"], _count: { id: true } }),
-				// Pending leave count
-				prisma.leave.count({ where: { status: "pending" } }),
-				// Recent 5 tasks
+				// Task counts by status (in org)
+				prisma.task.groupBy({ by: ["status"], where: orgFilter, _count: { id: true } }),
+				// Pending leave count (in org)
+				prisma.leave.count({ where: { status: "pending", ...orgFilter } }),
+				// Recent 5 tasks (in org)
 				prisma.task.findMany({
+					where: orgFilter,
 					orderBy: { created_at: "desc" },
 					take: 5,
 					include: { assignee: { select: { id: true, name: true, email: true } } },
 				}),
-				// Weekly time entries for all users
+				// Weekly time entries for all users in org
 				prisma.timeEntry.findMany({
 					where: {
+						...orgFilter,
 						start_time: { gte: sevenDaysAgo, lte: today },
 						end_time: { not: null },
 					},
@@ -98,6 +102,7 @@ export async function GET(_req: NextRequest) {
 						email: e.user.email,
 						start_time: e.start_time.toISOString(),
 						active_task_title: activeTaskByUser[e.user_id] ?? null,
+						entry_title: e.title ?? null,
 					})),
 				},
 				tasks: {

@@ -65,8 +65,10 @@ export async function GET(request: NextRequest) {
 		const userIdParam = searchParams.get("user_id");
 		const targetUserId = isAdmin && userIdParam ? userIdParam : user.id;
 
+		const orgId = user.app_metadata?.org_id as string | undefined;
 		const entries = await prisma.timeEntry.findMany({
 			where: {
+				...(orgId ? { org_id: orgId } : {}),
 				user_id: targetUserId,
 				start_time: { gte: start },
 				end_time: { lte: end, not: null },

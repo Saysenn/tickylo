@@ -17,9 +17,12 @@ export async function GET(request: NextRequest) {
 		const from = fromParam ? new Date(fromParam + "T00:00:00") : new Date(new Date().getFullYear(), new Date().getMonth(), 1);
 		const to = toParam ? new Date(toParam + "T23:59:59.999") : new Date();
 
-		// Fetch all employees
+		const orgId = admin.app_metadata?.org_id as string | undefined;
+		const orgFilter = orgId ? { org_id: orgId } : {};
+
+		// Fetch all employees in this org
 		const employees = await prisma.user.findMany({
-			where: { role: "employee" },
+			where: { role: "employee", ...orgFilter },
 			select: { id: true, name: true, email: true },
 			orderBy: { name: "asc" },
 		});
@@ -32,6 +35,7 @@ export async function GET(request: NextRequest) {
 		const [tasks, timeEntries] = await Promise.all([
 			prisma.task.findMany({
 				where: {
+					...orgFilter,
 					user_id: { in: userIds },
 					created_at: { gte: from, lte: to },
 				},

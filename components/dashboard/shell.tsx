@@ -7,10 +7,11 @@ import type { UserProfile } from "@/types";
 
 interface DashboardShellProps {
   user: UserProfile;
+  orgName?: string | null;
   children: React.ReactNode;
 }
 
-export function DashboardShell({ user, children }: DashboardShellProps) {
+export function DashboardShell({ user, orgName, children }: DashboardShellProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
@@ -28,6 +29,7 @@ export function DashboardShell({ user, children }: DashboardShellProps) {
       <div className="flex flex-col flex-1 min-w-0">
         <Header
           user={user}
+          orgName={orgName}
           onMenuClick={() => setSidebarOpen((prev) => !prev)}
           sidebarOpen={sidebarOpen}
         />

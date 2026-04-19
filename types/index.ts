@@ -7,6 +7,7 @@ export interface UserProfile {
 	avatar_url: string | null;
 	twoFactorEnabled: boolean;
 	role: Role;
+	org_id: string | null;
 }
 
 export interface AuthState {

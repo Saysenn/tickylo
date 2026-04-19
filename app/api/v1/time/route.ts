@@ -36,7 +36,9 @@ export async function GET(request: NextRequest) {
 		const localMidnightUTC = (d: string) =>
 			new Date(new Date(d + "T00:00:00Z").getTime() + tzOffset * 60000);
 
+		const orgId = user.app_metadata?.org_id as string | undefined;
 		const where = {
+			...(orgId ? { org_id: orgId } : {}),
 			user_id: filterUserId ?? user.id,
 			end_time: { not: null as null },
 			...(fromParam && toParam
@@ -98,8 +100,10 @@ export async function POST(request: NextRequest) {
 			if (!resolvedTitle) resolvedTitle = ticket?.title ?? null;
 		}
 
+		const orgId = user.app_metadata?.org_id as string | undefined;
 		const entry = await prisma.timeEntry.create({
 			data: {
+				...(orgId ? { org_id: orgId } : {}),
 				user_id: user.id,
 				start_time: new Date(),
 				title: resolvedTitle,

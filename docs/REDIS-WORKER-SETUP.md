@@ -137,6 +137,8 @@ Redis is already localhost-only from step 3, but this adds an extra layer.
 **On Vercel:**
 ```env
 REDIS_URL=redis://:YOUR_STRONG_PASSWORD@10.0.0.2:6379
+RESEND_API_KEY=re_...
+EMAIL_FROM=PerformAI <noreply@yourdomain.com>
 ```
 
 **On VPS worker (.env):**

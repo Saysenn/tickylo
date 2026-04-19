@@ -11,6 +11,55 @@ datasource db {
   provider = "postgresql"
 }
 
+// ─── Multi-tenancy ───────────────────────────────────────────────────────────
+
+model Organization {
+  id            String   @id @default(cuid())
+  name          String
+  slug          String   @unique
+  logo_url      String?
+  org_join_code String   @unique @default(cuid())
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+
+  users         User[]
+  join_requests UserJoinRequest[]
+
+  @@map("organizations")
+}
+
+model OrganizationApplication {
+  id           String    @id @default(cuid())
+  company_name String
+  admin_name   String
+  admin_email  String    @unique
+  reason       String?
+  status       String    @default("pending") // pending | approved | rejected
+  reject_reason String?
+  reviewed_at  DateTime?
+  created_at   DateTime  @default(now())
+
+  @@index([status])
+  @@map("organization_applications")
+}
+
+model UserJoinRequest {
+  id         String   @id @default(cuid())
+  org_id     String
+  user_id    String
+  status     String   @default("pending") // pending | approved | rejected
+  created_at DateTime @default(now())
+
+  org  Organization @relation(fields: [org_id], references: [id], onDelete: Cascade)
+  user User         @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([org_id, user_id])
+  @@index([org_id, status])
+  @@map("user_join_requests")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 enum TaskStatus {
   needs_approval
   pending
@@ -49,6 +98,7 @@ enum LeaveStatus {
 // id = auth.users.id (UUID). Row is created after a user signs up.
 model User {
   id            String  @id
+  org_id        String?
   department_id String?
   email         String  @unique
   name          String?
@@ -64,25 +114,33 @@ model User {
   leave             Leave[]
   taskWatchers      TaskWatcher[]
   commentReactions  CommentReaction[]
+  joinRequests      UserJoinRequest[]
 
-  created_at DateTime    @default(now())
-  updated_at DateTime    @updatedAt
-  department Department? @relation(fields: [department_id], references: [id])
+  created_at DateTime     @default(now())
+  updated_at DateTime     @updatedAt
+  org        Organization? @relation(fields: [org_id], references: [id], onDelete: SetNull)
+  department Department?  @relation(fields: [department_id], references: [id])
 
+  @@index([org_id])
   @@index([department_id])
   @@map("users")
 }
 
 model Department {
-  id    String @id @default(cuid())
-  name  String @unique
+  id     String  @id @default(cuid())
+  org_id String?
+  name   String
+
   users User[]
 
-  @@index([id])
+  @@unique([org_id, name])
+  @@index([org_id])
+  @@map("departments")
 }
 
 model TimeEntry {
   id          String    @id @default(cuid())
+  org_id      String?
   user_id     String
   ticket_id   String?
   start_time  DateTime
@@ -96,6 +154,7 @@ model TimeEntry {
   user   User  @relation(fields: [user_id], references: [id], onDelete: Cascade)
   ticket Task? @relation("TicketTimeEntries", fields: [ticket_id], references: [id], onDelete: SetNull)
 
+  @@index([org_id])
   @@index([user_id])
   @@index([ticket_id])
   @@index([start_time])
@@ -129,6 +188,7 @@ model UserMetaData {
 
 model Task {
   id           String        @id @default(cuid())
+  org_id       String?
   created_by   String
   user_id      String?       // assignee; null = unassigned pool
   title        String
@@ -162,6 +222,7 @@ model Task {
   relatedFrom   Task[]        @relation("RelatedTickets")
   timeEntries   TimeEntry[]   @relation("TicketTimeEntries")
 
+  @@index([org_id])
   @@index([created_by])
   @@index([user_id])
   @@index([status])
@@ -236,6 +297,7 @@ model TaskSubtask {
 
 model Leave {
   id      String      @id @default(cuid())
+  org_id  String?
   user_id String
   start   DateTime
   end     DateTime
@@ -248,6 +310,7 @@ model Leave {
 
   user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
+  @@index([org_id])
   @@index([user_id])
   @@index([status])
   @@index([start])
@@ -255,6 +318,7 @@ model Leave {
 
 model Notification {
   id         String   @id @default(cuid())
+  org_id     String?
   user_id    String
   type       String   // task_assigned | task_reassigned | task_claimed | task_completed | transfer_requested | comment_added
   title      String
@@ -273,7 +337,8 @@ model Notification {
 
 model TicketTypeConfig {
   id         String   @id @default(cuid())
-  key        String   @unique  // stored in Task.ticket_type; e.g. "internal_task", "change"
+  org_id     String?
+  key        String            // stored in Task.ticket_type; e.g. "internal_task", "change"
   name       String            // "Internal Task", "Request for Change"
   prefix     String            // "TASK", "RFC"
   color      String   @default("gray") // "gray" | "blue" | "red" | "orange" | "purple" | "green" | "yellow"
@@ -282,6 +347,7 @@ model TicketTypeConfig {
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
-  @@index([active])
+  @@unique([org_id, key])
+  @@index([org_id, active])
   @@map("ticket_type_configs")
 }

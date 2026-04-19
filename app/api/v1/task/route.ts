@@ -96,9 +96,13 @@ export async function GET(request: NextRequest) {
 			? assigneeFilter === "unassigned" ? { user_id: null } : { user_id: assigneeFilter }
 			: {};
 
+		const orgId = user.app_metadata?.org_id as string | undefined;
+		const orgFilter = orgId ? { org_id: orgId } : {};
+
 		const where: any = isAdmin
-			? { ...statusQueryFilter, ...overdueFilter, ...dueFilter_, ...searchFilter, ...typeFilter_, ...priorityFilter_, ...assigneeFilter_ }
+			? { ...orgFilter, ...statusQueryFilter, ...overdueFilter, ...dueFilter_, ...searchFilter, ...typeFilter_, ...priorityFilter_, ...assigneeFilter_ }
 			: {
+					...orgFilter,
 					...employeeVisibilityFilter,
 					...statusQueryFilter,
 					...overdueFilter,
@@ -158,9 +162,11 @@ export async function POST(request: NextRequest) {
 			? "needs_approval"
 			: assigned_to ? "assigned" : "pending";
 
+		const orgId = user.app_metadata?.org_id as string | undefined;
 		const entry = await prisma.task.create({
 			data: {
 				...rest,
+				org_id: orgId,
 				created_by: user.id,
 				user_id: assigned_to ?? null,
 				status,

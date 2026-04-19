@@ -12,6 +12,7 @@ const TimeTrackerButton = dynamic(
 
 interface HeaderProps {
   user: UserProfile;
+  orgName?: string | null;
   title?: string;
   onMenuClick?: () => void;
   sidebarOpen?: boolean;
@@ -39,7 +40,7 @@ function HamburgerIcon({ isOpen }: { isOpen: boolean }) {
   );
 }
 
-export function Header({ user, title, onMenuClick, sidebarOpen = false }: HeaderProps) {
+export function Header({ user, orgName, title, onMenuClick, sidebarOpen = false }: HeaderProps) {
   return (
     <header className="h-14 shrink-0 flex items-center justify-between px-4 md:px-6 glass-header sticky top-0 z-30">
       <div className="flex items-center gap-3">
@@ -52,7 +53,7 @@ export function Header({ user, title, onMenuClick, sidebarOpen = false }: Header
           <HamburgerIcon isOpen={sidebarOpen} />
         </button>
 
-        {title && (
+{title && (
           <h1 className="text-sm font-semibold text-ink">{title}</h1>
         )}
       </div>

@@ -71,8 +71,8 @@ export async function POST(request: NextRequest) {
 
 		const { name } = validated.data;
 
-		// Prevent duplicate department names
-		const existing = await prisma.department.findUnique({
+		// Prevent duplicate department names within the same org
+		const existing = await prisma.department.findFirst({
 			where: { name },
 		});
 

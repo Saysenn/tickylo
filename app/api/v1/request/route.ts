@@ -32,11 +32,13 @@ export async function GET(request: NextRequest) {
 		const skip = (page - 1) * limit;
 
 		const isAdmin = user.app_metadata?.role === ROLES.ADMIN;
+		const orgId = user.app_metadata?.org_id as string | undefined;
+		const orgFilter = orgId ? { org_id: orgId } : {};
 		const statusFilter = searchParams.get("status");
 
 		const where: any = isAdmin
-			? statusFilter ? { status: statusFilter } : {}
-			: { user_id: user.id, ...(statusFilter ? { status: statusFilter } : {}) };
+			? { ...orgFilter, ...(statusFilter ? { status: statusFilter } : {}) }
+			: { ...orgFilter, user_id: user.id, ...(statusFilter ? { status: statusFilter } : {}) };
 
 		const [leaves, total] = await Promise.all([
 			prisma.leave.findMany({
@@ -86,8 +88,10 @@ export async function POST(request: NextRequest) {
 			return errorResponse("End date must be after start date", 400);
 		}
 
+		const orgId = user.app_metadata?.org_id as string | undefined;
 		const leave = await prisma.leave.create({
 			data: {
+				...(orgId ? { org_id: orgId } : {}),
 				user_id: user.id,
 				start: startDate,
 				end: endDate,

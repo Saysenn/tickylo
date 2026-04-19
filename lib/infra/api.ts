@@ -274,6 +274,30 @@ class APIService {
 		list: (from: string, to: string) =>
 			axiosService.get(`${apiVersion}/performance`, { from, to }),
 	};
+
+	// ---------------------------------------------------------------------------
+	// Super Admin
+	// ---------------------------------------------------------------------------
+	public superAdmin = {
+		getApplications: (status: string) =>
+			axiosService.get(`/super-admin/applications`, { status }),
+		approveApplication: (id: string) =>
+			axiosService.post(`/super-admin/applications/${id}/approve`, {}),
+		rejectApplication: (id: string, reason: string) =>
+			axiosService.post(`/super-admin/applications/${id}/reject`, { reason }),
+	};
+
+	// ---------------------------------------------------------------------------
+	// Organization Apply / Join (public)
+	// ---------------------------------------------------------------------------
+	public org = {
+		apply: (data: { company_name: string; admin_name: string; admin_email: string; password: string; reason?: string }) =>
+			axiosService.post(`/auth/apply`, data),
+		checkJoinCode: (code: string) =>
+			axiosService.get(`/auth/join/check`, { code }),
+		join: (data: { org_join_code: string; name: string; email: string; password: string }) =>
+			axiosService.post(`/auth/join`, data),
+	};
 }
 
 export default APIService.getInstance();

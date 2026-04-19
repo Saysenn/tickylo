@@ -4,19 +4,22 @@ import { ok, errorResponse } from "@/lib/utils/response";
 import { ROLES, DEFAULT_ROLE, type Role } from "@/configs/rbac.config";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/auth/require-admin";
+import { prisma } from "@/lib/infra/prisma";
 
 const createEmployeeSchema = z.object({
 	name: z.string().min(2).max(100),
 	email: z.string().email(),
 	password: z.string().min(8),
-	role: z.enum([ROLES.ADMIN, ROLES.EMPLOYEE]).default(DEFAULT_ROLE),
+	role: z.enum([ROLES.ADMIN, ROLES.EMPLOYEE]).default(ROLES.EMPLOYEE),
 });
 
-// GET /api/v1/employees?page=1&limit=10 — paginated user list
+// GET /api/v1/employees?page=1&limit=10 — paginated user list scoped to org
 export async function GET(request: NextRequest) {
 	try {
 		const caller = await requireAdmin();
 		if (!caller) return errorResponse("Forbidden", 403);
+
+		const orgId = caller.app_metadata?.org_id as string | undefined;
 
 		const { searchParams } = new URL(request.url);
 		const page = Math.max(1, parseInt(searchParams.get("page") ?? "1", 10));
@@ -24,24 +27,32 @@ export async function GET(request: NextRequest) {
 			100,
 			Math.max(1, parseInt(searchParams.get("limit") ?? "10", 10)),
 		);
+		const skip = (page - 1) * perPage;
 
-		const admin = createAdminClient();
-		const { data, error } = await admin.auth.admin.listUsers({ page, perPage });
-		if (error) return errorResponse(error.message, 500);
+		// Use Prisma to scope by org_id (Supabase admin.listUsers has no org filter)
+		const [orgUsers, total] = await Promise.all([
+			prisma.user.findMany({
+				where: orgId ? { org_id: orgId } : {},
+				select: { id: true, email: true, name: true, avatar_url: true, role: true, created_at: true },
+				orderBy: { created_at: "desc" },
+				take: perPage,
+				skip,
+			}),
+			prisma.user.count({ where: orgId ? { org_id: orgId } : {} }),
+		]);
 
-		const employees = data.users.map((u) => ({
-			id: u.id,
-			email: u.email ?? "",
-			name: (u.user_metadata?.full_name ?? u.user_metadata?.name ?? null) as
-				| string
-				| null,
-			avatar_url: (u.user_metadata?.avatar_url ?? null) as string | null,
-			role: (u.app_metadata?.role ?? DEFAULT_ROLE) as Role,
-			created_at: u.created_at,
-			last_sign_in_at: u.last_sign_in_at ?? null,
+		// Augment with Supabase last_sign_in_at
+		const supabase = createAdminClient();
+		const { data: authData } = await supabase.auth.admin.listUsers({ page: 1, perPage: 1000 });
+		const authMap = new Map(authData?.users.map((u) => [u.id, u]) ?? []);
+
+		const employees = orgUsers.map((u) => ({
+			...u,
+			role: (u.role ?? DEFAULT_ROLE) as Role,
+			last_sign_in_at: authMap.get(u.id)?.last_sign_in_at ?? null,
 		}));
 
-		return ok({ data: employees, page, totalPages: data.lastPage });
+		return ok({ data: employees, page, totalPages: Math.ceil(total / perPage) || 1 });
 	} catch (err) {
 		console.error("[employees:GET]", err);
 		return errorResponse("Internal server error", 500);
@@ -64,17 +75,25 @@ export async function POST(request: NextRequest) {
 		}
 
 		const { name, email, password, role } = validated.data;
+		const orgId = caller.app_metadata?.org_id as string | undefined;
 
 		const admin = createAdminClient();
 		const { data, error } = await admin.auth.admin.createUser({
 			email,
 			password,
 			user_metadata: { full_name: name },
-			app_metadata: { role },
+			app_metadata: { role, ...(orgId ? { org_id: orgId } : {}) },
 			email_confirm: true,
 		});
 
 		if (error) return errorResponse(error.message, 400);
+
+		// Create Prisma user row so org_id is searchable
+		await prisma.user.upsert({
+			where: { id: data.user.id },
+			update: { org_id: orgId, role, name },
+			create: { id: data.user.id, email, name, org_id: orgId, role },
+		});
 
 		return ok(
 			{

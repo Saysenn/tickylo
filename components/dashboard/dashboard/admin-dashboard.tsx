@@ -21,6 +21,7 @@ interface AdminDashboardData {
 			email: string;
 			start_time: string;
 			active_task_title: string | null;
+			entry_title: string | null;
 		}[];
 	};
 	tasks: {
@@ -91,21 +92,21 @@ export function AdminDashboard() {
 				/>
 			</div>
 
-			{/* Row 2 — Weekly chart + Tasks list */}
+			{/* Row 2 — Weekly chart + Team activity */}
 			<div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
 				<div className="lg:col-span-2" style={{ minHeight: "220px" }}>
 					<WeeklyBarsChart days={data.weekly_days} title="Team Activity This Week" />
 				</div>
+				<TeamActivityWidget users={data.time.clocked_in_users} />
+			</div>
+
+			{/* Row 3 — Recent tasks + Donut + Timer */}
+			<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
 				<TasksListWidget
 					tasks={data.recent_tasks}
 					showNewButton
 					title="Recent Tasks"
 				/>
-			</div>
-
-			{/* Row 3 — Team activity + Donut + Timer */}
-			<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-				<TeamActivityWidget users={data.time.clocked_in_users} />
 				<TaskDonutChart
 					pending={data.tasks.pending}
 					assigned={data.tasks.assigned}

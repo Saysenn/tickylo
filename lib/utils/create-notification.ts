@@ -18,15 +18,19 @@ export async function createNotification(data: NotificationData) {
 }
 
 /**
- * Notify all admin users. Looks up admins from the users table.
+ * Notify all admin users in the given org. Looks up admins from the users table.
  * Optional excludeId skips one admin (e.g. the one who triggered the action).
  */
 export async function notifyAdmins(
-	data: Omit<NotificationData, "user_id"> & { excludeId?: string },
+	data: Omit<NotificationData, "user_id"> & { excludeId?: string; orgId?: string },
 ) {
-	const { excludeId, ...notifData } = data;
+	const { excludeId, orgId, ...notifData } = data;
 	const admins = await prisma.user.findMany({
-		where: { role: "admin", ...(excludeId ? { id: { not: excludeId } } : {}) },
+		where: {
+			role: "admin",
+			...(orgId ? { org_id: orgId } : {}),
+			...(excludeId ? { id: { not: excludeId } } : {}),
+		},
 		select: { id: true },
 	});
 	if (admins.length === 0) return;
@@ -57,15 +61,19 @@ export async function notifyWatchers(
 }
 
 /**
- * Notify all non-admin users (employees).
+ * Notify all non-admin users (employees) in the given org.
  */
-export async function notifyEmployees(data: Omit<NotificationData, "user_id">) {
+export async function notifyEmployees(data: Omit<NotificationData, "user_id"> & { orgId?: string }) {
+	const { orgId, ...notifData } = data;
 	const employees = await prisma.user.findMany({
-		where: { role: { not: "admin" } },
+		where: {
+			role: { not: "admin" },
+			...(orgId ? { org_id: orgId } : {}),
+		},
 		select: { id: true },
 	});
 	if (employees.length === 0) return;
 	await prisma.notification.createMany({
-		data: employees.map((e) => ({ ...data, user_id: e.id })),
+		data: employees.map((e) => ({ ...notifData, user_id: e.id })),
 	});
 }
