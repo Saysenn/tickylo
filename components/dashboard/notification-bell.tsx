@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
@@ -91,6 +92,7 @@ function notificationIcon(type: string) {
 export function NotificationBell() {
 	const router = useRouter();
 	const queryClient = useQueryClient();
+	const [open, setOpen] = useState(false);
 
 	const { data } = useQuery<NotificationsResponse>({
 		queryKey: ["notifications"],
@@ -115,11 +117,12 @@ export function NotificationBell() {
 
 	const handleClick = (n: Notification) => {
 		if (!n.read) readOne(n.id);
+		setOpen(false);
 		if (n.link) router.push(n.link);
 	};
 
 	return (
-		<DropdownMenu>
+		<DropdownMenu open={open} onOpenChange={setOpen}>
 			<DropdownMenuTrigger asChild>
 				<button
 					type="button"
@@ -203,7 +206,7 @@ export function NotificationBell() {
 				<div className="border-t border-border/40 px-4 py-2.5">
 					<button
 						type="button"
-						onClick={() => router.push("/dashboard/notifications")}
+						onClick={() => { setOpen(false); router.push("/dashboard/notifications"); }}
 						className="w-full text-center text-xs text-ink-3 hover:text-mint transition-colors"
 					>
 						View all notifications →

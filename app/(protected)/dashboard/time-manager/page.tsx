@@ -15,6 +15,7 @@ import {
 	startOfMonthDateStr, startOfLastMonthDateStr, endOfLastMonthDateStr,
 } from "@/lib/utils/format";
 import { useAppSelector } from "@/store/hooks";
+import { TeamActivityCards } from "@/components/dashboard/reports/team-activity-cards";
 
 const DATE_PRESETS = [
 	{ label: "Today",        from: () => todayDateStr(),            to: () => todayDateStr() },
@@ -141,6 +142,7 @@ export default function TimeManagerPage() {
 							search={search}
 						/>
 					</div>
+					<TeamActivityCards />
 				</div>
 			) : showEmployee && summary ? (
 				<div className="space-y-4">

@@ -39,9 +39,15 @@ const navGroups: NavGroup[] = [
 		items: [
 			{ label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
 			{
-				label: "Reports",
-				href: "/dashboard/reports",
-				icon: BarChart2,
+				label: "Team Overview",
+				href: "/dashboard/time-manager",
+				icon: Clock,
+				roles: ["admin"],
+			},
+			{
+				label: "Performance",
+				href: "/dashboard/performance",
+				icon: TrendingUp,
 				roles: ["admin"],
 			},
 		],
@@ -56,15 +62,9 @@ const navGroups: NavGroup[] = [
 				roles: ["admin"],
 			},
 			{
-				label: "Performance",
-				href: "/dashboard/performance",
-				icon: TrendingUp,
-				roles: ["admin"],
-			},
-			{
-				label: "Team Overview",
-				href: "/dashboard/time-manager",
-				icon: Clock,
+				label: "Reports",
+				href: "/dashboard/reports",
+				icon: BarChart2,
 				roles: ["admin"],
 			},
 		],
