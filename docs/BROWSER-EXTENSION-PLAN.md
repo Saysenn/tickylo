@@ -1,6 +1,6 @@
 # Browser Extension Time Tracker — Plan
 
-A lightweight Chrome/Edge/Firefox extension that lets employees clock in/out and log time directly from their browser, syncing with the PerformAI backend.
+A lightweight Chrome/Edge/Firefox extension that lets employees clock in/out and log time directly from their browser, syncing with the Tickworks backend.
 
 ---
 
@@ -22,7 +22,7 @@ Extension (popup UI)
   └─ chrome.storage.local   ← persists session state (entry_id, start_time, title)
   └─ Background Service Worker
        └─ Alarm API          ← ticks every 60s to update badge
-       └─ fetch()            ← calls PerformAI API with stored auth token
+       └─ fetch()            ← calls Tickworks API with stored auth token
 ```
 
 The extension talks directly to `https://yourapp.vercel.app/api/v1/time` — no separate server needed.
@@ -47,7 +47,7 @@ The extension talks directly to `https://yourapp.vercel.app/api/v1/time` — no 
 Extension runs on the same domain as the app. Supabase sets a cookie on `yourapp.com`. Extension makes fetch calls to `https://yourapp.com/api/v1/...` — browser automatically sends the cookie. No token storage needed.
 
 **Option B — API token (for Firefox / cross-domain)**
-User copies a personal API token from their PerformAI settings page. Extension stores it in `chrome.storage.local` and sends it as `Authorization: Bearer <token>` on each request.
+User copies a personal API token from their Tickworks settings page. Extension stores it in `chrome.storage.local` and sends it as `Authorization: Bearer <token>` on each request.
 
 **Recommended: Option A** for the initial version — zero extra infrastructure.
 
@@ -81,7 +81,7 @@ extension/
 ### Screen 1: Clocked Out
 ```
 ┌─────────────────────────┐
-│  PerformAI              │
+│  Tickworks              │
 │                         │
 │  [Task title input    ] │
 │                         │
@@ -94,7 +94,7 @@ extension/
 ### Screen 2: Clocked In
 ```
 ┌─────────────────────────┐
-│  PerformAI              │
+│  Tickworks              │
 │                         │
 │  ● Recording            │
 │  "Build login page"     │
@@ -108,7 +108,7 @@ extension/
 ### Screen 3: Not logged in
 ```
 ┌─────────────────────────┐
-│  PerformAI              │
+│  Tickworks              │
 │                         │
 │  Please log in at       │
 │  performai.app first.   │

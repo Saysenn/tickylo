@@ -2,8 +2,8 @@ import { JoinForm } from "@/components/auth/join-form";
 import Link from "next/link";
 
 export const metadata = {
-	title: "Join Your Team — PerformAI",
-	description: "Join your company workspace on PerformAI",
+	title: "Join Your Team — Tickworks",
+	description: "Join your company workspace on Tickworks",
 };
 
 export default function JoinPage() {

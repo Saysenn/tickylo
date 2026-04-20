@@ -42,13 +42,13 @@ export async function POST(
 		// Send rejection email
 		await sendEmail({
 			to: application.admin_email,
-			subject: `Update on your PerformAI company registration`,
+			subject: `Update on your Tickworks company registration`,
 			html: `
 				<p>Hi ${application.admin_name},</p>
-				<p>Thank you for your interest in PerformAI. Unfortunately, your company registration for <strong>${application.company_name}</strong> was not approved at this time.</p>
+				<p>Thank you for your interest in Tickworks. Unfortunately, your company registration for <strong>${application.company_name}</strong> was not approved at this time.</p>
 				<p><strong>Reason:</strong> ${reason}</p>
 				<p>If you believe this was a mistake or would like to reapply, please contact our support team.</p>
-				<p>— The PerformAI Team</p>
+				<p>— The Tickworks Team</p>
 			`,
 		});
 

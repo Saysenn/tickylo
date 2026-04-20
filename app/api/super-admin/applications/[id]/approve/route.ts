@@ -85,10 +85,10 @@ export async function POST(
 			subject: `Your company registration for ${application.company_name} has been approved`,
 			html: `
 				<p>Hi ${application.admin_name},</p>
-				<p>Great news! Your company registration for <strong>${application.company_name}</strong> on PerformAI has been approved.</p>
+				<p>Great news! Your company registration for <strong>${application.company_name}</strong> on Tickworks has been approved.</p>
 				<p>Log in using the email and password you set during registration:</p>
-				<p><a href="${appUrl}/login" style="display:inline-block;padding:10px 20px;background:#80ed99;color:#000;text-decoration:none;border-radius:6px;font-weight:600;">Log In to PerformAI →</a></p>
-				<p>— The PerformAI Team</p>
+				<p><a href="${appUrl}/login" style="display:inline-block;padding:10px 20px;background:#80ed99;color:#000;text-decoration:none;border-radius:6px;font-weight:600;">Log In to Tickworks →</a></p>
+				<p>— The Tickworks Team</p>
 			`,
 		});
 

@@ -12,7 +12,7 @@ Powered by Supabase Auth — configure SMTP once and all email features work aut
 | Field | Value |
 |---|---|
 | Sender email | `no-reply@yourdomain.com` |
-| Sender name | `PerformAI` (or your brand) |
+| Sender name | `Tickworks` (or your brand) |
 | Host | Your SMTP host (e.g. `smtp.resend.com`) |
 | Port | `587` (TLS) or `465` (SSL) |
 | Username | Your SMTP username / API key |

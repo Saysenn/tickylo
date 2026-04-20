@@ -45,7 +45,7 @@ export default function Footer() {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 mb-10">
           <div>
             <p className="text-[10px] text-white/28 tracking-[0.15em] uppercase mb-2">Company Name</p>
-            <p className="text-[12px] text-white/55">PerformAI</p>
+            <p className="text-[12px] text-white/55">Tickworks</p>
           </div>
           <div>
             <p className="text-[10px] text-white/28 tracking-[0.15em] uppercase mb-2">Company Number</p>
@@ -66,7 +66,7 @@ export default function Footer() {
         {/* Bottom bar */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-2">
           <p className="text-[10px] text-white/25 tracking-[0.14em] uppercase">
-            © 2026 PerformAI. All Rights Reserved.
+            © 2026 Tickworks. All Rights Reserved.
           </p>
           <p className="text-[10px] text-white/25 tracking-[0.14em] uppercase">
             Built for Agencies — Powered by AI

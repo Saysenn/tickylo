@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "PerformAI",
-    template: "%s | PerformAI",
+    default: "Tickworks",
+    template: "%s | Tickworks",
   },
   description: "AI-Powered Employee Performance Tracking System",
 };

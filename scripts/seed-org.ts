@@ -16,7 +16,7 @@ import * as path from "path";
 dotenv.config({ path: path.join(__dirname, "../.env.local") });
 
 const SUPER_ADMIN_EMAIL = "laudzioncascalla01@gmail.com";
-const DEFAULT_ORG_NAME  = "PerformAI Default";
+const DEFAULT_ORG_NAME  = "Tickworks Default";
 const DEFAULT_ORG_SLUG  = "performai-default";
 
 async function main() {

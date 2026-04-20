@@ -15,7 +15,7 @@ export async function sendEmail({
 	}
 
 	const resend = new Resend(process.env.RESEND_API_KEY);
-	const from = process.env.EMAIL_FROM ?? "PerformAI <noreply@performai.app>";
+	const from = process.env.EMAIL_FROM ?? "Tickworks <noreply@performai.app>";
 
 	const { error } = await resend.emails.send({ from, to, subject, html });
 

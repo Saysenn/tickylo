@@ -69,7 +69,7 @@ export default async function HomePage() {
           </h1>
 
           <p className="text-lg text-ink-3 max-w-xl mx-auto mb-10 leading-relaxed">
-            PerformAI gives agencies full visibility over billable hours, team output, and project deadlines — in one clean dashboard.
+            Tickworks gives agencies full visibility over billable hours, team output, and project deadlines — in one clean dashboard.
           </p>
 
           <div className="flex items-center justify-center gap-3 flex-wrap mb-10">
@@ -171,7 +171,7 @@ export default async function HomePage() {
         <section className="relative z-10 max-w-4xl mx-auto px-4 pb-24">
           <div className="glass rounded-2xl p-10 text-center shadow-[0_4px_30px_rgba(128,237,153,0.10)]">
             <h2 className="text-3xl font-bold text-ink tracking-tight mb-3">
-              Be one of the first agencies on PerformAI
+              Be one of the first agencies on Tickworks
             </h2>
             <p className="text-sm text-ink-3 mb-8 max-w-md mx-auto leading-relaxed">
               We're early stage and building fast. Sign up free — no credit card, no commitment — and help shape the product.

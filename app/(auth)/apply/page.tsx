@@ -2,8 +2,8 @@ import { ApplyForm } from "@/components/auth/apply-form";
 import Link from "next/link";
 
 export const metadata = {
-	title: "Register Your Company — PerformAI",
-	description: "Apply to create your organization on PerformAI",
+	title: "Register Your Company — Tickworks",
+	description: "Apply to create your organization on Tickworks",
 };
 
 export default function ApplyPage() {

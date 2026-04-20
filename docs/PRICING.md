@@ -1,4 +1,4 @@
-# PerformAI — Pricing Plan
+# Tickworks — Pricing Plan
 
 > **Marketing note:** All plans show the original price crossed out alongside the discounted launch price to create urgency and perceived value. The 30–35% discount framing is the anchor — it makes the actual price feel like a deal even before the customer compares plans.
 

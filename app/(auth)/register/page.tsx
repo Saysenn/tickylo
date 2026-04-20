@@ -2,8 +2,8 @@ import Link from "next/link";
 import { Building2, Users } from "lucide-react";
 
 export const metadata = {
-	title: "Get Started — PerformAI",
-	description: "Register your company or join your team on PerformAI",
+	title: "Get Started — Tickworks",
+	description: "Register your company or join your team on Tickworks",
 };
 
 export default function RegisterPage() {
@@ -28,7 +28,7 @@ export default function RegisterPage() {
 				<div className="glass rounded-2xl p-8 space-y-6">
 					<div className="text-center">
 						<h1 className="text-2xl font-bold text-ink">Get Started</h1>
-						<p className="text-ink-3 text-sm mt-1">How are you joining PerformAI?</p>
+						<p className="text-ink-3 text-sm mt-1">How are you joining Tickworks?</p>
 					</div>
 
 					<div className="grid grid-cols-2 gap-4">

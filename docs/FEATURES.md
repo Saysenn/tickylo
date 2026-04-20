@@ -1,4 +1,4 @@
-# PerformAI — Feature Reference
+# Tickworks — Feature Reference
 
 ## Leave Requests (`/dashboard/requests`)
 

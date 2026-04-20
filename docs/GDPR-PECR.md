@@ -1,6 +1,6 @@
 # UK GDPR & UK PECR Compliance Guide
 
-Applies to: PerformAI and any Next.js / Node.js web application handling UK user data.
+Applies to: Tickworks and any Next.js / Node.js web application handling UK user data.
 
 ---
 
@@ -146,7 +146,7 @@ Fields that are Article 9 (health, immigration) or high-sensitivity (government 
 
 ---
 
-## PerformAI — Current Gaps
+## Tickworks — Current Gaps
 
 | Requirement | Status | Priority |
 |-------------|--------|----------|

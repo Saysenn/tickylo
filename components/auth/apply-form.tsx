@@ -147,7 +147,7 @@ export function ApplyForm() {
 						id="reason"
 						className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-ink placeholder:text-ink-3 focus:outline-none focus:ring-1 focus:ring-mint resize-none"
 						rows={3}
-						placeholder="Brief description of your company and how you plan to use PerformAI..."
+						placeholder="Brief description of your company and how you plan to use Tickworks..."
 						value={form.reason}
 						onChange={(e) => set("reason", e.target.value)}
 					/>
