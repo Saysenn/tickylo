@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Shield, LogOut } from "lucide-react";
+import { Logo } from "@/components/logo";
 
 export default function SuperAdminHeader({ email }: { email: string }) {
 	const router = useRouter();
@@ -16,11 +17,12 @@ export default function SuperAdminHeader({ email }: { email: string }) {
 	return (
 		<header className="border-b border-border/60 bg-background/95 backdrop-blur-sm sticky top-0 z-10">
 			<div className="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
-				<div className="flex items-center gap-2.5">
-					<div className="w-7 h-7 rounded-lg bg-red-500/15 flex items-center justify-center">
-						<Shield className="w-4 h-4 text-red-500" />
+				<div className="flex items-center gap-3">
+					<Logo size="sm" />
+					<div className="flex items-center gap-1.5 border border-red-500/20 bg-red-500/10 rounded px-2 py-0.5">
+						<Shield className="w-3 h-3 text-red-500" />
+						<span className="text-[11px] font-medium text-red-600">Admin</span>
 					</div>
-					<span className="text-sm font-semibold text-ink">PerformAI Admin</span>
 				</div>
 				<div className="flex items-center gap-4">
 					<span className="text-xs text-ink-3">{email}</span>

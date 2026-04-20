@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { Logo } from "@/components/logo";
 import {
 	LayoutDashboard,
 	TrendingUp,
@@ -115,13 +116,8 @@ export function Sidebar({ isOpen = false, onClose, role }: SidebarProps) {
 	const sidebarContent = (
 		<>
 			{/* Logo */}
-			<div className="flex items-center gap-3 px-5 py-5 border-b">
-				<div className="w-8 h-8 bg-mint rounded-xl flex items-center justify-center shrink-0 shadow-[0_2px_12px_rgba(128,237,153,0.35)]">
-					<TrendingUp className="w-4 h-4 text-ink" strokeWidth={2.5} />
-				</div>
-				<span className="font-semibold text-ink text-sm tracking-tight">
-					PerformAI
-				</span>
+			<div className="px-4 py-4 border-b">
+				<Logo size="sm" />
 			</div>
 
 			{/* Navigation */}

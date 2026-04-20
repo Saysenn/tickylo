@@ -1,4 +1,5 @@
-import { TrendingUp, Mail, Phone } from "lucide-react";
+import { Mail, Phone } from "lucide-react";
+import { Logo } from "@/components/logo";
 import { Separator } from "@/components/ui/separator";
 
 export default function Footer() {
@@ -9,14 +10,7 @@ export default function Footer() {
         {/* Top row: logo + tagline */}
         <div className="flex items-start justify-between mb-10">
           <div className="space-y-3">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 bg-mint rounded-xl flex items-center justify-center shadow-[0_2px_10px_rgba(128,237,153,0.25)]">
-                <TrendingUp className="w-4 h-4 text-ink" strokeWidth={2.5} />
-              </div>
-              <span className="font-semibold text-white text-[13px] tracking-[0.18em] uppercase">
-                PerformAI
-              </span>
-            </div>
+            <Logo size="md" invert />
             <p className="text-[11px] text-white/30 tracking-[0.14em] uppercase">
               For Agencies, Dev Studios & Freelance Teams
             </p>
