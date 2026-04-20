@@ -5,6 +5,8 @@ import { ROLES, DEFAULT_ROLE, type Role } from "@/configs/rbac.config";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/auth/require-admin";
 import { prisma } from "@/lib/infra/prisma";
+import { sendEmail } from "@/lib/email/send";
+import { employeeWelcomeEmail } from "@/lib/email/templates";
 
 const createEmployeeSchema = z.object({
 	name: z.string().min(2).max(100),
@@ -94,6 +96,21 @@ export async function POST(request: NextRequest) {
 			update: { org_id: orgId, role, name },
 			create: { id: data.user.id, email, name, org_id: orgId, role },
 		});
+
+		// Send welcome email with credentials (fire-and-forget)
+		if (orgId) {
+			prisma.organization.findUnique({ where: { id: orgId }, select: { name: true } })
+				.then((org) => {
+					const { subject, html } = employeeWelcomeEmail({
+						employeeName: name,
+						employeeEmail: email,
+						tempPassword: password,
+						orgName: org?.name ?? "your organization",
+					});
+					return sendEmail({ to: email, subject, html });
+				})
+				.catch(() => {});
+		}
 
 		return ok(
 			{

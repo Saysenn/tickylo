@@ -3,6 +3,8 @@ import { z } from "zod";
 import { prisma } from "@/lib/infra/prisma";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ok, errorResponse } from "@/lib/utils/response";
+import { sendEmail } from "@/lib/email/send";
+import { employeeJoinRequestEmail } from "@/lib/email/templates";
 
 const schema = z.object({
 	org_join_code: z.string().min(1),
@@ -57,6 +59,20 @@ export async function POST(request: NextRequest) {
 		// Create join request for admin to approve
 		await prisma.userJoinRequest.create({
 			data: { org_id: org.id, user_id: userId },
+		});
+
+		// Notify org admins by email (fire-and-forget)
+		const admins = await prisma.user.findMany({
+			where: { org_id: org.id, role: "admin" },
+			select: { email: true },
+		});
+		const { subject, html } = employeeJoinRequestEmail({
+			employeeName: name,
+			employeeEmail: email,
+			orgName: org.name,
+		});
+		admins.forEach(({ email: adminEmail }) => {
+			sendEmail({ to: adminEmail, subject, html }).catch(() => {});
 		});
 
 		return ok({ message: "Join request submitted. Your admin will approve your access." });
