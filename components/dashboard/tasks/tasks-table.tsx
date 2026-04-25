@@ -11,7 +11,7 @@ import { TaskFormDialog } from "./task-form-dialog";
 import { TaskDeleteDialog } from "./task-delete-dialog";
 import { TimeOutDialog } from "@/components/dashboard/time-tracker/time-out-dialog";
 import { useAppSelector } from "@/store/hooks";
-import { formatDate } from "@/lib/utils/format";
+import { formatDate, formatDueDate, formatDurationMs } from "@/lib/utils/format";
 import { cn } from "@/lib/utils/cn";
 import { ClipboardList, Plus, Trash2, CheckCheck, UserCog, X, SlidersHorizontal } from "lucide-react";
 import { ROWS_PER_PAGE } from "@/configs/pagination.config";
@@ -236,6 +236,10 @@ export function TasksTable() {
 	});
 
 	const handleStart = async (task: Task) => {
+		// If a timer is already running, stop it first so the new start doesn't 409
+		if (activeEntry) {
+			await stopTimer({ title: activeEntry.ticket?.title ?? activeEntry.title ?? undefined });
+		}
 		await Promise.all([
 			startTask(task.id),
 			startTimer({ title: task.title, ticket_id: task.id }),
@@ -438,6 +442,9 @@ export function TasksTable() {
 									<th className="text-left px-4 py-2 text-xs font-semibold text-ink-3 uppercase tracking-wider hidden md:table-cell">
 										Due
 									</th>
+									<th className="text-left px-4 py-2 text-xs font-semibold text-ink-3 uppercase tracking-wider hidden lg:table-cell">
+										Time
+									</th>
 									<th className="px-4 py-2" />
 								</tr>
 							</thead>
@@ -514,7 +521,7 @@ export function TasksTable() {
 											{task.due_date ? (
 												<div className="flex flex-col gap-0.5">
 													<span className={cn("text-xs", task.status !== "completed" && new Date(task.due_date) < new Date() ? "text-red-600 font-medium" : "text-ink-3")}>
-														{formatDate(task.due_date)}
+														{formatDueDate(task.due_date)}
 													</span>
 													{task.status !== "completed" && new Date(task.due_date) < new Date() && (
 														<Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 bg-red-500/10 text-red-600 border-red-500/20 w-fit">
@@ -525,6 +532,12 @@ export function TasksTable() {
 											) : (
 												<span className="text-ink-3 text-xs">—</span>
 											)}
+										</td>
+
+										<td className="px-4 py-2 hidden lg:table-cell">
+											<span className="text-xs text-ink-3">
+												{task.total_time_ms && task.total_time_ms > 0 ? formatDurationMs(task.total_time_ms) : "—"}
+											</span>
 										</td>
 
 										<td className="px-4 py-2" onClick={(e) => e.stopPropagation()}>

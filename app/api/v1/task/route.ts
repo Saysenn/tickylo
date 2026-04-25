@@ -26,6 +26,8 @@ const createTaskSchema = z.object({
 	implementation_plan: z.string().max(5000).optional(),
 	rollback_plan: z.string().max(5000).optional(),
 	links: z.array(linkSchema).max(20).optional(),
+	source: z.enum(["sms", "email", "in_system"]).optional(),
+	assignee_permission: z.enum(["viewer", "editor"]).optional(),
 });
 
 /**
@@ -117,7 +119,8 @@ export async function GET(request: NextRequest) {
 			prisma.task.findMany({
 				where,
 				include: {
-					assignee: { select: { id: true, name: true, email: true } },
+					assignee:    { select: { id: true, name: true, email: true } },
+					timeEntries: { select: { start_time: true, end_time: true } },
 				},
 				orderBy: { created_at: "desc" },
 				take: limit,
@@ -126,8 +129,16 @@ export async function GET(request: NextRequest) {
 			prisma.task.count({ where }),
 		]);
 
+		const data = entries.map(({ timeEntries, ...task }) => ({
+			...task,
+			total_time_ms: timeEntries.reduce((sum, e) => {
+				if (e.end_time) return sum + (new Date(e.end_time).getTime() - new Date(e.start_time).getTime());
+				return sum;
+			}, 0),
+		}));
+
 		return ok({
-			data: entries,
+			data,
 			page,
 			totalPages: Math.ceil(total / limit) || 1,
 		});

@@ -137,6 +137,8 @@ class APIService {
 			implementation_plan?: string;
 			rollback_plan?: string;
 			links?: { url: string; label?: string }[];
+			source?: string;
+			assignee_permission?: string;
 		}) => axiosService.post(`${apiVersion}/ticket`, data),
 		update: (id: string, data: object) =>
 			axiosService.patch(`${apiVersion}/ticket/${id}`, data),
@@ -198,6 +200,8 @@ class APIService {
 			axiosService.patch(`${apiVersion}/ticket/${id}/approve`, {}),
 		reject: (id: string, reason?: string) =>
 			axiosService.patch(`${apiVersion}/ticket/${id}/reject`, { reason }),
+		requestReopen: (id: string) =>
+			axiosService.post(`${apiVersion}/ticket/${id}/request-reopen`, {}),
 		bulk: (action: "assign" | "complete" | "delete", ids: string[], user_id?: string) =>
 			axiosService.post(`${apiVersion}/ticket/bulk`, { action, ids, user_id }),
 	};

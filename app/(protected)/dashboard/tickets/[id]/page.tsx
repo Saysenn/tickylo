@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { useAppSelector } from "@/store/hooks";
-import { formatDate, formatDuration } from "@/lib/utils/format";
+import { formatDate, formatDuration, formatDueDate, toDatetimeInput } from "@/lib/utils/format";
 import type { TimeEntry } from "@/components/dashboard/time-tracker/types";
 import { cn } from "@/lib/utils/cn";
 import {
@@ -231,7 +231,12 @@ export default function TicketDetailPage() {
 		mutationFn: (reason?: string) => APIService.tasks.reject(id, reason),
 		onSuccess: () => { invalidate(); setRejectOpen(false); setRejectReason(""); },
 	});
-	const { mutateAsync: staleTicket,   isPending: isStaling }    = useMutation({ mutationFn: () => APIService.tasks.stale(id),   onSuccess: invalidate });
+	const { mutateAsync: staleTicket,      isPending: isStaling }        = useMutation({ mutationFn: () => APIService.tasks.stale(id),         onSuccess: invalidate });
+	const { mutateAsync: requestReopen,    isPending: isRequestingReopen } = useMutation({ mutationFn: () => APIService.tasks.requestReopen(id), onSuccess: invalidateComments });
+	const { mutateAsync: adminReopenTask,  isPending: isAdminReopening }   = useMutation({
+		mutationFn: () => APIService.tasks.update(id, { status: ticket?.user_id ? "assigned" : "pending" }),
+		onSuccess: invalidate,
+	});
 	const { mutateAsync: updateBillable } = useMutation({ mutationFn: (h: number | null) => APIService.tasks.updateBillable(id, h), onSuccess: invalidate });
 	const { mutateAsync: adminHold,      isPending: isAdminHolding } = useMutation({
 		mutationFn: () => APIService.tasks.hold(id),
@@ -353,7 +358,7 @@ export default function TicketDetailPage() {
 										<Button size="sm" variant="ghost" className="h-7 gap-1.5 text-xs text-ink-3 hover:text-ink" onClick={() => setReassignOpen(true)}>
 											<UserCog className="w-3.5 h-3.5" /> Reassign
 										</Button>
-										{ticket.status !== "on_hold" && (
+										{["assigned", "in_progress"].includes(ticket.status) && (
 											<Button
 												size="sm" variant="ghost"
 												className="h-7 gap-1.5 text-xs text-orange-600 hover:bg-orange-500/10 hover:text-orange-700"
@@ -361,6 +366,16 @@ export default function TicketDetailPage() {
 												onClick={() => adminHold()}
 											>
 												<Pause className="w-3.5 h-3.5" /> Hold
+											</Button>
+										)}
+										{["on_hold", "stale"].includes(ticket.status) && (
+											<Button
+												size="sm" variant="ghost"
+												className="h-7 gap-1.5 text-xs text-green-600 hover:bg-green-500/10 hover:text-green-700"
+												disabled={isAdminReopening} isLoading={isAdminReopening}
+												onClick={() => adminReopenTask()}
+											>
+												<RotateCcw className="w-3.5 h-3.5" /> Reopen
 											</Button>
 										)}
 										{ticket.status !== "stale" && (
@@ -517,17 +532,32 @@ export default function TicketDetailPage() {
 								<MetaRow icon={Calendar} label="Due date">
 									{isAdmin ? (
 										<input
-											type="date"
-											defaultValue={ticket.due_date ? ticket.due_date.slice(0, 10) : ""}
-											onChange={(e) => updateTicket({ due_date: e.target.value || null })}
+											type="datetime-local"
+											defaultValue={toDatetimeInput(ticket.due_date)}
+											onChange={(e) => {
+												const val = e.target.value;
+												if (val && !isNaN(new Date(val).getTime())) {
+													updateTicket({ due_date: new Date(val).toISOString() });
+												} else if (!val) {
+													updateTicket({ due_date: null });
+												}
+											}}
 											className="text-sm text-ink bg-transparent border-0 focus:outline-none focus:ring-0 p-0 cursor-pointer"
 										/>
 									) : ticket.due_date ? (
-										<span className={cn("font-medium", isOverdue ? "text-red-600" : "text-ink")}>{formatDate(ticket.due_date)}</span>
+										<span className={cn("font-medium", isOverdue ? "text-red-600" : "text-ink")}>{formatDueDate(ticket.due_date)}</span>
 									) : (
 										<span className="text-ink-3 italic">Not set</span>
 									)}
 								</MetaRow>
+
+								{(ticket as any).source && (
+									<MetaRow icon={ArrowRightLeft} label="Source">
+										<span className="font-medium text-ink capitalize">
+											{(ticket as any).source === "in_system" ? "In-system" : (ticket as any).source.toUpperCase()}
+										</span>
+									</MetaRow>
+								)}
 
 								{ticket.client_name && (
 									<MetaRow icon={Building2} label="Client">
@@ -537,6 +567,16 @@ export default function TicketDetailPage() {
 												<p className="text-xs text-ink-3">{(ticket as any).client_email}</p>
 											)}
 										</div>
+									</MetaRow>
+								)}
+
+								{ticket.assignee && (
+									<MetaRow icon={User} label="Assignee access">
+										<span className={cn("text-xs font-medium capitalize",
+											(ticket as any).assignee_permission === "viewer" ? "text-amber-600" : "text-green-600"
+										)}>
+											{(ticket as any).assignee_permission === "viewer" ? "Viewer" : "Editor"}
+										</span>
 									</MetaRow>
 								)}
 
@@ -607,7 +647,7 @@ export default function TicketDetailPage() {
 											<DollarSign className="w-3.5 h-3.5" />
 											Billable
 										</div>
-										{isAdmin || !isAssignee ? (
+										{isAdmin || !isAssignee || (ticket as any).assignee_permission === "viewer" ? (
 											<span className="text-sm font-semibold text-ink">
 												{ticket.billable_hours != null ? `${ticket.billable_hours}h` : <span className="text-ink-3 font-normal italic text-xs">Not set</span>}
 											</span>
@@ -634,11 +674,24 @@ export default function TicketDetailPage() {
 						)}
 					</div>
 
-					{/* Stale lock notice — employees only */}
+					{/* Stale lock notice — employees only, with request-reopen option */}
 					{!isAdmin && isStale && (
-						<div className="rounded-xl border border-yellow-500/20 bg-yellow-500/5 p-5">
-							<p className="text-xs font-semibold text-yellow-700 mb-1">Ticket is stale</p>
-							<p className="text-xs text-yellow-700/70">This ticket has been marked stale by an admin. You can view it but cannot take any actions until it is reactivated.</p>
+						<div className="rounded-xl border border-yellow-500/20 bg-yellow-500/5 p-5 space-y-3">
+							<div>
+								<p className="text-xs font-semibold text-yellow-700 mb-1">Ticket is stale</p>
+								<p className="text-xs text-yellow-700/70">This ticket has been marked stale by an admin. You can view it but cannot take any actions until it is reactivated.</p>
+							</div>
+							{isAssignee && (
+								<Button
+									size="sm" variant="outline"
+									className="w-full gap-2 text-xs text-yellow-700 border-yellow-500/30 hover:bg-yellow-500/10"
+									disabled={isRequestingReopen} isLoading={isRequestingReopen}
+									onClick={() => requestReopen()}
+								>
+									<RotateCcw className="w-3.5 h-3.5" />
+									Request reopen
+								</Button>
+							)}
 						</div>
 					)}
 
@@ -733,9 +786,20 @@ export default function TicketDetailPage() {
 								</>
 							)}
 							{ticket.status === "on_hold" && isAssignee && (
-								<p className="text-xs text-ink-3/70 text-center py-1">
-									Start the timer above to resume work.
-								</p>
+								<>
+									<p className="text-xs text-ink-3/70 text-center py-1">
+										Start the timer above to resume work.
+									</p>
+									<Button
+										size="sm" variant="outline"
+										className="w-full gap-2 text-xs text-ink-3 border-border hover:bg-accent"
+										disabled={isRequestingReopen} isLoading={isRequestingReopen}
+										onClick={() => requestReopen()}
+									>
+										<RotateCcw className="w-3.5 h-3.5" />
+										Request reopen
+									</Button>
+								</>
 							)}
 							{ticket.status === "completed" && isAssignee && (
 								<Button
@@ -755,6 +819,7 @@ export default function TicketDetailPage() {
 								</Button>
 							)}
 
+							{!isAssignee && (
 							<div className="pt-1 border-t">
 								<Button
 									size="sm" variant="ghost"
@@ -767,6 +832,7 @@ export default function TicketDetailPage() {
 									{watcherCount > 0 && <span className="opacity-50">· {watcherCount} watching</span>}
 								</Button>
 							</div>
+						)}
 						</div>
 					)}
 				</div>
@@ -972,7 +1038,7 @@ function EditTicketDialog({ ticket, open, onOpenChange, onSave }: EditTicketDial
 	const [ticketType,         setTicketType]         = useState<string>(ticket.ticket_type ?? "internal_task");
 	const [status,             setStatus]             = useState<string>(ticket.status);
 	const [priority,           setPriority]           = useState<string>(ticket.priority ?? "medium");
-	const [dueDate,            setDueDate]            = useState(ticket.due_date ? ticket.due_date.slice(0, 10) : "");
+	const [dueDate,            setDueDate]            = useState(ticket.due_date ? toDatetimeInput(ticket.due_date) : "");
 	const [clientName,         setClientName]         = useState(ticket.client_name ?? "");
 	const [clientEmail,        setClientEmail]        = useState((ticket as any).client_email ?? "");
 	const [estimatedHours,     setEstimatedHours]     = useState(ticket.estimated_hours != null ? String(ticket.estimated_hours) : "");
@@ -980,8 +1046,32 @@ function EditTicketDialog({ ticket, open, onOpenChange, onSave }: EditTicketDial
 	const [implementationPlan, setImplementationPlan] = useState(ticket.implementation_plan ?? "");
 	const [rollbackPlan,       setRollbackPlan]       = useState(ticket.rollback_plan ?? "");
 	const [links,              setLinks]              = useState<TicketLink[]>(Array.isArray((ticket as any).links) ? (ticket as any).links : []);
+	const [source,             setSource]             = useState<string>((ticket as any).source ?? "");
+	const [assigneePermission, setAssigneePermission] = useState<string>((ticket as any).assignee_permission ?? "editor");
 	const [isSaving,           setIsSaving]           = useState(false);
 	const [error,              setError]              = useState("");
+
+	// Sync all form fields with latest ticket data each time the dialog opens
+	useEffect(() => {
+		if (open) {
+			setTitle(ticket.title);
+			setDescription(ticket.description ?? "");
+			setTicketType(ticket.ticket_type ?? "internal_task");
+			setStatus(ticket.status);
+			setPriority(ticket.priority ?? "medium");
+			setDueDate(ticket.due_date ? toDatetimeInput(ticket.due_date) : "");
+			setClientName(ticket.client_name ?? "");
+			setClientEmail((ticket as any).client_email ?? "");
+			setEstimatedHours(ticket.estimated_hours != null ? String(ticket.estimated_hours) : "");
+			setBillableHours(ticket.billable_hours  != null ? String(ticket.billable_hours)  : "");
+			setImplementationPlan(ticket.implementation_plan ?? "");
+			setRollbackPlan(ticket.rollback_plan ?? "");
+			setLinks(Array.isArray((ticket as any).links) ? (ticket as any).links : []);
+			setSource((ticket as any).source ?? "");
+			setAssigneePermission((ticket as any).assignee_permission ?? "editor");
+			setError("");
+		}
+	}, [open, ticket]);
 
 	async function handleSubmit(e: React.FormEvent) {
 		e.preventDefault();
@@ -995,7 +1085,9 @@ function EditTicketDialog({ ticket, open, onOpenChange, onSave }: EditTicketDial
 				ticket_type: ticketType,
 				status,
 				priority,
-				due_date: dueDate || null,
+				due_date: dueDate ? new Date(dueDate).toISOString() : null,
+				source: source || null,
+				assignee_permission: assigneePermission,
 				client_name: clientName.trim() || null,
 				client_email: clientEmail.trim() || null,
 				estimated_hours: estimatedHours ? parseFloat(estimatedHours) : null,
@@ -1018,6 +1110,7 @@ function EditTicketDialog({ ticket, open, onOpenChange, onSave }: EditTicketDial
 				<div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-border/50 px-6 py-4">
 					<DialogHeader>
 						<DialogTitle className="text-base font-semibold">Edit Ticket</DialogTitle>
+						<DialogDescription className="sr-only">Edit the ticket fields below and save changes.</DialogDescription>
 					</DialogHeader>
 				</div>
 
@@ -1060,6 +1153,24 @@ function EditTicketDialog({ ticket, open, onOpenChange, onSave }: EditTicketDial
 							</select>
 						</div>
 					</div>
+					<div className="grid grid-cols-2 gap-4">
+						<div className="space-y-1.5">
+							<Label htmlFor="edit-source">{optLabel("Source")}</Label>
+							<select id="edit-source" value={source} onChange={(e) => setSource(e.target.value)} className={inputCls}>
+								<option value="">Not specified</option>
+								<option value="in_system">In-system</option>
+								<option value="email">Email</option>
+								<option value="sms">SMS</option>
+							</select>
+						</div>
+						<div className="space-y-1.5">
+							<Label htmlFor="edit-permission">Assignee access</Label>
+							<select id="edit-permission" value={assigneePermission} onChange={(e) => setAssigneePermission(e.target.value)} className={inputCls}>
+								<option value="editor">Editor — can edit fields</option>
+								<option value="viewer">Viewer — read-only</option>
+							</select>
+						</div>
+					</div>
 
 					{/* ── Title ── */}
 					<div className="flex items-center gap-3">
@@ -1078,8 +1189,8 @@ function EditTicketDialog({ ticket, open, onOpenChange, onSave }: EditTicketDial
 					</div>
 					<div className="grid grid-cols-2 gap-4">
 						<div className="space-y-1.5">
-							<Label htmlFor="edit-due">{optLabel("Due date")}</Label>
-							<input id="edit-due" type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} className={inputCls} />
+							<Label htmlFor="edit-due">{optLabel("Due date & time")}</Label>
+							<input id="edit-due" type="datetime-local" value={dueDate} onChange={(e) => setDueDate(e.target.value)} className={inputCls} />
 						</div>
 						<div className="space-y-1.5">
 							<Label htmlFor="edit-client">{optLabel("Client name")}</Label>

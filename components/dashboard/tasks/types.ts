@@ -29,6 +29,9 @@ export interface Task {
 	started_at?: string | null;
 	created_at: string;
 	assignee?: { id: string; name: string | null; email: string } | null;
+	total_time_ms?: number;
+	assignee_permission?: string;
+	source?: string | null;
 }
 
 export interface TaskPage {

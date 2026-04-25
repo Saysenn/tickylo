@@ -31,6 +31,8 @@ interface TaskFormDialogProps {
 		implementation_plan?: string;
 		rollback_plan?: string;
 		links?: { url: string; label?: string }[];
+		source?: string;
+		assignee_permission?: string;
 	}) => Promise<void>;
 	trigger: React.ReactNode;
 }
@@ -100,6 +102,8 @@ export function TaskFormDialog({
 	const [implementationPlan, setImplementationPlan] = useState("");
 	const [rollbackPlan, setRollbackPlan] = useState("");
 	const [links, setLinks] = useState<TicketLink[]>([]);
+	const [source, setSource] = useState("");
+	const [assigneePermission, setAssigneePermission] = useState("editor");
 	const [error, setError] = useState("");
 
 	const { data: employeesResult } = useQuery({
@@ -129,6 +133,8 @@ export function TaskFormDialog({
 		setImplementationPlan("");
 		setRollbackPlan("");
 		setLinks([]);
+		setSource("");
+		setAssigneePermission("editor");
 		setError("");
 	}
 
@@ -143,13 +149,15 @@ export function TaskFormDialog({
 				description: description.trim() || undefined,
 				ticket_type: ticketType || undefined,
 				priority: priority || undefined,
-				due_date: dueDate || undefined,
+				due_date: dueDate ? new Date(dueDate).toISOString() : undefined,
 				assigned_to: assignedTo || undefined,
 				client_name: clientName.trim() || undefined,
 				estimated_hours: estimatedHours ? parseFloat(estimatedHours) : undefined,
 				implementation_plan: implementationPlan.trim() || undefined,
 				rollback_plan: rollbackPlan.trim() || undefined,
 				links: links.filter((l) => l.url.trim()).map((l) => ({ url: l.url.trim(), label: l.label?.trim() || undefined })),
+				source: source || undefined,
+				assignee_permission: assigneePermission || undefined,
 			});
 			setOpen(false);
 			resetForm();
@@ -238,10 +246,10 @@ export function TaskFormDialog({
 
 					<div className={isAdmin ? "grid grid-cols-2 gap-4" : "grid grid-cols-1 gap-4"}>
 						<div className="space-y-1.5">
-							<Label htmlFor="due-date"><FieldOpt>Due date</FieldOpt></Label>
+							<Label htmlFor="due-date"><FieldOpt>Due date &amp; time</FieldOpt></Label>
 							<input
 								id="due-date"
-								type="date"
+								type="datetime-local"
 								value={dueDate}
 								onChange={(e) => setDueDate(e.target.value)}
 								className={inputCls}
@@ -266,6 +274,28 @@ export function TaskFormDialog({
 							</div>
 						)}
 					</div>
+
+					{/* Source & permission — admin only */}
+					{isAdmin && (
+						<div className="grid grid-cols-2 gap-4">
+							<div className="space-y-1.5">
+								<Label htmlFor="source"><FieldOpt>Source</FieldOpt></Label>
+								<select id="source" value={source} onChange={(e) => setSource(e.target.value)} className={selectCls}>
+									<option value="">Not specified</option>
+									<option value="in_system">In-system</option>
+									<option value="email">Email</option>
+									<option value="sms">SMS</option>
+								</select>
+							</div>
+							<div className="space-y-1.5">
+								<Label htmlFor="assignee-permission">Assignee access</Label>
+								<select id="assignee-permission" value={assigneePermission} onChange={(e) => setAssigneePermission(e.target.value)} className={selectCls}>
+									<option value="editor">Editor — can edit fields</option>
+									<option value="viewer">Viewer — read-only</option>
+								</select>
+							</div>
+						</div>
+					)}
 
 					{/* ── Billing ── */}
 					<SectionDivider label="Billing" />

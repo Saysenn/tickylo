@@ -163,6 +163,36 @@ export function toDateInput(iso: string | null | undefined): string {
 }
 
 /**
+ * Converts an ISO datetime string to a "YYYY-MM-DDTHH:MM" value suitable for
+ * <input type="datetime-local">. Uses LOCAL time so the browser shows the right value.
+ * Returns "" for null/undefined.
+ */
+export function toDatetimeInput(iso: string | null | undefined): string {
+	if (!iso) return "";
+	const d = new Date(iso);
+	if (isNaN(d.getTime())) return "";
+	const pad = (n: number) => String(n).padStart(2, "0");
+	return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+/**
+ * Formats a due-date ISO string. Shows time only when the stored value has a
+ * non-zero UTC time (i.e. was set via datetime-local, not a legacy date-only field).
+ */
+export function formatDueDate(dateStr: string | null | undefined): string {
+	if (!dateStr) return "Never";
+	const d = new Date(dateStr);
+	const hasTime = d.getUTCHours() !== 0 || d.getUTCMinutes() !== 0 || d.getUTCSeconds() !== 0;
+	if (hasTime) {
+		return d.toLocaleDateString("en-US", {
+			month: "short", day: "numeric", year: "numeric",
+			hour: "2-digit", minute: "2-digit",
+		});
+	}
+	return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+}
+
+/**
  * Converts a nullable number to its string representation for number inputs.
  * Returns "" for null/undefined so the input renders as empty.
  */

@@ -201,7 +201,7 @@ model Task {
   assigned_at  DateTime?
 
   // Ticket fields — type is a free string keyed to TicketTypeConfig.key
-  ticket_type         String @default("internal_task")
+  ticket_type         String  @default("internal_task")
   client_name         String?
   client_email        String?
   estimated_hours     Float?
@@ -209,7 +209,9 @@ model Task {
   implementation_plan String?
   rollback_plan       String?
   related_to          String?
-  links               Json     @default("[]")
+  links               Json    @default("[]")
+  source              String? // "sms" | "email" | "in_system"
+  assignee_permission String  @default("editor") // "viewer" | "editor"
 
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt

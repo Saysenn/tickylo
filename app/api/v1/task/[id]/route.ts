@@ -43,7 +43,7 @@ export async function GET(
 const adminUpdateSchema = z.object({
 	title: z.string().min(1).max(200).optional(),
 	description: z.string().max(1000).optional(),
-	status: z.enum(["pending", "assigned", "in_progress", "on_hold", "completed", "closed"]).optional(),
+	status: z.enum(["pending", "assigned", "in_progress", "on_hold", "stale", "completed", "closed"]).optional(),
 	priority: z.enum(["low", "medium", "high", "critical"]).optional(),
 	due_date: z.coerce.date().nullable().optional(),
 	ticket_type: z.enum(["internal_task", "request", "incident", "change"]).optional(),
@@ -54,6 +54,8 @@ const adminUpdateSchema = z.object({
 	implementation_plan: z.string().max(5000).nullable().optional(),
 	rollback_plan: z.string().max(5000).nullable().optional(),
 	links: z.array(z.object({ url: z.string().url().max(2000), label: z.string().max(100).optional() })).max(20).nullable().optional(),
+	source: z.enum(["sms", "email", "in_system"]).nullable().optional(),
+	assignee_permission: z.enum(["viewer", "editor"]).optional(),
 });
 
 /**
