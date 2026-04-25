@@ -105,16 +105,18 @@ model User {
   avatar_url    String?
   role          String?
 
-  TimeEntries       TimeEntry[]
-  createdTasks      Task[]            @relation("TaskCreatedBy")
-  assignedTasks     Task[]            @relation("TaskAssignedTo")
-  taskComments      TaskComment[]
-  notifications     Notification[]
-  meta              UserMetaData?
-  leave             Leave[]
-  taskWatchers      TaskWatcher[]
-  commentReactions  CommentReaction[]
-  joinRequests      UserJoinRequest[]
+  TimeEntries            TimeEntry[]
+  createdTasks           Task[]            @relation("TaskCreatedBy")
+  assignedTasks          Task[]            @relation("TaskAssignedTo")
+  taskComments           TaskComment[]
+  notifications          Notification[]
+  meta                   UserMetaData?
+  leave                  Leave[]
+  taskWatchers           TaskWatcher[]
+  commentReactions       CommentReaction[]
+  joinRequests           UserJoinRequest[]
+  dueDateRequestsMade    DueDateRequest[]  @relation("DueDateRequester")
+  dueDateRequestsReviewed DueDateRequest[] @relation("DueDateReviewer")
 
   created_at DateTime     @default(now())
   updated_at DateTime     @updatedAt
@@ -216,14 +218,15 @@ model Task {
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
-  creator       User          @relation("TaskCreatedBy",  fields: [created_by], references: [id])
-  assignee      User?         @relation("TaskAssignedTo", fields: [user_id],    references: [id])
-  comments      TaskComment[]
-  watchers      TaskWatcher[]
-  subtasks      TaskSubtask[]
-  relatedTicket Task?         @relation("RelatedTickets", fields: [related_to], references: [id], onDelete: SetNull)
-  relatedFrom   Task[]        @relation("RelatedTickets")
-  timeEntries   TimeEntry[]   @relation("TicketTimeEntries")
+  creator          User             @relation("TaskCreatedBy",  fields: [created_by], references: [id])
+  assignee         User?            @relation("TaskAssignedTo", fields: [user_id],    references: [id])
+  comments         TaskComment[]
+  watchers         TaskWatcher[]
+  subtasks         TaskSubtask[]
+  relatedTicket    Task?            @relation("RelatedTickets", fields: [related_to], references: [id], onDelete: SetNull)
+  relatedFrom      Task[]           @relation("RelatedTickets")
+  timeEntries      TimeEntry[]      @relation("TicketTimeEntries")
+  dueDateRequests  DueDateRequest[]
 
   @@index([org_id])
   @@index([created_by])
@@ -336,6 +339,29 @@ model Notification {
   @@index([user_id, read])
   @@index([created_at])
   @@map("notifications")
+}
+
+model DueDateRequest {
+  id             String    @id @default(cuid())
+  org_id         String?
+  task_id        String
+  requested_by   String
+  requested_date DateTime
+  reason         String?
+  status         String    @default("pending") // "pending" | "approved" | "rejected"
+  reviewed_by    String?
+  reviewed_at    DateTime?
+  reject_reason  String?
+  created_at     DateTime  @default(now())
+  updated_at     DateTime  @updatedAt
+
+  task      Task  @relation(fields: [task_id], references: [id], onDelete: Cascade)
+  requester User  @relation("DueDateRequester", fields: [requested_by], references: [id])
+  reviewer  User? @relation("DueDateReviewer",  fields: [reviewed_by],  references: [id])
+
+  @@index([task_id, status])
+  @@index([org_id])
+  @@map("due_date_requests")
 }
 
 model TicketTypeConfig {

@@ -126,6 +126,11 @@ export default function TicketDetailPage() {
 	const [subtasksOpen,  setSubtasksOpen]  = useState(false);
 	const [rejectOpen,    setRejectOpen]    = useState(false);
 	const [rejectReason,  setRejectReason]  = useState("");
+	const [dueDateRequestOpen, setDueDateRequestOpen] = useState(false);
+	const [requestedDate,      setRequestedDate]      = useState("");
+	const [requestReason,      setRequestReason]      = useState("");
+	const [ddRejectOpen,   setDdRejectOpen]   = useState(false);
+	const [ddRejectReason, setDdRejectReason] = useState("");
 
 	// Timer state
 	const [timerElapsed, setTimerElapsed] = useState("00:00:00");
@@ -170,6 +175,13 @@ export default function TicketDetailPage() {
 	});
 	const subtaskTotal = subtasksData.length;
 	const subtaskDone  = subtasksData.filter((s) => s.completed).length;
+
+	const { data: dueDateRequest, refetch: refetchDueDateRequest } = useQuery<{ id: string; requested_date: string; reason?: string | null } | null>({
+		queryKey: ["due-date-request", id],
+		queryFn: () => APIService.tasks.dueDateRequest.get(id),
+		enabled: !!id,
+	});
+	const hasPendingDDRequest = !!dueDateRequest?.id;
 
 	const { data: activeEntry, refetch: refetchTimer } = useQuery<TimeEntry | null>({
 		queryKey: ["time", "active"],
@@ -238,6 +250,20 @@ export default function TicketDetailPage() {
 		onSuccess: invalidate,
 	});
 	const { mutateAsync: updateBillable } = useMutation({ mutationFn: (h: number | null) => APIService.tasks.updateBillable(id, h), onSuccess: invalidate });
+
+	const { mutateAsync: createDueDateRequest, isPending: isCreatingDDRequest } = useMutation({
+		mutationFn: (data: { requested_date: string; reason?: string }) => APIService.tasks.dueDateRequest.create(id, data),
+		onSuccess: () => { invalidateComments(); refetchDueDateRequest(); setDueDateRequestOpen(false); setRequestedDate(""); setRequestReason(""); },
+	});
+	const { mutateAsync: approveDueDateRequest, isPending: isApprovingDDRequest } = useMutation({
+		mutationFn: () => APIService.tasks.dueDateRequest.approve(id),
+		onSuccess: () => { invalidate(); refetchDueDateRequest(); invalidateComments(); },
+	});
+	const { mutateAsync: rejectDueDateRequest, isPending: isRejectingDDRequest } = useMutation({
+		mutationFn: (reason?: string) => APIService.tasks.dueDateRequest.reject(id, reason),
+		onSuccess: () => { refetchDueDateRequest(); invalidateComments(); setDdRejectOpen(false); setDdRejectReason(""); },
+	});
+
 	const { mutateAsync: adminHold,      isPending: isAdminHolding } = useMutation({
 		mutationFn: () => APIService.tasks.hold(id),
 		onSuccess: async () => { invalidate(); await refetchTimer(); },
@@ -531,19 +557,66 @@ export default function TicketDetailPage() {
 
 								<MetaRow icon={Calendar} label="Due date">
 									{isAdmin ? (
-										<input
-											type="datetime-local"
-											defaultValue={toDatetimeInput(ticket.due_date)}
-											onChange={(e) => {
-												const val = e.target.value;
-												if (val && !isNaN(new Date(val).getTime())) {
-													updateTicket({ due_date: new Date(val).toISOString() });
-												} else if (!val) {
-													updateTicket({ due_date: null });
-												}
-											}}
-											className="text-sm text-ink bg-transparent border-0 focus:outline-none focus:ring-0 p-0 cursor-pointer"
-										/>
+										<div className="space-y-2">
+											<input
+												type="datetime-local"
+												defaultValue={toDatetimeInput(ticket.due_date)}
+												onChange={(e) => {
+													const val = e.target.value;
+													if (val && !isNaN(new Date(val).getTime())) {
+														updateTicket({ due_date: new Date(val).toISOString() });
+													} else if (!val) {
+														updateTicket({ due_date: null });
+													}
+												}}
+												className="text-sm text-ink bg-transparent border-0 focus:outline-none focus:ring-0 p-0 cursor-pointer"
+											/>
+											{hasPendingDDRequest && dueDateRequest && (
+												<div className="rounded-md border border-amber-500/20 bg-amber-500/5 p-2 space-y-1.5">
+													<p className="text-[10px] font-semibold text-amber-700 uppercase tracking-wider">Pending date request</p>
+													<p className="text-xs text-amber-700/80">
+														<span className="font-medium">{formatDueDate(dueDateRequest.requested_date)}</span>
+														{dueDateRequest.reason && <> — &ldquo;{dueDateRequest.reason}&rdquo;</>}
+													</p>
+													<div className="flex gap-1.5">
+														<Button
+															size="sm" variant="ghost"
+															className="h-6 px-2 text-[10px] text-green-700 hover:bg-green-500/10"
+															disabled={isApprovingDDRequest} isLoading={isApprovingDDRequest}
+															onClick={() => approveDueDateRequest()}
+														>
+															<Check className="w-3 h-3 mr-1" /> Approve
+														</Button>
+														<Button
+															size="sm" variant="ghost"
+															className="h-6 px-2 text-[10px] text-red-600 hover:bg-red-500/10"
+															onClick={() => setDdRejectOpen(true)}
+														>
+															<X className="w-3 h-3 mr-1" /> Reject
+														</Button>
+													</div>
+												</div>
+											)}
+										</div>
+									) : isAssignee && (ticket as any).assignee_permission === "editor" ? (
+										<div className="space-y-1">
+											<span className={cn("font-medium", isOverdue ? "text-red-600" : "text-ink")}>
+												{ticket.due_date ? formatDueDate(ticket.due_date) : <span className="text-ink-3 font-normal italic">Not set</span>}
+											</span>
+											{hasPendingDDRequest ? (
+												<p className="flex items-center gap-1 text-[10px] text-amber-600 font-medium">
+													<Clock className="w-3 h-3 shrink-0" /> Request pending…
+												</p>
+											) : (
+												<button
+													type="button"
+													className="block text-[10px] text-mint hover:underline"
+													onClick={() => { setRequestedDate(ticket.due_date ? toDatetimeInput(ticket.due_date) : ""); setDueDateRequestOpen(true); }}
+												>
+													Request change
+												</button>
+											)}
+										</div>
 									) : ticket.due_date ? (
 										<span className={cn("font-medium", isOverdue ? "text-red-600" : "text-ink")}>{formatDueDate(ticket.due_date)}</span>
 									) : (
@@ -759,6 +832,13 @@ export default function TicketDetailPage() {
 						<div className="rounded-xl border bg-background shadow-sm p-5 space-y-2.5">
 							<p className="text-[10px] font-semibold text-ink-3 uppercase tracking-widest mb-3">Actions</p>
 
+							{isAssignee && (ticket as any).assignee_permission === "editor" && !isDone && !isStale && (
+								<Button size="sm" variant="outline" className="w-full gap-2" onClick={() => setEditOpen(true)}>
+									<Pencil className="w-3.5 h-3.5" />
+									Edit ticket
+								</Button>
+							)}
+
 							{ticket.status === "pending" && (
 								<Button size="sm" variant="outline" className="w-full" disabled={isClaiming} isLoading={isClaiming} onClick={() => claimTask()}>
 									Claim ticket
@@ -916,12 +996,13 @@ export default function TicketDetailPage() {
 				</DialogContent>
 			</DialogRoot>
 
-			{/* Edit ticket */}
-			{isAdmin && (
+			{/* Edit ticket — admin full edit, or employee with editor permission */}
+			{(isAdmin || (isAssignee && (ticket as any).assignee_permission === "editor")) && (
 				<EditTicketDialog
 					ticket={ticket}
 					open={editOpen}
 					onOpenChange={setEditOpen}
+					isEmployee={!isAdmin}
 					onSave={async (data) => { await updateTicket(data); setEditOpen(false); }}
 				/>
 			)}
@@ -963,6 +1044,83 @@ export default function TicketDetailPage() {
 								? ticket.implementation_plan ?? ""
 								: ticket.rollback_plan ?? ""}
 						</ReactMarkdown>
+					</div>
+				</DialogContent>
+			</DialogRoot>
+
+			{/* Employee: request due date change */}
+			<DialogRoot open={dueDateRequestOpen} onOpenChange={(o) => { setDueDateRequestOpen(o); if (!o) { setRequestedDate(""); setRequestReason(""); } }}>
+				<DialogContent className="sm:max-w-sm">
+					<DialogHeader>
+						<DialogTitle>Request due date change</DialogTitle>
+						<DialogDescription>An admin will review and approve or reject your request.</DialogDescription>
+					</DialogHeader>
+					<div className="space-y-4 pt-1">
+						<div className="space-y-1.5">
+							<Label htmlFor="dd-date">New due date</Label>
+							<input
+								id="dd-date"
+								type="datetime-local"
+								value={requestedDate}
+								onChange={(e) => setRequestedDate(e.target.value)}
+								className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-mint"
+								required
+							/>
+						</div>
+						<div className="space-y-1.5">
+							<Label htmlFor="dd-reason">Reason <span className="text-[10px] text-ink-3/50 font-normal">optional</span></Label>
+							<textarea
+								id="dd-reason"
+								value={requestReason}
+								onChange={(e) => setRequestReason(e.target.value)}
+								rows={2}
+								maxLength={500}
+								placeholder="Why do you need a different due date?"
+								className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-mint resize-none placeholder:text-ink-3/40"
+							/>
+						</div>
+						<div className="flex justify-end gap-2">
+							<Button variant="outline" size="sm" onClick={() => setDueDateRequestOpen(false)}>Cancel</Button>
+							<Button
+								size="sm"
+								disabled={!requestedDate || isCreatingDDRequest}
+								isLoading={isCreatingDDRequest}
+								onClick={() => createDueDateRequest({ requested_date: new Date(requestedDate).toISOString(), reason: requestReason.trim() || undefined })}
+							>
+								Submit request
+							</Button>
+						</div>
+					</div>
+				</DialogContent>
+			</DialogRoot>
+
+			{/* Admin: reject due date request */}
+			<DialogRoot open={ddRejectOpen} onOpenChange={(o) => { setDdRejectOpen(o); if (!o) setDdRejectReason(""); }}>
+				<DialogContent className="sm:max-w-sm">
+					<DialogHeader>
+						<DialogTitle>Reject date change request</DialogTitle>
+						<DialogDescription>Optionally provide a reason. The assignee will be notified.</DialogDescription>
+					</DialogHeader>
+					<div className="space-y-4 pt-1">
+						<textarea
+							value={ddRejectReason}
+							onChange={(e) => setDdRejectReason(e.target.value)}
+							rows={3}
+							maxLength={500}
+							placeholder="Reason for rejection (optional)…"
+							className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-mint resize-none placeholder:text-ink-3/40"
+						/>
+						<div className="flex justify-end gap-2">
+							<Button variant="outline" size="sm" onClick={() => setDdRejectOpen(false)}>Cancel</Button>
+							<Button
+								size="sm"
+								className="bg-destructive hover:bg-destructive/90 text-white"
+								disabled={isRejectingDDRequest} isLoading={isRejectingDDRequest}
+								onClick={() => rejectDueDateRequest(ddRejectReason.trim() || undefined)}
+							>
+								Reject request
+							</Button>
+						</div>
 					</div>
 				</DialogContent>
 			</DialogRoot>
@@ -1030,9 +1188,10 @@ interface EditTicketDialogProps {
 	open: boolean;
 	onOpenChange: (v: boolean) => void;
 	onSave: (data: object) => Promise<void>;
+	isEmployee?: boolean;
 }
 
-function EditTicketDialog({ ticket, open, onOpenChange, onSave }: EditTicketDialogProps) {
+function EditTicketDialog({ ticket, open, onOpenChange, onSave, isEmployee = false }: EditTicketDialogProps) {
 	const [title,              setTitle]              = useState(ticket.title);
 	const [description,        setDescription]        = useState(ticket.description ?? "");
 	const [ticketType,         setTicketType]         = useState<string>(ticket.ticket_type ?? "internal_task");
@@ -1079,23 +1238,37 @@ function EditTicketDialog({ ticket, open, onOpenChange, onSave }: EditTicketDial
 		if (!title.trim()) { setError("Title is required."); return; }
 		setIsSaving(true);
 		try {
-			await onSave({
-				title: title.trim(),
-				description: description.trim() || null,
-				ticket_type: ticketType,
-				status,
-				priority,
-				due_date: dueDate ? new Date(dueDate).toISOString() : null,
-				source: source || null,
-				assignee_permission: assigneePermission,
-				client_name: clientName.trim() || null,
-				client_email: clientEmail.trim() || null,
-				estimated_hours: estimatedHours ? parseFloat(estimatedHours) : null,
-				billable_hours:  billableHours  ? parseFloat(billableHours)  : null,
-				implementation_plan: implementationPlan.trim() || null,
-				rollback_plan:       rollbackPlan.trim()       || null,
-				links: links.filter((l) => l.url.trim()).map((l) => ({ url: l.url.trim(), label: l.label?.trim() || undefined })),
-			});
+			const linksPayload = links.filter((l) => l.url.trim()).map((l) => ({ url: l.url.trim(), label: l.label?.trim() || undefined }));
+
+			if (isEmployee) {
+				await onSave({
+					title: title.trim(),
+					description: description.trim() || null,
+					priority,
+					implementation_plan: implementationPlan.trim() || null,
+					rollback_plan:       rollbackPlan.trim()       || null,
+					billable_hours:      billableHours ? parseFloat(billableHours) : null,
+					links: linksPayload,
+				});
+			} else {
+				await onSave({
+					title: title.trim(),
+					description: description.trim() || null,
+					ticket_type: ticketType,
+					status,
+					priority,
+					due_date: dueDate ? new Date(dueDate).toISOString() : null,
+					source: source || null,
+					assignee_permission: assigneePermission,
+					client_name: clientName.trim() || null,
+					client_email: clientEmail.trim() || null,
+					estimated_hours: estimatedHours ? parseFloat(estimatedHours) : null,
+					billable_hours:  billableHours  ? parseFloat(billableHours)  : null,
+					implementation_plan: implementationPlan.trim() || null,
+					rollback_plan:       rollbackPlan.trim()       || null,
+					links: linksPayload,
+				});
+			}
 		} catch {
 			setError("Failed to save changes.");
 		} finally {
@@ -1121,28 +1294,7 @@ function EditTicketDialog({ ticket, open, onOpenChange, onSave }: EditTicketDial
 						<span className="text-[10px] font-semibold uppercase tracking-widest text-ink-3/50 whitespace-nowrap">Classification</span>
 						<div className="flex-1 border-t border-border/40" />
 					</div>
-					<div className="grid grid-cols-3 gap-4">
-						<div className="space-y-1.5">
-							<Label htmlFor="edit-type">Type</Label>
-							<select id="edit-type" value={ticketType} onChange={(e) => setTicketType(e.target.value)} className={inputCls}>
-								<option value="internal_task">Internal Task</option>
-								<option value="request">Request</option>
-								<option value="incident">Incident</option>
-								<option value="change">Request for Change</option>
-							</select>
-						</div>
-						<div className="space-y-1.5">
-							<Label htmlFor="edit-status">Status</Label>
-							<select id="edit-status" value={status} onChange={(e) => setStatus(e.target.value)} className={inputCls}>
-								<option value="pending">Open</option>
-								<option value="assigned">Assigned</option>
-								<option value="in_progress">In Progress</option>
-								<option value="on_hold">On Hold</option>
-								<option value="stale">Stale</option>
-								<option value="completed">Resolved</option>
-								<option value="closed">Closed</option>
-							</select>
-						</div>
+					{isEmployee ? (
 						<div className="space-y-1.5">
 							<Label htmlFor="edit-priority">Priority</Label>
 							<select id="edit-priority" value={priority} onChange={(e) => setPriority(e.target.value)} className={inputCls}>
@@ -1152,25 +1304,60 @@ function EditTicketDialog({ ticket, open, onOpenChange, onSave }: EditTicketDial
 								<option value="critical">Critical</option>
 							</select>
 						</div>
-					</div>
-					<div className="grid grid-cols-2 gap-4">
-						<div className="space-y-1.5">
-							<Label htmlFor="edit-source">{optLabel("Source")}</Label>
-							<select id="edit-source" value={source} onChange={(e) => setSource(e.target.value)} className={inputCls}>
-								<option value="">Not specified</option>
-								<option value="in_system">In-system</option>
-								<option value="email">Email</option>
-								<option value="sms">SMS</option>
-							</select>
-						</div>
-						<div className="space-y-1.5">
-							<Label htmlFor="edit-permission">Assignee access</Label>
-							<select id="edit-permission" value={assigneePermission} onChange={(e) => setAssigneePermission(e.target.value)} className={inputCls}>
-								<option value="editor">Editor — can edit fields</option>
-								<option value="viewer">Viewer — read-only</option>
-							</select>
-						</div>
-					</div>
+					) : (
+						<>
+							<div className="grid grid-cols-3 gap-4">
+								<div className="space-y-1.5">
+									<Label htmlFor="edit-type">Type</Label>
+									<select id="edit-type" value={ticketType} onChange={(e) => setTicketType(e.target.value)} className={inputCls}>
+										<option value="internal_task">Internal Task</option>
+										<option value="request">Request</option>
+										<option value="incident">Incident</option>
+										<option value="change">Request for Change</option>
+									</select>
+								</div>
+								<div className="space-y-1.5">
+									<Label htmlFor="edit-status">Status</Label>
+									<select id="edit-status" value={status} onChange={(e) => setStatus(e.target.value)} className={inputCls}>
+										<option value="pending">Open</option>
+										<option value="assigned">Assigned</option>
+										<option value="in_progress">In Progress</option>
+										<option value="on_hold">On Hold</option>
+										<option value="stale">Stale</option>
+										<option value="completed">Resolved</option>
+										<option value="closed">Closed</option>
+									</select>
+								</div>
+								<div className="space-y-1.5">
+									<Label htmlFor="edit-priority">Priority</Label>
+									<select id="edit-priority" value={priority} onChange={(e) => setPriority(e.target.value)} className={inputCls}>
+										<option value="low">Low</option>
+										<option value="medium">Medium</option>
+										<option value="high">High</option>
+										<option value="critical">Critical</option>
+									</select>
+								</div>
+							</div>
+							<div className="grid grid-cols-2 gap-4">
+								<div className="space-y-1.5">
+									<Label htmlFor="edit-source">{optLabel("Source")}</Label>
+									<select id="edit-source" value={source} onChange={(e) => setSource(e.target.value)} className={inputCls}>
+										<option value="">Not specified</option>
+										<option value="in_system">In-system</option>
+										<option value="email">Email</option>
+										<option value="sms">SMS</option>
+									</select>
+								</div>
+								<div className="space-y-1.5">
+									<Label htmlFor="edit-permission">Assignee access</Label>
+									<select id="edit-permission" value={assigneePermission} onChange={(e) => setAssigneePermission(e.target.value)} className={inputCls}>
+										<option value="editor">Editor — can edit fields</option>
+										<option value="viewer">Viewer — read-only</option>
+									</select>
+								</div>
+							</div>
+						</>
+					)}
 
 					{/* ── Title ── */}
 					<div className="flex items-center gap-3">
@@ -1187,26 +1374,32 @@ function EditTicketDialog({ ticket, open, onOpenChange, onSave }: EditTicketDial
 						<span className="text-[10px] font-semibold uppercase tracking-widest text-ink-3/50 whitespace-nowrap">Scheduling & Billing</span>
 						<div className="flex-1 border-t border-border/40" />
 					</div>
+					{!isEmployee && (
+						<div className="grid grid-cols-2 gap-4">
+							<div className="space-y-1.5">
+								<Label htmlFor="edit-due">{optLabel("Due date & time")}</Label>
+								<input id="edit-due" type="datetime-local" value={dueDate} onChange={(e) => setDueDate(e.target.value)} className={inputCls} />
+							</div>
+							<div className="space-y-1.5">
+								<Label htmlFor="edit-client">{optLabel("Client name")}</Label>
+								<input id="edit-client" type="text" value={clientName} onChange={(e) => setClientName(e.target.value)} maxLength={100} placeholder="e.g. Acme Corp" className={inputCls} />
+							</div>
+						</div>
+					)}
+					{!isEmployee && (
+						<div className="space-y-1.5">
+							<Label htmlFor="edit-client-email">{optLabel("Client email")}</Label>
+							<input id="edit-client-email" type="email" value={clientEmail} onChange={(e) => setClientEmail(e.target.value)} maxLength={200} placeholder="client@example.com" className={inputCls} />
+						</div>
+					)}
 					<div className="grid grid-cols-2 gap-4">
-						<div className="space-y-1.5">
-							<Label htmlFor="edit-due">{optLabel("Due date & time")}</Label>
-							<input id="edit-due" type="datetime-local" value={dueDate} onChange={(e) => setDueDate(e.target.value)} className={inputCls} />
-						</div>
-						<div className="space-y-1.5">
-							<Label htmlFor="edit-client">{optLabel("Client name")}</Label>
-							<input id="edit-client" type="text" value={clientName} onChange={(e) => setClientName(e.target.value)} maxLength={100} placeholder="e.g. Acme Corp" className={inputCls} />
-						</div>
-					</div>
-					<div className="space-y-1.5">
-						<Label htmlFor="edit-client-email">{optLabel("Client email")}</Label>
-						<input id="edit-client-email" type="email" value={clientEmail} onChange={(e) => setClientEmail(e.target.value)} maxLength={200} placeholder="client@example.com" className={inputCls} />
-					</div>
-					<div className="grid grid-cols-2 gap-4">
-						<div className="space-y-1.5">
-							<Label htmlFor="edit-est">{optLabel("Est. hours")}</Label>
-							<input id="edit-est" type="number" min="0" step="0.5" value={estimatedHours} onChange={(e) => setEstimatedHours(e.target.value)} placeholder="e.g. 4" className={inputCls} />
-						</div>
-						<div className="space-y-1.5">
+						{!isEmployee && (
+							<div className="space-y-1.5">
+								<Label htmlFor="edit-est">{optLabel("Est. hours")}</Label>
+								<input id="edit-est" type="number" min="0" step="0.5" value={estimatedHours} onChange={(e) => setEstimatedHours(e.target.value)} placeholder="e.g. 4" className={inputCls} />
+							</div>
+						)}
+						<div className={cn("space-y-1.5", isEmployee && "col-span-2")}>
 							<Label htmlFor="edit-bill">{optLabel("Billable hours")}</Label>
 							<input id="edit-bill" type="number" min="0" step="0.5" value={billableHours} onChange={(e) => setBillableHours(e.target.value)} placeholder="e.g. 4" className={inputCls} />
 						</div>

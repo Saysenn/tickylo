@@ -202,6 +202,16 @@ class APIService {
 			axiosService.patch(`${apiVersion}/ticket/${id}/reject`, { reason }),
 		requestReopen: (id: string) =>
 			axiosService.post(`${apiVersion}/ticket/${id}/request-reopen`, {}),
+		dueDateRequest: {
+			get: (id: string) =>
+				axiosService.get(`${apiVersion}/ticket/${id}/due-date-request`),
+			create: (id: string, data: { requested_date: string; reason?: string }) =>
+				axiosService.post(`${apiVersion}/ticket/${id}/due-date-request`, data),
+			approve: (id: string) =>
+				axiosService.patch(`${apiVersion}/ticket/${id}/due-date-request/approve`, {}),
+			reject: (id: string, reason?: string) =>
+				axiosService.patch(`${apiVersion}/ticket/${id}/due-date-request/reject`, { reason }),
+		},
 		bulk: (action: "assign" | "complete" | "delete", ids: string[], user_id?: string) =>
 			axiosService.post(`${apiVersion}/ticket/bulk`, { action, ids, user_id }),
 	};

@@ -20,7 +20,7 @@ export function Logo({ size = "md", className, invert = false }: LogoProps) {
 		<div className={cn("flex items-center gap-2.5 select-none", className)}>
 			<div className="relative shrink-0" style={{ width: icon, height: icon }}>
 				<Image
-					src="/logo-plain.webp"
+					src="/logo.webp"
 					alt="Tickworks"
 					fill
 					sizes={`${icon}px`}

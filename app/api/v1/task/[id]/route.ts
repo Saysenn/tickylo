@@ -58,10 +58,22 @@ const adminUpdateSchema = z.object({
 	assignee_permission: z.enum(["viewer", "editor"]).optional(),
 });
 
+// Fields an editor-role assignee is allowed to change
+const employeeUpdateSchema = z.object({
+	title: z.string().min(1).max(200).optional(),
+	description: z.string().max(1000).nullable().optional(),
+	priority: z.enum(["low", "medium", "high", "critical"]).optional(),
+	due_date: z.coerce.date().nullable().optional(),
+	implementation_plan: z.string().max(5000).nullable().optional(),
+	rollback_plan: z.string().max(5000).nullable().optional(),
+	links: z.array(z.object({ url: z.string().url().max(2000), label: z.string().max(100).optional() })).max(20).nullable().optional(),
+	billable_hours: z.number().nonnegative().nullable().optional(),
+});
+
 /**
  * PATCH /api/v1/task/[id]
- * Admin: update any field
- * Employee: not allowed via this route (use /start and /complete)
+ * Admin: update any field.
+ * Employee with editor permission: update a restricted subset of fields.
  */
 export async function PATCH(
 	request: NextRequest,
@@ -74,10 +86,30 @@ export async function PATCH(
 		if (!user) return errorResponse("Unauthorized", 401);
 
 		const isAdmin = user.app_metadata?.role === ROLES.ADMIN;
-		if (!isAdmin) return errorResponse("Forbidden", 403);
 
 		const task = await prisma.task.findUnique({ where: { id } });
 		if (!task) return errorResponse("Task not found", 404);
+
+		// Employee path — must be the assignee with editor permission
+		if (!isAdmin) {
+			if (task.user_id !== user.id) return errorResponse("Forbidden", 403);
+			if (task.assignee_permission !== "editor") return errorResponse("You have viewer access to this ticket", 403);
+
+			const body = await request.json().catch(() => ({}));
+			const validated = employeeUpdateSchema.safeParse(body);
+			if (!validated.success) return errorResponse("Invalid request body", 400);
+
+			const { links, ...rest } = validated.data;
+			const updatedTask = await prisma.task.update({
+				where: { id },
+				data: {
+					...rest,
+					...(links !== undefined ? { links: links ?? [] } : {}),
+				},
+				include: { assignee: { select: { id: true, name: true, email: true } } },
+			});
+			return ok(updatedTask);
+		}
 
 		const body = await request.json().catch(() => ({}));
 		const validated = adminUpdateSchema.safeParse(body);
