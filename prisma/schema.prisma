@@ -115,8 +115,13 @@ model User {
   taskWatchers           TaskWatcher[]
   commentReactions       CommentReaction[]
   joinRequests           UserJoinRequest[]
-  dueDateRequestsMade    DueDateRequest[]  @relation("DueDateRequester")
-  dueDateRequestsReviewed DueDateRequest[] @relation("DueDateReviewer")
+  dueDateRequestsMade      DueDateRequest[]  @relation("DueDateRequester")
+  dueDateRequestsReviewed  DueDateRequest[]  @relation("DueDateReviewer")
+  reopenRequestsMade       ReopenRequest[]   @relation("ReopenRequester")
+  reopenRequestsReviewed   ReopenRequest[]   @relation("ReopenReviewer")
+  transferRequestsMade     TransferRequest[] @relation("TransferRequester")
+  transferRequestsReviewed TransferRequest[] @relation("TransferReviewer")
+  transferRequestsTargeted TransferRequest[] @relation("TransferTarget")
 
   created_at DateTime     @default(now())
   updated_at DateTime     @updatedAt
@@ -227,6 +232,8 @@ model Task {
   relatedFrom      Task[]           @relation("RelatedTickets")
   timeEntries      TimeEntry[]      @relation("TicketTimeEntries")
   dueDateRequests  DueDateRequest[]
+  reopenRequests   ReopenRequest[]
+  transferRequests TransferRequest[]
 
   @@index([org_id])
   @@index([created_by])
@@ -362,6 +369,48 @@ model DueDateRequest {
   @@index([task_id, status])
   @@index([org_id])
   @@map("due_date_requests")
+}
+
+model ReopenRequest {
+  id           String    @id @default(cuid())
+  org_id       String?
+  task_id      String
+  requested_by String
+  status       String    @default("pending") // pending | approved | rejected
+  reviewed_by  String?
+  reviewed_at  DateTime?
+  created_at   DateTime  @default(now())
+  updated_at   DateTime  @updatedAt
+
+  task      Task  @relation(fields: [task_id], references: [id], onDelete: Cascade)
+  requester User  @relation("ReopenRequester", fields: [requested_by], references: [id])
+  reviewer  User? @relation("ReopenReviewer",  fields: [reviewed_by],  references: [id])
+
+  @@index([task_id, status])
+  @@index([org_id])
+  @@map("reopen_requests")
+}
+
+model TransferRequest {
+  id           String    @id @default(cuid())
+  org_id       String?
+  task_id      String
+  requested_by String
+  requested_to String?
+  status       String    @default("pending") // pending | approved | rejected
+  reviewed_by  String?
+  reviewed_at  DateTime?
+  created_at   DateTime  @default(now())
+  updated_at   DateTime  @updatedAt
+
+  task           Task  @relation(fields: [task_id], references: [id], onDelete: Cascade)
+  requester      User  @relation("TransferRequester", fields: [requested_by], references: [id])
+  reviewer       User? @relation("TransferReviewer",  fields: [reviewed_by],  references: [id])
+  targetEmployee User? @relation("TransferTarget",    fields: [requested_to], references: [id])
+
+  @@index([task_id, status])
+  @@index([org_id])
+  @@map("transfer_requests")
 }
 
 model TicketTypeConfig {

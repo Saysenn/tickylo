@@ -6,13 +6,32 @@ import { requireUser } from "@/lib/auth/require-user";
 import { createNotification, notifyAdmins } from "@/lib/utils/create-notification";
 
 const schema = z.object({
-	requested_to: z.string().uuid().optional(), // null = let admin decide
+	requested_to: z.string().uuid().optional(),
 });
+
+/** GET /api/v1/task/[id]/request-transfer — pending transfer request (if any) */
+export async function GET(
+	_req: NextRequest,
+	{ params }: { params: Promise<{ id: string }> },
+) {
+	try {
+		const user = await requireUser();
+		if (!user) return errorResponse("Unauthorized", 401);
+		const { id } = await params;
+		const request = await prisma.transferRequest.findFirst({
+			where: { task_id: id, status: "pending" },
+			include: { targetEmployee: { select: { name: true, email: true } } },
+		});
+		return ok(request);
+	} catch (err) {
+		console.error("[request-transfer:GET]", err);
+		return errorResponse("Internal server error", 500);
+	}
+}
 
 /**
  * POST /api/v1/task/[id]/request-transfer
- * Current assignee only. Posts a system comment requesting transfer.
- * requested_to is optional — if omitted, admin decides who gets it.
+ * Current assignee only. Creates a TransferRequest record + system comment.
  */
 export async function POST(
 	request: NextRequest,
@@ -60,16 +79,30 @@ export async function POST(
 			targetName = target.name ?? target.email;
 		}
 
+		const existing = await prisma.transferRequest.findFirst({ where: { task_id: id, status: "pending" } });
+		if (existing) return errorResponse("A transfer request is already pending", 409);
+
+		const orgId = user.app_metadata?.org_id as string | undefined;
 		const commentBody = `${requesterName} requested to transfer this task to ${targetName}.`;
 
-		const comment = await prisma.taskComment.create({
-			data: {
-				task_id: id,
-				user_id: null,
-				body: commentBody,
-				is_system: true,
-			},
-		});
+		const [, comment] = await prisma.$transaction([
+			prisma.transferRequest.create({
+				data: {
+					...(orgId ? { org_id: orgId } : {}),
+					task_id: id,
+					requested_by: user.id,
+					requested_to: requested_to ?? null,
+				},
+			}),
+			prisma.taskComment.create({
+				data: {
+					task_id: id,
+					user_id: null,
+					body: commentBody,
+					is_system: true,
+				},
+			}),
+		]);
 
 		// Notify the ticket creator directly (most reliable — they're always the responsible admin)
 		createNotification({
@@ -89,7 +122,7 @@ export async function POST(
 			excludeId: task.created_by,
 		}).catch(() => {});
 
-		return ok(comment);
+		return ok({ success: true, comment });
 	} catch (err) {
 		console.error("[task:request-transfer:POST]", err);
 		return errorResponse("Internal server error", 500);

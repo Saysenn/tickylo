@@ -129,8 +129,10 @@ export default function TicketDetailPage() {
 	const [dueDateRequestOpen, setDueDateRequestOpen] = useState(false);
 	const [requestedDate,      setRequestedDate]      = useState("");
 	const [requestReason,      setRequestReason]      = useState("");
-	const [ddRejectOpen,   setDdRejectOpen]   = useState(false);
-	const [ddRejectReason, setDdRejectReason] = useState("");
+	const [ddRejectOpen,           setDdRejectOpen]           = useState(false);
+	const [ddRejectReason,         setDdRejectReason]         = useState("");
+	const [transferReassignOpen,   setTransferReassignOpen]   = useState(false);
+	const [transferAssignTo,       setTransferAssignTo]       = useState("");
 
 	// Timer state
 	const [timerElapsed, setTimerElapsed] = useState("00:00:00");
@@ -146,7 +148,7 @@ export default function TicketDetailPage() {
 		enabled: !!id,
 	});
 
-	const dialogOpen = reassignOpen || transferOpen;
+	const dialogOpen = reassignOpen || transferOpen || transferReassignOpen;
 	const { data: employeesResult } = useQuery<{ data: Employee[] }>({
 		queryKey: ["employees-list"],
 		queryFn: () => APIService.employees.list(1, 50),
@@ -182,6 +184,24 @@ export default function TicketDetailPage() {
 		enabled: !!id,
 	});
 	const hasPendingDDRequest = !!dueDateRequest?.id;
+
+	const { data: reopenRequest, refetch: refetchReopenRequest } = useQuery<{ id: string } | null>({
+		queryKey: ["reopen-request", id],
+		queryFn: () => APIService.tasks.reopenRequest.get(id),
+		enabled: !!id,
+	});
+	const hasPendingReopenRequest = !!reopenRequest?.id;
+
+	const { data: transferRequest, refetch: refetchTransferRequest } = useQuery<{
+		id: string;
+		requested_to: string | null;
+		targetEmployee?: { name: string | null; email: string } | null;
+	} | null>({
+		queryKey: ["transfer-request", id],
+		queryFn: () => APIService.tasks.transferRequest.get(id),
+		enabled: !!id,
+	});
+	const hasPendingTransferRequest = !!transferRequest?.id;
 
 	const { data: activeEntry, refetch: refetchTimer } = useQuery<TimeEntry | null>({
 		queryKey: ["time", "active"],
@@ -234,7 +254,7 @@ export default function TicketDetailPage() {
 	});
 	const { mutateAsync: requestTransfer, isPending: isRequesting } = useMutation({
 		mutationFn: (to?: string) => APIService.tasks.requestTransfer(id, to),
-		onSuccess: () => { invalidateComments(); setTransferOpen(false); setTransferTo(""); },
+		onSuccess: () => { invalidateComments(); refetchTransferRequest(); setTransferOpen(false); setTransferTo(""); },
 	});
 	const { mutateAsync: watchTicket,   isPending: isWatchPending }   = useMutation({ mutationFn: () => APIService.tasks.watchers.watch(id),   onSuccess: invalidateWatchers });
 	const { mutateAsync: unwatchTicket, isPending: isUnwatchPending } = useMutation({ mutationFn: () => APIService.tasks.watchers.unwatch(id), onSuccess: invalidateWatchers });
@@ -244,12 +264,32 @@ export default function TicketDetailPage() {
 		onSuccess: () => { invalidate(); setRejectOpen(false); setRejectReason(""); },
 	});
 	const { mutateAsync: staleTicket,      isPending: isStaling }        = useMutation({ mutationFn: () => APIService.tasks.stale(id),         onSuccess: invalidate });
-	const { mutateAsync: requestReopen,    isPending: isRequestingReopen } = useMutation({ mutationFn: () => APIService.tasks.requestReopen(id), onSuccess: invalidateComments });
+	const { mutateAsync: requestReopen,    isPending: isRequestingReopen } = useMutation({
+		mutationFn: () => APIService.tasks.requestReopen(id),
+		onSuccess: () => { invalidateComments(); refetchReopenRequest(); },
+	});
 	const { mutateAsync: adminReopenTask,  isPending: isAdminReopening }   = useMutation({
 		mutationFn: () => APIService.tasks.update(id, { status: ticket?.user_id ? "assigned" : "pending" }),
 		onSuccess: invalidate,
 	});
 	const { mutateAsync: updateBillable } = useMutation({ mutationFn: (h: number | null) => APIService.tasks.updateBillable(id, h), onSuccess: invalidate });
+
+	const { mutateAsync: approveReopenRequest, isPending: isApprovingReopen } = useMutation({
+		mutationFn: () => APIService.tasks.reopenRequest.approve(id),
+		onSuccess: () => { invalidate(); refetchReopenRequest(); invalidateComments(); },
+	});
+	const { mutateAsync: rejectReopenRequest, isPending: isRejectingReopen } = useMutation({
+		mutationFn: (reason?: string) => APIService.tasks.reopenRequest.reject(id, reason),
+		onSuccess: () => { refetchReopenRequest(); invalidateComments(); },
+	});
+	const { mutateAsync: approveTransferRequest, isPending: isApprovingTransfer } = useMutation({
+		mutationFn: (assigneeId: string) => APIService.tasks.transferRequest.approve(id, assigneeId),
+		onSuccess: () => { invalidate(); refetchTransferRequest(); invalidateComments(); setTransferReassignOpen(false); setTransferAssignTo(""); },
+	});
+	const { mutateAsync: rejectTransferRequest, isPending: isRejectingTransfer } = useMutation({
+		mutationFn: (reason?: string) => APIService.tasks.transferRequest.reject(id, reason),
+		onSuccess: () => { refetchTransferRequest(); invalidateComments(); },
+	});
 
 	const { mutateAsync: createDueDateRequest, isPending: isCreatingDDRequest } = useMutation({
 		mutationFn: (data: { requested_date: string; reason?: string }) => APIService.tasks.dueDateRequest.create(id, data),
@@ -330,6 +370,13 @@ export default function TicketDetailPage() {
 	const canTransfer   = !isAdmin && isAssignee && (ticket.status === "assigned" || ticket.status === "in_progress");
 	const canTimer      = !isAdmin && isAssignee && !isDone && !isStale;
 
+	// Extensible pending-actions list — push new types here as features are added
+	const pendingActions: string[] = [
+		...(hasPendingDDRequest       ? ["due_date_request"] : []),
+		...(hasPendingReopenRequest   ? ["reopen_request"]   : []),
+		...(hasPendingTransferRequest ? ["transfer_request"] : []),
+	];
+
 	// ── Render ────────────────────────────────────────────────────────────
 
 	return (
@@ -353,6 +400,12 @@ export default function TicketDetailPage() {
 				<h1 className="text-base font-bold text-ink leading-snug flex-1 min-w-0 truncate">
 					{ticket.title}
 				</h1>
+				{isAdmin && pendingActions.length > 0 && (
+					<Badge variant="outline" className="shrink-0 text-xs bg-amber-500/10 text-amber-700 border-amber-500/30 gap-1">
+						<Clock className="w-3 h-3" />
+						{pendingActions.length} pending {pendingActions.length === 1 ? "action" : "actions"}
+					</Badge>
+				)}
 				{/* Admin quick actions */}
 				{isAdmin && (
 					<div className="ml-auto flex items-center gap-2">
@@ -543,6 +596,120 @@ export default function TicketDetailPage() {
 				{/* ── Right: sidebar ── */}
 				<div className="space-y-4">
 
+					{/* Pending Actions card — admin only, scalable: add new action types below */}
+					{isAdmin && pendingActions.length > 0 && (
+						<div className="rounded-xl border border-amber-500/25 bg-amber-500/5 divide-y divide-amber-500/15">
+							<div className="px-5 py-3 flex items-center gap-2">
+								<Clock className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+								<p className="text-[10px] font-semibold text-amber-700 uppercase tracking-widest">
+									Pending Actions
+								</p>
+								<span className="ml-auto text-[10px] font-bold text-amber-700 bg-amber-500/15 px-1.5 py-0.5 rounded-full">
+									{pendingActions.length}
+								</span>
+							</div>
+
+							{/* Due date change request */}
+							{hasPendingDDRequest && dueDateRequest && (
+								<div className="px-5 py-4 space-y-2">
+									<div className="flex items-center gap-1.5">
+										<Calendar className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+										<span className="text-xs font-semibold text-amber-700">Due date change request</span>
+									</div>
+									<p className="text-xs text-amber-700/80 pl-5">
+										Requesting: <span className="font-medium">{formatDueDate(dueDateRequest.requested_date)}</span>
+										{dueDateRequest.reason && <> &mdash; &ldquo;{dueDateRequest.reason}&rdquo;</>}
+									</p>
+									<div className="flex gap-2 pl-5 pt-0.5">
+										<Button
+											size="sm" variant="ghost"
+											className="h-7 px-3 text-xs text-green-700 hover:bg-green-500/10 hover:text-green-800"
+											disabled={isApprovingDDRequest} isLoading={isApprovingDDRequest}
+											onClick={() => approveDueDateRequest()}
+										>
+											<Check className="w-3.5 h-3.5 mr-1" /> Approve
+										</Button>
+										<Button
+											size="sm" variant="ghost"
+											className="h-7 px-3 text-xs text-red-600 hover:bg-red-500/10 hover:text-red-700"
+											onClick={() => setDdRejectOpen(true)}
+										>
+											<X className="w-3.5 h-3.5 mr-1" /> Reject
+										</Button>
+									</div>
+								</div>
+							)}
+
+							{/* Reopen request */}
+							{hasPendingReopenRequest && (
+								<div className="px-5 py-4 space-y-2">
+									<div className="flex items-center gap-1.5">
+										<RotateCcw className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+										<span className="text-xs font-semibold text-amber-700">Reopen request</span>
+									</div>
+									<p className="text-xs text-amber-700/80 pl-5">
+										The assignee wants this ticket reopened from <span className="font-medium capitalize">{ticket.status.replace("_", " ")}</span>.
+									</p>
+									<div className="flex gap-2 pl-5 pt-0.5">
+										<Button
+											size="sm" variant="ghost"
+											className="h-7 px-3 text-xs text-green-700 hover:bg-green-500/10 hover:text-green-800"
+											disabled={isApprovingReopen} isLoading={isApprovingReopen}
+											onClick={() => approveReopenRequest()}
+										>
+											<Check className="w-3.5 h-3.5 mr-1" /> Approve
+										</Button>
+										<Button
+											size="sm" variant="ghost"
+											className="h-7 px-3 text-xs text-red-600 hover:bg-red-500/10 hover:text-red-700"
+											disabled={isRejectingReopen} isLoading={isRejectingReopen}
+											onClick={() => rejectReopenRequest(undefined)}
+										>
+											<X className="w-3.5 h-3.5 mr-1" /> Reject
+										</Button>
+									</div>
+								</div>
+							)}
+
+							{/* Transfer request */}
+							{hasPendingTransferRequest && transferRequest && (
+								<div className="px-5 py-4 space-y-2">
+									<div className="flex items-center gap-1.5">
+										<ArrowRightLeft className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+										<span className="text-xs font-semibold text-amber-700">Transfer request</span>
+									</div>
+									<p className="text-xs text-amber-700/80 pl-5">
+										{transferRequest.targetEmployee
+											? <>Requested to <span className="font-medium">{transferRequest.targetEmployee.name ?? transferRequest.targetEmployee.email}</span> — confirm or pick someone else.</>
+											: "No specific target — pick who to reassign to."}
+									</p>
+									<div className="flex gap-2 pl-5 pt-0.5">
+										<Button
+											size="sm" variant="ghost"
+											className="h-7 px-3 text-xs text-green-700 hover:bg-green-500/10 hover:text-green-800"
+											onClick={() => {
+												setTransferAssignTo(transferRequest.requested_to ?? "");
+												setTransferReassignOpen(true);
+											}}
+										>
+											<UserCog className="w-3.5 h-3.5 mr-1" /> Reassign
+										</Button>
+										<Button
+											size="sm" variant="ghost"
+											className="h-7 px-3 text-xs text-red-600 hover:bg-red-500/10 hover:text-red-700"
+											disabled={isRejectingTransfer} isLoading={isRejectingTransfer}
+											onClick={() => rejectTransferRequest(undefined)}
+										>
+											<X className="w-3.5 h-3.5 mr-1" /> Reject
+										</Button>
+									</div>
+								</div>
+							)}
+
+							{/* Future action types: add new sections here */}
+						</div>
+					)}
+
 					{/* Details card */}
 					<div className="rounded-xl border bg-background shadow-sm divide-y">
 						<div className="px-5 py-4">
@@ -559,6 +726,7 @@ export default function TicketDetailPage() {
 									{isAdmin ? (
 										<div className="space-y-2">
 											<input
+												key={ticket.due_date ?? "none"}
 												type="datetime-local"
 												defaultValue={toDatetimeInput(ticket.due_date)}
 												onChange={(e) => {
@@ -571,31 +739,10 @@ export default function TicketDetailPage() {
 												}}
 												className="text-sm text-ink bg-transparent border-0 focus:outline-none focus:ring-0 p-0 cursor-pointer"
 											/>
-											{hasPendingDDRequest && dueDateRequest && (
-												<div className="rounded-md border border-amber-500/20 bg-amber-500/5 p-2 space-y-1.5">
-													<p className="text-[10px] font-semibold text-amber-700 uppercase tracking-wider">Pending date request</p>
-													<p className="text-xs text-amber-700/80">
-														<span className="font-medium">{formatDueDate(dueDateRequest.requested_date)}</span>
-														{dueDateRequest.reason && <> — &ldquo;{dueDateRequest.reason}&rdquo;</>}
-													</p>
-													<div className="flex gap-1.5">
-														<Button
-															size="sm" variant="ghost"
-															className="h-6 px-2 text-[10px] text-green-700 hover:bg-green-500/10"
-															disabled={isApprovingDDRequest} isLoading={isApprovingDDRequest}
-															onClick={() => approveDueDateRequest()}
-														>
-															<Check className="w-3 h-3 mr-1" /> Approve
-														</Button>
-														<Button
-															size="sm" variant="ghost"
-															className="h-6 px-2 text-[10px] text-red-600 hover:bg-red-500/10"
-															onClick={() => setDdRejectOpen(true)}
-														>
-															<X className="w-3 h-3 mr-1" /> Reject
-														</Button>
-													</div>
-												</div>
+											{hasPendingDDRequest && (
+												<p className="flex items-center gap-1 text-[10px] text-amber-600 font-medium mt-1">
+													<Clock className="w-3 h-3 shrink-0" /> Change requested
+												</p>
 											)}
 										</div>
 									) : isAssignee && (ticket as any).assignee_permission === "editor" ? (
@@ -747,24 +894,11 @@ export default function TicketDetailPage() {
 						)}
 					</div>
 
-					{/* Stale lock notice — employees only, with request-reopen option */}
+					{/* Stale lock notice — informational only */}
 					{!isAdmin && isStale && (
-						<div className="rounded-xl border border-yellow-500/20 bg-yellow-500/5 p-5 space-y-3">
-							<div>
-								<p className="text-xs font-semibold text-yellow-700 mb-1">Ticket is stale</p>
-								<p className="text-xs text-yellow-700/70">This ticket has been marked stale by an admin. You can view it but cannot take any actions until it is reactivated.</p>
-							</div>
-							{isAssignee && (
-								<Button
-									size="sm" variant="outline"
-									className="w-full gap-2 text-xs text-yellow-700 border-yellow-500/30 hover:bg-yellow-500/10"
-									disabled={isRequestingReopen} isLoading={isRequestingReopen}
-									onClick={() => requestReopen()}
-								>
-									<RotateCcw className="w-3.5 h-3.5" />
-									Request reopen
-								</Button>
-							)}
+						<div className="rounded-xl border border-yellow-500/20 bg-yellow-500/5 px-5 py-4">
+							<p className="text-xs font-semibold text-yellow-700 mb-1">Ticket is stale</p>
+							<p className="text-xs text-yellow-700/70">This ticket has been marked stale by an admin. You can request to reopen it below.</p>
 						</div>
 					)}
 
@@ -828,11 +962,30 @@ export default function TicketDetailPage() {
 					)}
 
 					{/* Employee actions card */}
-					{!isAdmin && !isStale && (
+					{!isAdmin && (
 						<div className="rounded-xl border bg-background shadow-sm p-5 space-y-2.5">
 							<p className="text-[10px] font-semibold text-ink-3 uppercase tracking-widest mb-3">Actions</p>
 
-							{isAssignee && (ticket as any).assignee_permission === "editor" && !isDone && !isStale && (
+							{/* Stale — only show request reopen */}
+							{isStale && isAssignee && (
+								hasPendingReopenRequest ? (
+									<p className="flex items-center justify-center gap-1.5 text-xs text-amber-600 font-medium py-1">
+										<Clock className="w-3.5 h-3.5 shrink-0" /> Reopen request pending…
+									</p>
+								) : (
+									<Button
+										size="sm" variant="outline"
+										className="w-full gap-2 text-yellow-700 border-yellow-500/30 hover:bg-yellow-500/10"
+										disabled={isRequestingReopen} isLoading={isRequestingReopen}
+										onClick={() => requestReopen()}
+									>
+										<RotateCcw className="w-3.5 h-3.5" />
+										Request reopen
+									</Button>
+								)
+							)}
+
+							{!isStale && isAssignee && (ticket as any).assignee_permission === "editor" && !isDone && (
 								<Button size="sm" variant="outline" className="w-full gap-2" onClick={() => setEditOpen(true)}>
 									<Pencil className="w-3.5 h-3.5" />
 									Edit ticket
@@ -870,15 +1023,21 @@ export default function TicketDetailPage() {
 									<p className="text-xs text-ink-3/70 text-center py-1">
 										Start the timer above to resume work.
 									</p>
-									<Button
-										size="sm" variant="outline"
-										className="w-full gap-2 text-xs text-ink-3 border-border hover:bg-accent"
-										disabled={isRequestingReopen} isLoading={isRequestingReopen}
-										onClick={() => requestReopen()}
-									>
-										<RotateCcw className="w-3.5 h-3.5" />
-										Request reopen
-									</Button>
+									{hasPendingReopenRequest ? (
+										<p className="flex items-center justify-center gap-1.5 text-xs text-amber-600 font-medium py-1">
+											<Clock className="w-3.5 h-3.5 shrink-0" /> Reopen request pending…
+										</p>
+									) : (
+										<Button
+											size="sm" variant="outline"
+											className="w-full gap-2 text-xs text-ink-3 border-border hover:bg-accent"
+											disabled={isRequestingReopen} isLoading={isRequestingReopen}
+											onClick={() => requestReopen()}
+										>
+											<RotateCcw className="w-3.5 h-3.5" />
+											Request reopen
+										</Button>
+									)}
 								</>
 							)}
 							{ticket.status === "completed" && isAssignee && (
@@ -893,10 +1052,16 @@ export default function TicketDetailPage() {
 								</Button>
 							)}
 							{canTransfer && (
+								hasPendingTransferRequest ? (
+									<p className="flex items-center justify-center gap-1.5 text-xs text-amber-600 font-medium py-1">
+										<Clock className="w-3.5 h-3.5 shrink-0" /> Transfer request pending…
+									</p>
+								) : (
 								<Button size="sm" variant="outline" className="w-full gap-2 text-ink-3" onClick={() => setTransferOpen(true)}>
 									<ArrowRightLeft className="w-3.5 h-3.5" />
 									Request transfer
 								</Button>
+								)
 							)}
 
 							{!isAssignee && (
@@ -951,6 +1116,37 @@ export default function TicketDetailPage() {
 						<div className="flex justify-end gap-2">
 							<Button variant="outline" size="sm" onClick={() => setReassignOpen(false)}>Cancel</Button>
 							<Button size="sm" disabled={!reassignTo || isReassigning} isLoading={isReassigning} onClick={() => reassignTask(reassignTo)}>Confirm</Button>
+						</div>
+					</div>
+				</DialogContent>
+			</DialogRoot>
+
+			{/* Reassign for transfer request */}
+			<DialogRoot open={transferReassignOpen} onOpenChange={(o) => { setTransferReassignOpen(o); if (!o) setTransferAssignTo(""); }}>
+				<DialogContent className="sm:max-w-sm">
+					<DialogHeader>
+						<DialogTitle>Approve transfer — pick assignee</DialogTitle>
+						<DialogDescription>Select who to reassign this ticket to. The transfer request will be approved automatically.</DialogDescription>
+					</DialogHeader>
+					<div className="space-y-4 pt-1">
+						<SelectRoot value={transferAssignTo} onValueChange={setTransferAssignTo}>
+							<SelectTrigger className="w-full"><SelectValue placeholder="Select employee…" /></SelectTrigger>
+							<SelectContent>
+								{employees.filter((e) => e.id !== ticket.user_id).map((e) => (
+									<SelectItem key={e.id} value={e.id}>{e.name ?? e.email}</SelectItem>
+								))}
+							</SelectContent>
+						</SelectRoot>
+						<div className="flex justify-end gap-2">
+							<Button variant="outline" size="sm" onClick={() => setTransferReassignOpen(false)}>Cancel</Button>
+							<Button
+								size="sm"
+								disabled={!transferAssignTo || isApprovingTransfer}
+								isLoading={isApprovingTransfer}
+								onClick={() => approveTransferRequest(transferAssignTo)}
+							>
+								Confirm &amp; reassign
+							</Button>
 						</div>
 					</div>
 				</DialogContent>

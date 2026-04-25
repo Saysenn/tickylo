@@ -5,10 +5,28 @@ import { NextRequest } from "next/server";
 import { notifyAdmins } from "@/lib/utils/create-notification";
 import { ROLES } from "@/configs/rbac.config";
 
+/** GET /api/v1/task/[id]/request-reopen — pending reopen request for this ticket (if any) */
+export async function GET(
+	_req: NextRequest,
+	{ params }: { params: Promise<{ id: string }> },
+) {
+	try {
+		const user = await requireUser();
+		if (!user) return errorResponse("Unauthorized", 401);
+		const { id } = await params;
+		const request = await prisma.reopenRequest.findFirst({
+			where: { task_id: id, status: "pending" },
+		});
+		return ok(request);
+	} catch (err) {
+		console.error("[request-reopen:GET]", err);
+		return errorResponse("Internal server error", 500);
+	}
+}
+
 /**
  * POST /api/v1/task/[id]/request-reopen
- * Assignee only. Creates a comment notifying admins that the employee wants
- * the ticket reopened from stale or on_hold state.
+ * Assignee only. Creates a ReopenRequest record + system comment.
  */
 export async function POST(
 	_request: NextRequest,
@@ -30,16 +48,29 @@ export async function POST(
 			return errorResponse("Only stale or on-hold tickets can be requested for reopen", 400);
 		}
 
-		const actorName = (user.user_metadata?.name as string | undefined) ?? user.email ?? "The assignee";
+		const existing = await prisma.reopenRequest.findFirst({ where: { task_id: id, status: "pending" } });
+		if (existing) return errorResponse("A reopen request is already pending", 409);
 
-		await prisma.taskComment.create({
-			data: {
-				task_id: id,
-				user_id: user.id,
-				body: `${actorName} requested to reopen this ticket — currently ${task.status === "on_hold" ? "on hold" : "stale"}.`,
-				is_system: true,
-			},
-		});
+		const actorName = (user.user_metadata?.name as string | undefined) ?? user.email ?? "The assignee";
+		const orgId = user.app_metadata?.org_id as string | undefined;
+
+		await prisma.$transaction([
+			prisma.reopenRequest.create({
+				data: {
+					...(orgId ? { org_id: orgId } : {}),
+					task_id: id,
+					requested_by: user.id,
+				},
+			}),
+			prisma.taskComment.create({
+				data: {
+					task_id: id,
+					user_id: user.id,
+					body: `${actorName} requested to reopen this ticket — currently ${task.status === "on_hold" ? "on hold" : "stale"}.`,
+					is_system: true,
+				},
+			}),
+		]);
 
 		notifyAdmins({
 			type: "task_updated",

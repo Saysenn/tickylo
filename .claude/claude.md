@@ -102,3 +102,53 @@ Input helpers: `toDateInput` (ISO → `<input type="date">` value), `toIntInput`
 - **Simplicity First**: Make every change as simple as possible. Impact minimal code.
 - **No Laziness**: Find root causes. No temporary fixes. Senior developer standards.
 - **Minimal Impact**: Changes should only touch what's necessary. Avoid introducing bugs.
+
+# Real-Time Data & State Updates
+
+Every CRUD operation **must** reflect immediately in the UI without a page reload. This is non-negotiable.
+
+## React Query invalidation after mutations
+
+After every `useMutation` `onSuccess`, invalidate the relevant query keys:
+
+```ts
+const { mutateAsync } = useMutation({
+  mutationFn: (data) => APIService.x.update(id, data),
+  onSuccess: () => {
+    queryClient.invalidateQueries({ queryKey: ["resource", id] });
+    queryClient.invalidateQueries({ queryKey: ["resources"] }); // list view
+  },
+});
+```
+
+- Always invalidate **both** the detail query (`["resource", id]`) and the list query (`["resources"]`) when updating a single resource.
+- If a mutation affects multiple resources (e.g. approve writes to two models), invalidate all affected query keys.
+
+## Controlled vs uncontrolled inputs
+
+**Never use `defaultValue` for inputs that display server-fetched data.** `defaultValue` is uncontrolled — React ignores prop changes after mount, so data updated via mutations will silently not reflect.
+
+- Use `defaultValue` only for truly static defaults that never change.
+- For inputs displaying server data that can change, either:
+  - Use controlled `value` + `onChange` state
+  - Or add `key={serverValue ?? "fallback"}` to force a remount when the value changes (acceptable for simple inline edit inputs)
+
+```tsx
+// WRONG — won't update when ticket.due_date changes after approve mutation
+<input type="datetime-local" defaultValue={toDatetimeInput(ticket.due_date)} />
+
+// CORRECT — remounts when due_date changes, picking up the new defaultValue
+<input key={ticket.due_date ?? "none"} type="datetime-local" defaultValue={toDatetimeInput(ticket.due_date)} />
+```
+
+## Architecture for scalable ticket-level signals
+
+When adding a new pending action type (e.g. a new approval flow, a transfer request):
+
+1. **Backend** (`app/api/v1/task/route.ts` GET handler): include the new model in findMany, push a new string identifier into the `pending_actions` array.
+2. **Types** (`components/dashboard/tasks/types.ts`): `pending_actions` is already typed as `string[]` — no change needed.
+3. **Table** (`tasks-table.tsx`): the amber `Clock` dot appears automatically because it checks `pending_actions.length > 0`.
+4. **Detail page** (`tickets/[id]/page.tsx`):
+   - Add to the `pendingActions` derived array.
+   - Add a new section inside the "Pending Actions" sidebar card (follow the existing due-date section as a template).
+   - The header badge count updates automatically.

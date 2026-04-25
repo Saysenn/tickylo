@@ -202,6 +202,16 @@ class APIService {
 			axiosService.patch(`${apiVersion}/ticket/${id}/reject`, { reason }),
 		requestReopen: (id: string) =>
 			axiosService.post(`${apiVersion}/ticket/${id}/request-reopen`, {}),
+		reopenRequest: {
+			get:     (id: string) => axiosService.get(`${apiVersion}/ticket/${id}/request-reopen`),
+			approve: (id: string) => axiosService.patch(`${apiVersion}/ticket/${id}/request-reopen/approve`, {}),
+			reject:  (id: string, reason?: string) => axiosService.patch(`${apiVersion}/ticket/${id}/request-reopen/reject`, { reason }),
+		},
+		transferRequest: {
+			get:     (id: string) => axiosService.get(`${apiVersion}/ticket/${id}/request-transfer`),
+			approve: (id: string, assigneeId: string) => axiosService.patch(`${apiVersion}/ticket/${id}/request-transfer/approve`, { assignee_id: assigneeId }),
+			reject:  (id: string, reason?: string) => axiosService.patch(`${apiVersion}/ticket/${id}/request-transfer/reject`, { reason }),
+		},
 		dueDateRequest: {
 			get: (id: string) =>
 				axiosService.get(`${apiVersion}/ticket/${id}/due-date-request`),

@@ -32,6 +32,7 @@ export interface Task {
 	total_time_ms?: number;
 	assignee_permission?: string;
 	source?: string | null;
+	pending_actions?: string[];
 }
 
 export interface TaskPage {

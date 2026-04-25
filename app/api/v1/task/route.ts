@@ -119,8 +119,11 @@ export async function GET(request: NextRequest) {
 			prisma.task.findMany({
 				where,
 				include: {
-					assignee:    { select: { id: true, name: true, email: true } },
-					timeEntries: { select: { start_time: true, end_time: true } },
+					assignee:         { select: { id: true, name: true, email: true } },
+					timeEntries:      { select: { start_time: true, end_time: true } },
+					dueDateRequests:  { where: { status: "pending" }, select: { id: true } },
+					reopenRequests:   { where: { status: "pending" }, select: { id: true } },
+					transferRequests: { where: { status: "pending" }, select: { id: true } },
 				},
 				orderBy: { created_at: "desc" },
 				take: limit,
@@ -129,12 +132,18 @@ export async function GET(request: NextRequest) {
 			prisma.task.count({ where }),
 		]);
 
-		const data = entries.map(({ timeEntries, ...task }) => ({
+		const data = entries.map(({ timeEntries, dueDateRequests, reopenRequests, transferRequests, ...task }) => ({
 			...task,
 			total_time_ms: timeEntries.reduce((sum, e) => {
 				if (e.end_time) return sum + (new Date(e.end_time).getTime() - new Date(e.start_time).getTime());
 				return sum;
 			}, 0),
+			// Extensible: push new type strings here as new ticket-level actions are introduced
+			pending_actions: [
+				...(dueDateRequests.length  > 0 ? ["due_date_request"] : []),
+				...(reopenRequests.length   > 0 ? ["reopen_request"]   : []),
+				...(transferRequests.length > 0 ? ["transfer_request"] : []),
+			],
 		}));
 
 		return ok({
