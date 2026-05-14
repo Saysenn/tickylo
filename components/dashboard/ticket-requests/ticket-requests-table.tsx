@@ -13,6 +13,7 @@ import {
 	SelectRoot, SelectTrigger, SelectValue, SelectContent, SelectItem,
 } from "@/components/ui/select";
 import { EmployeePickerModal } from "@/components/dashboard/tickets/employee-picker-modal";
+import { Pagination } from "@/components/ui/pagination";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -431,16 +432,13 @@ export function TicketRequestsTable() {
 				</div>
 			</div>
 
-			{/* Pagination */}
-			{data && data.totalPages > 1 && (
-				<div className="flex items-center justify-between text-xs text-ink-3">
-					<span>Page {data.page} of {data.totalPages}</span>
-					<div className="flex gap-1">
-						<Button variant="outline" size="sm" className="h-7 text-xs" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>Previous</Button>
-						<Button variant="outline" size="sm" className="h-7 text-xs" disabled={page >= data.totalPages} onClick={() => setPage((p) => p + 1)}>Next</Button>
-					</div>
-				</div>
-			)}
+			<Pagination
+				page={page}
+				totalPages={data?.totalPages ?? 1}
+				onPrev={() => setPage((p) => p - 1)}
+				onNext={() => setPage((p) => p + 1)}
+				onGoTo={setPage}
+			/>
 		</div>
 	);
 }

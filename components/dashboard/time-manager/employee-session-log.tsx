@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { Clock, TicketCheck, Timer, ExternalLink } from "lucide-react";
+import { Pagination } from "@/components/ui/pagination";
 import APIService from "@/lib/infra/api";
 import { formatDate, formatTime, formatDurationBetween } from "@/lib/utils/format";
 import { SessionDetailModal } from "@/components/dashboard/time-tracker/session-detail-modal";
@@ -124,25 +125,13 @@ export function EmployeeSessionLog({ userId, from, to }: Props) {
 				</ul>
 			)}
 
-			{totalPages > 1 && (
-				<div className="flex items-center justify-center gap-3 px-5 py-3 border-t">
-					<button
-						onClick={() => setPage((p) => Math.max(1, p - 1))}
-						disabled={page === 1}
-						className="text-xs text-ink-3 hover:text-ink disabled:opacity-30 transition-colors"
-					>
-						← Prev
-					</button>
-					<span className="text-xs text-ink-3">{page} / {totalPages}</span>
-					<button
-						onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-						disabled={page === totalPages}
-						className="text-xs text-ink-3 hover:text-ink disabled:opacity-30 transition-colors"
-					>
-						Next →
-					</button>
-				</div>
-			)}
+			<Pagination
+				page={page}
+				totalPages={totalPages}
+				onPrev={() => setPage((p) => p - 1)}
+				onNext={() => setPage((p) => p + 1)}
+				onGoTo={setPage}
+			/>
 
 			{detailEntry && (
 				<SessionDetailModal entry={detailEntry} onClose={() => setDetailEntry(null)} />

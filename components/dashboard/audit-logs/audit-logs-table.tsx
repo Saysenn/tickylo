@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ChevronDown, ChevronRight, Filter, X } from "lucide-react";
+import { Pagination } from "@/components/ui/pagination";
 import APIService from "@/lib/infra/api";
 import { formatDateTime } from "@/lib/utils/format";
 import { cn } from "@/lib/utils/cn";
@@ -360,34 +361,13 @@ export function AuditLogsTable() {
 				</div>
 			</div>
 
-			{/* Pagination */}
-			{data && data.totalPages > 1 && (
-				<div className="flex items-center justify-between text-xs text-ink-3">
-					<span>
-						Page {data.page} of {data.totalPages}
-					</span>
-					<div className="flex gap-1">
-						<Button
-							variant="outline"
-							size="sm"
-							className="h-7 text-xs"
-							disabled={page <= 1}
-							onClick={() => setPage((p) => p - 1)}
-						>
-							Previous
-						</Button>
-						<Button
-							variant="outline"
-							size="sm"
-							className="h-7 text-xs"
-							disabled={page >= data.totalPages}
-							onClick={() => setPage((p) => p + 1)}
-						>
-							Next
-						</Button>
-					</div>
-				</div>
-			)}
+			<Pagination
+				page={page}
+				totalPages={data?.totalPages ?? 1}
+				onPrev={() => setPage((p) => p - 1)}
+				onNext={() => setPage((p) => p + 1)}
+				onGoTo={setPage}
+			/>
 		</div>
 	);
 }

@@ -23,6 +23,7 @@ import {
 	startOfLastMonthDateStr, endOfLastMonthDateStr, daysAgoDateStr,
 } from "@/lib/utils/format";
 import { cn } from "@/lib/utils/cn";
+import { Pagination } from "@/components/ui/pagination";
 
 interface Employee {
 	id: string;
@@ -312,21 +313,13 @@ export function EmployeeReportsSection() {
 						</table>
 					</div>
 
-					{totalPages > 1 && (
-						<div className="flex items-center justify-between text-xs text-ink-3">
-							<span>Page {page} of {totalPages}</span>
-							<div className="flex gap-1">
-								<button disabled={page === 1} onClick={() => setPage((p) => p - 1)}
-									className="px-2 py-1 rounded border border-border disabled:opacity-40 hover:bg-accent/30">
-									Prev
-								</button>
-								<button disabled={page === totalPages} onClick={() => setPage((p) => p + 1)}
-									className="px-2 py-1 rounded border border-border disabled:opacity-40 hover:bg-accent/30">
-									Next
-								</button>
-							</div>
-						</div>
-					)}
+					<Pagination
+						page={page}
+						totalPages={totalPages}
+						onPrev={() => setPage((p) => p - 1)}
+						onNext={() => setPage((p) => p + 1)}
+						onGoTo={setPage}
+					/>
 				</div>
 			)}
 
