@@ -33,7 +33,7 @@ function ElapsedTimer({ startTime }: { startTime: string }) {
 	}, [startTime]);
 
 	return (
-		<span className="text-xs font-mono tabular-nums text-mint">{elapsed}</span>
+		<span className="text-[10px] font-mono tabular-nums text-mint">{elapsed}</span>
 	);
 }
 
@@ -82,21 +82,21 @@ export function TeamActivityWidget({ users }: TeamActivityWidgetProps) {
 
 								{/* Info */}
 								<div className="flex-1 min-w-0">
-									<p className="text-sm font-medium text-ink truncate">
+									<p className="text-xs font-medium text-ink truncate">
 										{displayName}
 									</p>
 									{u.active_task_title ? (
-										<p className="text-xs text-ink-3 truncate flex items-center gap-1">
+										<p className="text-[10px] text-ink-3 truncate flex items-center gap-1">
 											<TicketCheck className="w-3 h-3 shrink-0 text-mint" />
 											<span className="font-medium text-ink-2 truncate">{u.active_task_title}</span>
 										</p>
 									) : u.entry_title ? (
-										<p className="text-xs text-ink-3 truncate flex items-center gap-1">
+										<p className="text-[10px] text-ink-3 truncate flex items-center gap-1">
 											<Timer className="w-3 h-3 shrink-0 text-ink-3" />
 											<span className="truncate">{u.entry_title}</span>
 										</p>
 									) : (
-										<p className="text-xs text-ink-3 flex items-center gap-1">
+										<p className="text-[10px] text-ink-3 flex items-center gap-1">
 											<Timer className="w-3 h-3 shrink-0 text-ink-3" />
 											General timer
 										</p>
