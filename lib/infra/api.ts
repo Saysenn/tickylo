@@ -302,7 +302,7 @@ class APIService {
 	};
 
 	// ---------------------------------------------------------------------------
-	// Audit Logs (admin + super_admin only)
+	// Audit Logs (admin only — org-scoped)
 	// ---------------------------------------------------------------------------
 	public auditLogs = {
 		list: (params?: { page?: number; limit?: number; action?: string; entity_type?: string; actor_id?: string; from?: string; to?: string }) =>
@@ -314,11 +314,11 @@ class APIService {
 	// ---------------------------------------------------------------------------
 	public superAdmin = {
 		getApplications: (status: string) =>
-			axiosService.get(`/super-admin/applications`, { status }),
+			axiosService.get(`${apiVersion}/super-admin/applications`, { status }),
 		approveApplication: (id: string) =>
-			axiosService.post(`/super-admin/applications/${id}/approve`, {}),
+			axiosService.post(`${apiVersion}/super-admin/applications/${id}/approve`, {}),
 		rejectApplication: (id: string, reason: string) =>
-			axiosService.post(`/super-admin/applications/${id}/reject`, { reason }),
+			axiosService.post(`${apiVersion}/super-admin/applications/${id}/reject`, { reason }),
 	};
 
 	// ---------------------------------------------------------------------------

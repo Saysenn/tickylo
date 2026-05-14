@@ -1,11 +1,11 @@
 import { NextRequest } from "next/server";
 import { ok, errorResponse } from "@/lib/utils/response";
-import { requireAdmin } from "@/lib/auth/require-admin";
+import { requireAdminAccess } from "@/lib/auth/require-admin-access";
 import * as AnalyticsService from "@/services/analytics.service";
 
 export async function GET(req: NextRequest) {
 	try {
-		const admin = await requireAdmin();
+		const admin = await requireAdminAccess();
 		if (!admin) return errorResponse("Forbidden", 403);
 
 		const { searchParams } = req.nextUrl;

@@ -1,17 +1,10 @@
 import { NextRequest } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { z } from "zod";
 import { prisma } from "@/lib/infra/prisma";
 import { ok, errorResponse } from "@/lib/utils/response";
 import { sendEmail } from "@/lib/email/send";
 import { auditLog } from "@/lib/utils/audit";
-import { z } from "zod";
-
-async function requireSuperAdmin() {
-	const supabase = await createClient();
-	const { data: { user } } = await supabase.auth.getUser();
-	if (!user || user.app_metadata?.role !== "super_admin") return null;
-	return user;
-}
+import { requireSuperAdmin } from "@/lib/auth/require-super-admin";
 
 const schema = z.object({ reason: z.string().min(1, "Reason is required") });
 
@@ -40,7 +33,6 @@ export async function POST(
 			data: { status: "rejected", reject_reason: reason, reviewed_at: new Date() },
 		});
 
-		// Send rejection email
 		await sendEmail({
 			to: application.admin_email,
 			subject: `Update on your Tickworks company registration`,
