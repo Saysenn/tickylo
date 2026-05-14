@@ -89,6 +89,13 @@ export function formatTime(dateStr: string): string {
 	});
 }
 
+export function formatDateTime(dateStr: string | null | undefined): string {
+	if (!dateStr) return "Never";
+	const d = new Date(dateStr);
+	return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+		+ ", " + d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+}
+
 /**
  * Formats milliseconds into a human-readable time string (HH:MM:SS).
  * @param ms - The number of milliseconds to format.

@@ -1075,6 +1075,8 @@ export async function bulkTicketAction(action: BulkAction, ids: string[], admin:
 // ─── Reopen Request ───────────────────────────────────────────────────────────
 
 export async function getReopenRequest(ticketId: string) {
+	const ticket = await prisma.ticket.findUnique({ where: { id: ticketId }, select: { status: true } });
+	if (!ticket || ticket.status !== "stale") return null;
 	return prisma.reopenRequest.findFirst({ where: { task_id: ticketId, status: "pending" } });
 }
 
@@ -1083,8 +1085,8 @@ export async function submitReopenRequest(ticketId: string, caller: Caller) {
 	if (!ticket) throw Object.assign(new Error("Ticket not found"), { status: 404 });
 	if (callerIsAdmin(caller)) throw Object.assign(new Error("Admins can reopen tickets directly"), { status: 400 });
 	if (ticket.user_id !== caller.id) throw Object.assign(new Error("Only the assignee can request a reopen"), { status: 403 });
-	if (!["stale", "on_hold"].includes(ticket.status))
-		throw Object.assign(new Error("Only stale or on-hold tickets can be requested for reopen"), { status: 400 });
+	if (ticket.status !== "stale")
+		throw Object.assign(new Error("Only stale tickets can be requested for reopen"), { status: 400 });
 
 	const existing = await prisma.reopenRequest.findFirst({ where: { task_id: ticketId, status: "pending" } });
 	if (existing) throw Object.assign(new Error("A reopen request is already pending"), { status: 409 });
@@ -1094,7 +1096,7 @@ export async function submitReopenRequest(ticketId: string, caller: Caller) {
 
 	await prisma.$transaction([
 		prisma.reopenRequest.create({ data: { ...(orgId ? { org_id: orgId } : {}), task_id: ticketId, requested_by: caller.id } }),
-		prisma.ticketComment.create({ data: { task_id: ticketId, user_id: caller.id, body: `${actorName} requested to reopen this ticket — currently ${ticket.status === "on_hold" ? "on hold" : "stale"}.`, is_system: true } }),
+		prisma.ticketComment.create({ data: { task_id: ticketId, user_id: caller.id, body: `${actorName} requested to reopen this ticket — currently stale.`, is_system: true } }),
 	]);
 
 	auditLog({

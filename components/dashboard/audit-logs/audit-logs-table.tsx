@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ChevronDown, ChevronRight, Filter, X } from "lucide-react";
 import APIService from "@/lib/infra/api";
-import { formatDate } from "@/lib/utils/format";
+import { formatDateTime } from "@/lib/utils/format";
 import { cn } from "@/lib/utils/cn";
 import {
 	SelectRoot,
@@ -177,7 +177,7 @@ function AuditLogRow({ log }: { log: AuditLogEntry }) {
 			>
 				{/* Timestamp */}
 				<td className="px-4 py-3 text-xs text-ink-3 whitespace-nowrap">
-					{formatDate(log.created_at)}
+					{formatDateTime(log.created_at)}
 				</td>
 
 				{/* Actor */}

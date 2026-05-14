@@ -1019,26 +1019,9 @@ export default function TicketDetailPage() {
 								</>
 							)}
 							{ticket.status === "on_hold" && isAssignee && (
-								<>
-									<p className="text-xs text-ink-3/70 text-center py-1">
-										Start the timer above to resume work.
-									</p>
-									{hasPendingReopenRequest ? (
-										<p className="flex items-center justify-center gap-1.5 text-xs text-amber-600 font-medium py-1">
-											<Clock className="w-3.5 h-3.5 shrink-0" /> Reopen request pending…
-										</p>
-									) : (
-										<Button
-											size="sm" variant="outline"
-											className="w-full gap-2 text-xs text-ink-3 border-border hover:bg-accent"
-											disabled={isRequestingReopen} isLoading={isRequestingReopen}
-											onClick={() => requestReopen()}
-										>
-											<RotateCcw className="w-3.5 h-3.5" />
-											Request reopen
-										</Button>
-									)}
-								</>
+								<p className="text-xs text-ink-3/70 text-center py-1">
+									Start the timer above to resume work.
+								</p>
 							)}
 							{ticket.status === "completed" && isAssignee && (
 								<Button

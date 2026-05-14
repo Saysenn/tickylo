@@ -150,56 +150,17 @@ export default async function EmployeeDetailPage({
 				}
 			/>
 
-			{/* Leave balances + history */}
+			{/* Leave — coming soon */}
 			<section className="rounded-lg border bg-background p-6 space-y-4">
 				<h2 className="font-semibold text-ink">Leave</h2>
-
-				{/* Editable leave balances */}
-				<EmployeeLeaveBalanceSection
-					employeeId={id}
-					initialBalances={{
-						sick_leave: meta?.sick_leave ?? 0,
-						vacation_leave: meta?.vacation_leave ?? 0,
-						emergency_leave: meta?.emergency_leave ?? 0,
-						personal_leave: meta?.personal_leave ?? 0,
-					}}
-				/>
-
-				{/* Leave history */}
-				{leaves.length > 0 && (
-					<div className="rounded-md border overflow-x-auto mt-2">
-						<table className="w-full text-sm min-w-[400px]">
-							<thead>
-								<tr className="border-b bg-accent/30">
-									<th className="text-left px-4 py-2 text-xs font-semibold text-ink-3 uppercase tracking-wider">Type</th>
-									<th className="text-left px-4 py-2 text-xs font-semibold text-ink-3 uppercase tracking-wider">Dates</th>
-									<th className="text-left px-4 py-2 text-xs font-semibold text-ink-3 uppercase tracking-wider">Status</th>
-								</tr>
-							</thead>
-							<tbody className="divide-y">
-								{leaves.map((leave) => (
-									<tr key={leave.id} className="hover:bg-accent/10">
-										<td className="px-4 py-2 capitalize">{leave.type}</td>
-										<td className="px-4 py-2 text-ink-3">
-											{formatDate(leave.start.toISOString())} → {formatDate(leave.end.toISOString())}
-										</td>
-										<td className="px-4 py-2">
-											<Badge
-												variant="outline"
-												className={cn("capitalize", LEAVE_STATUS_STYLES[leave.status])}
-											>
-												{leave.status}
-											</Badge>
-										</td>
-									</tr>
-								))}
-							</tbody>
-						</table>
-					</div>
-				)}
-				{leaves.length === 0 && (
-					<p className="text-sm text-ink-3">No leave history.</p>
-				)}
+				<div className="flex flex-col items-center justify-center py-8 gap-3 text-center">
+					<span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-mint/10 text-mint text-xs font-medium">
+						Coming Soon
+					</span>
+					<p className="text-sm text-ink-3 max-w-xs">
+						Leave management is coming soon.
+					</p>
+				</div>
 			</section>
 
 			{/* Tasks */}
