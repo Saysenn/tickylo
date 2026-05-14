@@ -16,7 +16,7 @@ interface EmployeeDashboardData {
 		active: { id: string; start_time: string; title: string | null } | null;
 	};
 	tasks: { assigned: number; in_progress: number; completed: number };
-	requests: { pending: number };
+	ticket_requests: { pending: number };
 	weekly_days: { date: string; totalMs: number }[];
 	my_tasks: {
 		id: string;
@@ -64,11 +64,11 @@ export function EmployeeDashboard() {
 					href="/dashboard/tasks"
 				/>
 				<StatCard
-					label="Pending Requests"
-					value={data.requests.pending}
-					subtext="awaiting approval"
+					label="My Requests"
+					value={data.ticket_requests.pending}
+					subtext="ticket requests"
 					icon={ClipboardList}
-					href="/dashboard/requests"
+					href="/dashboard/tickets"
 				/>
 			</div>
 

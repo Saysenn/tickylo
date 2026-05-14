@@ -30,7 +30,7 @@ interface AdminDashboardData {
 		in_progress: number;
 		completed: number;
 	};
-	leaves: { pending: number };
+	ticket_requests: { pending: number };
 	weekly_days: { date: string; totalMs: number }[];
 	recent_tasks: {
 		id: string;
@@ -84,11 +84,11 @@ export function AdminDashboard() {
 					href="/dashboard/tickets"
 				/>
 				<StatCard
-					label="Pending Approvals"
-					value={data.leaves.pending}
-					subtext="leave requests"
+					label="Ticket Requests"
+					value={data.ticket_requests.pending}
+					subtext="pending review"
 					icon={ClipboardList}
-					href="/dashboard/requests"
+					href="/dashboard/tickets"
 				/>
 			</div>
 

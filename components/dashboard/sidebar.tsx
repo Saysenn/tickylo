@@ -10,7 +10,6 @@ import {
 	Clock,
 	AlarmClock,
 	ClipboardList,
-	Inbox,
 	BarChart2,
 	Shield,
 } from "lucide-react";
@@ -86,8 +85,7 @@ const navGroups: NavGroup[] = [
 				icon: AlarmClock,
 			},
 			{ label: "Tickets", href: "/dashboard/tickets", icon: ClipboardList },
-			{ label: "Requests", href: "/dashboard/requests", icon: Inbox },
-		],
+			],
 	},
 ];
 
