@@ -82,6 +82,10 @@ function notificationIcon(type: string) {
 			return <AtSign className="w-3.5 h-3.5 text-purple-500" />;
 		case "due_date_reminder":
 			return <AlertTriangle className="w-3.5 h-3.5 text-yellow-500" />;
+		case "priority_escalated":
+			return <AlertTriangle className="w-3.5 h-3.5 text-red-500" />;
+		case "timer_auto_closed":
+			return <LogOut className="w-3.5 h-3.5 text-orange-500" />;
 		case "task_watched":
 			return <Eye className="w-3.5 h-3.5 text-mint" />;
 		default:

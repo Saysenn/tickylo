@@ -61,7 +61,7 @@ export function EmployeeDashboard() {
 					value={activeTasks}
 					subtext={`${data.tasks.in_progress} in progress`}
 					icon={CheckSquare}
-					href="/dashboard/tasks"
+					href="/dashboard/tickets"
 				/>
 				<StatCard
 					label="My Requests"

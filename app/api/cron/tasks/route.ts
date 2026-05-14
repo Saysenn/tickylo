@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
 			type: "due_date_reminder",
 			title: "Task due soon",
 			body: `"${task.title}" is due within 24 hours.`,
-			link: `/dashboard/tasks/${task.id}`,
+			link: `/dashboard/tickets/${task.id}`,
 		}).catch(() => {});
 	}
 
@@ -74,7 +74,7 @@ export async function GET(request: NextRequest) {
 				type: "priority_escalated",
 				title: "Task priority escalated",
 				body: `"${task.title}" is overdue. Priority bumped to High.`,
-				link: `/dashboard/tasks/${task.id}`,
+				link: `/dashboard/tickets/${task.id}`,
 			}).catch(() => {});
 		}
 	}
