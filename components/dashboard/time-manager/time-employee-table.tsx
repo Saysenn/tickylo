@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { ChevronRight } from "lucide-react";
 import { formatDurationMs } from "@/lib/utils/format";
+import { Pagination } from "@/components/ui/pagination";
 
 export interface EmployeeStat {
 	id: string;
@@ -108,29 +109,13 @@ export function TimeEmployeeTable({ employees, onSelect, currentUserId, search =
 				</table>
 			</div>
 
-			{totalPages > 1 && (
-				<div className="flex items-center justify-between text-xs text-ink-3">
-					<span>
-						Page {currentPage} of {totalPages}
-					</span>
-					<div className="flex gap-1">
-						<button
-							disabled={currentPage === 1}
-							onClick={() => setPage((p) => p - 1)}
-							className="px-2 py-1 rounded border border-border disabled:opacity-40 hover:bg-accent/30"
-						>
-							Prev
-						</button>
-						<button
-							disabled={currentPage === totalPages}
-							onClick={() => setPage((p) => p + 1)}
-							className="px-2 py-1 rounded border border-border disabled:opacity-40 hover:bg-accent/30"
-						>
-							Next
-						</button>
-					</div>
-				</div>
-			)}
+			<Pagination
+				page={currentPage}
+				totalPages={totalPages}
+				onPrev={() => setPage((p) => p - 1)}
+				onNext={() => setPage((p) => p + 1)}
+				onGoTo={setPage}
+			/>
 		</div>
 	);
 }
