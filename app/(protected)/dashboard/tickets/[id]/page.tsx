@@ -13,6 +13,7 @@ import {
 	DialogTitle,
 	DialogDescription,
 } from "@/components/ui/dialog";
+import { EmployeePickerModal } from "@/components/dashboard/tickets/employee-picker-modal";
 import {
 	SelectRoot,
 	SelectTrigger,
@@ -1069,71 +1070,28 @@ export default function TicketDetailPage() {
 			{/* ── Dialogs ── */}
 
 			{/* Reassign */}
-			<DialogRoot open={reassignOpen} onOpenChange={(o) => { setReassignOpen(o); if (!o) setReassignTo(""); }}>
-				<DialogContent className="sm:max-w-sm">
-					<DialogHeader>
-						<DialogTitle>Reassign Ticket</DialogTitle>
-						<DialogDescription>Active ticket counts shown to help balance workload.</DialogDescription>
-					</DialogHeader>
-					<div className="space-y-4 pt-1">
-						<SelectRoot value={reassignTo} onValueChange={setReassignTo}>
-							<SelectTrigger className="w-full"><SelectValue placeholder="Select employee…" /></SelectTrigger>
-							<SelectContent>
-								{employees.map((e) => {
-									const count = workload[e.id] ?? 0;
-									return (
-										<SelectItem key={e.id} value={e.id}>
-											<span className="flex items-center justify-between w-full gap-4">
-												<span>{e.name ?? e.email}</span>
-												<span className={cn("text-[10px] font-medium px-1.5 py-0.5 rounded",
-													count === 0 ? "bg-mint/15 text-mint" : count <= 3 ? "bg-yellow-500/10 text-yellow-600" : "bg-red-500/10 text-red-600",
-												)}>
-													{count} active
-												</span>
-											</span>
-										</SelectItem>
-									);
-								})}
-							</SelectContent>
-						</SelectRoot>
-						<div className="flex justify-end gap-2">
-							<Button variant="outline" size="sm" onClick={() => setReassignOpen(false)}>Cancel</Button>
-							<Button size="sm" disabled={!reassignTo || isReassigning} isLoading={isReassigning} onClick={() => reassignTask(reassignTo)}>Confirm</Button>
-						</div>
-					</div>
-				</DialogContent>
-			</DialogRoot>
+			<EmployeePickerModal
+				open={reassignOpen}
+				title="Reassign Ticket"
+				subtitle="Active ticket counts shown to help balance workload."
+				workload={workload}
+				isPending={isReassigning}
+				confirmLabel="Confirm"
+				onConfirm={(eid) => reassignTask(eid)}
+				onClose={() => setReassignOpen(false)}
+			/>
 
 			{/* Reassign for transfer request */}
-			<DialogRoot open={transferReassignOpen} onOpenChange={(o) => { setTransferReassignOpen(o); if (!o) setTransferAssignTo(""); }}>
-				<DialogContent className="sm:max-w-sm">
-					<DialogHeader>
-						<DialogTitle>Approve transfer — pick assignee</DialogTitle>
-						<DialogDescription>Select who to reassign this ticket to. The transfer request will be approved automatically.</DialogDescription>
-					</DialogHeader>
-					<div className="space-y-4 pt-1">
-						<SelectRoot value={transferAssignTo} onValueChange={setTransferAssignTo}>
-							<SelectTrigger className="w-full"><SelectValue placeholder="Select employee…" /></SelectTrigger>
-							<SelectContent>
-								{employees.filter((e) => e.id !== ticket.user_id).map((e) => (
-									<SelectItem key={e.id} value={e.id}>{e.name ?? e.email}</SelectItem>
-								))}
-							</SelectContent>
-						</SelectRoot>
-						<div className="flex justify-end gap-2">
-							<Button variant="outline" size="sm" onClick={() => setTransferReassignOpen(false)}>Cancel</Button>
-							<Button
-								size="sm"
-								disabled={!transferAssignTo || isApprovingTransfer}
-								isLoading={isApprovingTransfer}
-								onClick={() => approveTransferRequest(transferAssignTo)}
-							>
-								Confirm &amp; reassign
-							</Button>
-						</div>
-					</div>
-				</DialogContent>
-			</DialogRoot>
+			<EmployeePickerModal
+				open={transferReassignOpen}
+				title="Approve Transfer"
+				subtitle="Select who to reassign this ticket to."
+				excludeIds={ticket.user_id ? [ticket.user_id] : []}
+				isPending={isApprovingTransfer}
+				confirmLabel="Confirm & Reassign"
+				onConfirm={(eid) => approveTransferRequest(eid)}
+				onClose={() => setTransferReassignOpen(false)}
+			/>
 
 			{/* Transfer */}
 			<DialogRoot open={transferOpen} onOpenChange={(o) => { setTransferOpen(o); if (!o) setTransferTo(""); }}>

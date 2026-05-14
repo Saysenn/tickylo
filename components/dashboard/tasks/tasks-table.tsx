@@ -13,7 +13,7 @@ import { TimeOutDialog } from "@/components/dashboard/time-tracker/time-out-dial
 import { useAppSelector } from "@/store/hooks";
 import { formatDate, formatDueDate, formatDurationMs } from "@/lib/utils/format";
 import { cn } from "@/lib/utils/cn";
-import { ClipboardList, Plus, Trash2, CheckCheck, UserCog, X, SlidersHorizontal, Clock } from "lucide-react";
+import { ClipboardList, Plus, Trash2, CheckCheck, UserCog, X, SlidersHorizontal, Clock, CheckSquare } from "lucide-react";
 import { ROWS_PER_PAGE } from "@/configs/pagination.config";
 import {
 	SelectRoot,
@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/select";
 import type { Task, TaskPage } from "./types";
 import type { TimeEntry } from "@/components/dashboard/time-tracker/types";
+import { EmployeePickerModal } from "@/components/dashboard/tickets/employee-picker-modal";
 
 const STATUS_STYLES: Record<string, string> = {
 	needs_approval: "bg-purple-500/15 text-purple-700 border-purple-500/20",
@@ -86,6 +87,7 @@ export function TasksTable() {
 	const [pendingCompleteTask, setPendingCompleteTask] = useState<Task | null>(null);
 	const [viewFilter, setViewFilter] = useState<"assigned" | "unassigned" | "all">("assigned");
 	const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+	const [bulkMode, setBulkMode] = useState(false);
 	const [bulkAssignTo, setBulkAssignTo] = useState("");
 	const [bulkAssignOpen, setBulkAssignOpen] = useState(false);
 
@@ -229,6 +231,7 @@ export function TasksTable() {
 			APIService.tasks.bulk(action, [...selectedIds], user_id),
 		onSuccess: () => {
 			setSelectedIds(new Set());
+			setBulkMode(false);
 			setBulkAssignTo("");
 			setBulkAssignOpen(false);
 			invalidateAll();
@@ -321,6 +324,20 @@ export function TasksTable() {
 					</div>
 					<div className="flex items-center gap-2">
 						<p className="text-sm text-ink-3">{result?.data.length ?? 0} {(result?.data.length ?? 0) === 1 ? "ticket" : "tickets"}</p>
+						{isAdmin && (
+							<Button
+								size="sm"
+								variant={bulkMode ? "outline" : "ghost"}
+								className={cn("h-8 text-xs gap-1.5", bulkMode ? "border-mint/40 text-mint" : "text-ink-3")}
+								onClick={() => {
+									setBulkMode((v) => !v);
+									setSelectedIds(new Set());
+								}}
+							>
+								<CheckSquare className="w-3.5 h-3.5" />
+								{bulkMode ? "Exit Bulk" : "Bulk"}
+							</Button>
+						)}
 						<TaskFormDialog
 							isPending={isCreating}
 							onSubmit={async (data) => { await createTask(data); }}
@@ -393,6 +410,49 @@ export function TasksTable() {
 				</div>
 			</div>
 
+			{/* Inline bulk action bar */}
+			{isAdmin && bulkMode && selectedIds.size > 0 && (
+				<div className="flex items-center gap-3 px-4 py-2.5 rounded-xl bg-mint/8 border border-mint/20">
+					<span className="text-xs font-medium text-ink-2">{selectedIds.size} selected</span>
+					<div className="flex items-center gap-2 ml-auto">
+						<Button
+							size="sm" variant="outline"
+							className="h-7 text-xs gap-1.5"
+							disabled={isBulkPending}
+							onClick={() => setBulkAssignOpen(true)}
+						>
+							<UserCog className="w-3.5 h-3.5" />
+							Reassign
+						</Button>
+						<Button
+							size="sm" variant="outline"
+							className="h-7 text-xs gap-1.5 text-green-700 border-green-500/30 hover:bg-green-500/10"
+							disabled={isBulkPending}
+							onClick={() => bulkAction({ action: "complete" })}
+						>
+							<CheckCheck className="w-3.5 h-3.5" />
+							Complete
+						</Button>
+						<Button
+							size="sm" variant="outline"
+							className="h-7 text-xs gap-1.5 text-destructive border-red-500/30 hover:bg-red-500/10 hover:text-destructive"
+							disabled={isBulkPending}
+							onClick={() => bulkAction({ action: "delete" })}
+						>
+							<Trash2 className="w-3.5 h-3.5" />
+							Delete
+						</Button>
+						<Button
+							size="sm" variant="ghost"
+							className="h-7 text-xs text-ink-3"
+							onClick={() => { setSelectedIds(new Set()); setBulkMode(false); }}
+						>
+							Cancel
+						</Button>
+					</div>
+				</div>
+			)}
+
 			{/* Empty state */}
 			{list.length === 0 && (
 				<div className="flex flex-col items-center justify-center py-24 text-center border rounded-lg">
@@ -412,7 +472,7 @@ export function TasksTable() {
 							<thead>
 								<tr className="border-b bg-accent/30">
 									{isAdmin && (
-										<th className="w-8 px-3 py-2">
+										<th className={cn("w-8 px-3 py-2", !bulkMode && "hidden")}>
 											<input
 												type="checkbox"
 												checked={list.length > 0 && selectedIds.size === list.length}
@@ -456,7 +516,7 @@ export function TasksTable() {
 										onClick={() => router.push(`/dashboard/tickets/${task.id}`)}
 									>
 										{isAdmin && (
-											<td className="w-8 px-3 py-2" onClick={(e) => e.stopPropagation()}>
+											<td className={cn("w-8 px-3 py-2", !bulkMode && "hidden")} onClick={(e) => e.stopPropagation()}>
 												<input
 													type="checkbox"
 													checked={selectedIds.has(task.id)}
@@ -630,89 +690,16 @@ export function TasksTable() {
 				onCancel={() => setPendingCompleteTask(null)}
 			/>
 
-			{/* Bulk action bar */}
-			{isAdmin && selectedIds.size > 0 && (
-				<div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 rounded-xl border bg-background shadow-lg px-4 py-2.5 animate-fade-in">
-					<span className="text-xs font-medium text-ink-3 mr-1">
-						{selectedIds.size} selected
-					</span>
-					<Button
-						size="sm"
-						variant="outline"
-						className="h-7 text-xs gap-1.5"
-						disabled={isBulkPending}
-						onClick={() => setBulkAssignOpen(true)}
-					>
-						<UserCog className="w-3.5 h-3.5" />
-						Reassign
-					</Button>
-					<Button
-						size="sm"
-						variant="outline"
-						className="h-7 text-xs gap-1.5 text-green-700"
-						disabled={isBulkPending}
-						onClick={() => bulkAction({ action: "complete" })}
-					>
-						<CheckCheck className="w-3.5 h-3.5" />
-						Complete
-					</Button>
-					<Button
-						size="sm"
-						variant="outline"
-						className="h-7 text-xs gap-1.5 text-destructive hover:text-destructive"
-						disabled={isBulkPending}
-						onClick={() => bulkAction({ action: "delete" })}
-					>
-						<Trash2 className="w-3.5 h-3.5" />
-						Delete
-					</Button>
-					<Button
-						size="sm"
-						variant="ghost"
-						className="h-7 text-xs text-ink-3"
-						onClick={() => setSelectedIds(new Set())}
-					>
-						Cancel
-					</Button>
-				</div>
-			)}
-
-			{/* Bulk assign dialog */}
+{/* Bulk assign dialog */}
 			{isAdmin && (
-				<>
-					{bulkAssignOpen && (
-						<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-							<div className="bg-background rounded-xl border shadow-xl p-5 w-72 space-y-4">
-								<h3 className="text-sm font-semibold text-ink">Reassign {selectedIds.size} ticket{selectedIds.size !== 1 ? "s" : ""}</h3>
-								<SelectRoot value={bulkAssignTo} onValueChange={setBulkAssignTo}>
-									<SelectTrigger className="w-full">
-										<SelectValue placeholder="Select employee…" />
-									</SelectTrigger>
-									<SelectContent>
-										{employees.map((e) => (
-											<SelectItem key={e.id} value={e.id}>
-												{e.name ?? e.email}
-											</SelectItem>
-										))}
-									</SelectContent>
-								</SelectRoot>
-								<div className="flex justify-end gap-2">
-									<Button size="sm" variant="outline" onClick={() => { setBulkAssignOpen(false); setBulkAssignTo(""); }}>
-										Cancel
-									</Button>
-									<Button
-										size="sm"
-										disabled={!bulkAssignTo || isBulkPending}
-										isLoading={isBulkPending}
-										onClick={() => bulkAction({ action: "assign", user_id: bulkAssignTo })}
-									>
-										Confirm
-									</Button>
-								</div>
-							</div>
-						</div>
-					)}
-				</>
+				<EmployeePickerModal
+					open={bulkAssignOpen}
+					title={`Reassign ${selectedIds.size} ticket${selectedIds.size !== 1 ? "s" : ""}`}
+					isPending={isBulkPending}
+					confirmLabel="Confirm"
+					onConfirm={(eid) => bulkAction({ action: "assign", user_id: eid })}
+					onClose={() => { setBulkAssignOpen(false); setBulkAssignTo(""); }}
+				/>
 			)}
 		</div>
 	);

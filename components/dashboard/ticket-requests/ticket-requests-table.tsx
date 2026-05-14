@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { RotateCcw, ArrowRightLeft, Calendar, Check, X, Search, Filter, ChevronRight, Users } from "lucide-react";
+import { RotateCcw, ArrowRightLeft, Calendar, Check, X, Search, Filter, ChevronRight, Users, CheckSquare } from "lucide-react";
 import Link from "next/link";
 import APIService from "@/lib/infra/api";
 import { formatDate, formatDateTime, formatInitials } from "@/lib/utils/format";
@@ -10,12 +10,9 @@ import { cn } from "@/lib/utils/cn";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-	SelectRoot,
-	SelectTrigger,
-	SelectValue,
-	SelectContent,
-	SelectItem,
+	SelectRoot, SelectTrigger, SelectValue, SelectContent, SelectItem,
 } from "@/components/ui/select";
+import { EmployeePickerModal } from "@/components/dashboard/tickets/employee-picker-modal";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -40,12 +37,6 @@ interface TicketRequestsResponse {
 	total: number;
 	page: number;
 	totalPages: number;
-}
-
-interface Employee {
-	id: string;
-	name: string | null;
-	email: string;
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -75,84 +66,27 @@ const TYPE_LABELS: Record<RequestType, string> = {
 	due_date: "Due Date",
 };
 
-// ─── Transfer Approve Picker ──────────────────────────────────────────────────
-
-function TransferApprovePicker({
-	ticketId,
-	suggestedEmployee,
-	onDone,
-	onCancel,
-}: {
-	ticketId: string;
-	suggestedEmployee: Employee | null;
-	onDone: () => void;
-	onCancel: () => void;
-}) {
-	const [selectedId, setSelectedId] = useState<string>(suggestedEmployee?.id ?? "");
-
-	const { data: employeesData } = useQuery({
-		queryKey: ["employees-picker"],
-		queryFn: () => APIService.employees.list(1, 50),
-	});
-
-	const employees: Employee[] = (employeesData as any)?.data ?? [];
-
-	const { mutateAsync: approve, isPending } = useMutation({
-		mutationFn: () => APIService.tasks.transferRequest.approve(ticketId, selectedId),
-		onSuccess: onDone,
-	});
-
-	return (
-		<div className="flex items-center gap-2 flex-wrap">
-			<SelectRoot value={selectedId} onValueChange={setSelectedId}>
-				<SelectTrigger className="h-7 text-xs w-44">
-					<SelectValue placeholder="Pick employee…" />
-				</SelectTrigger>
-				<SelectContent>
-					{employees.map((e) => (
-						<SelectItem key={e.id} value={e.id}>
-							{e.name ?? e.email}
-						</SelectItem>
-					))}
-				</SelectContent>
-			</SelectRoot>
-			<Button
-				size="sm"
-				className="h-7 px-2.5 text-xs bg-green-600 hover:bg-green-700 text-white"
-				disabled={!selectedId || isPending}
-				isLoading={isPending}
-				onClick={() => approve()}
-			>
-				<Check className="w-3 h-3 mr-1" /> Confirm
-			</Button>
-			<Button size="sm" variant="ghost" className="h-7 px-2 text-xs text-ink-3" onClick={onCancel}>
-				Cancel
-			</Button>
-		</div>
-	);
-}
-
 // ─── Row ──────────────────────────────────────────────────────────────────────
 
 function RequestRow({
 	req,
+	bulkMode,
 	selected,
 	onSelect,
 	onActionDone,
 }: {
 	req: TicketRequest;
+	bulkMode: boolean;
 	selected: boolean;
 	onSelect: (id: string, checked: boolean) => void;
 	onActionDone: () => void;
 }) {
-	const [showTransferPicker, setShowTransferPicker] = useState(false);
-	const [rejected, setRejected] = useState(false);
+	const [reassignOpen, setReassignOpen] = useState(false);
 
 	const approveMutation = useMutation({
 		mutationFn: () => {
 			if (req.type === "reopen") return APIService.tasks.reopenRequest.approve(req.ticket_id);
-			if (req.type === "due_date") return APIService.tasks.dueDateRequest.approve(req.ticket_id);
-			return Promise.reject(new Error("Use picker for transfer"));
+			return APIService.tasks.dueDateRequest.approve(req.ticket_id);
 		},
 		onSuccess: onActionDone,
 	});
@@ -176,100 +110,109 @@ function RequestRow({
 		return "from stale";
 	};
 
+	const transferApproveMutation = useMutation({
+		mutationFn: (employeeId: string) => APIService.tasks.transferRequest.approve(req.ticket_id, employeeId),
+		onSuccess: () => { setReassignOpen(false); onActionDone(); },
+	});
+
 	return (
-		<tr className="border-b border-border/50 hover:bg-mint/3 transition-colors">
-			{/* Checkbox */}
-			<td className="px-4 py-3 w-8">
-				<input
-					type="checkbox"
-					checked={selected}
-					onChange={(e) => onSelect(req.id, e.target.checked)}
-					className="w-3.5 h-3.5 rounded accent-mint cursor-pointer"
-				/>
-			</td>
+		<>
+			<EmployeePickerModal
+				open={reassignOpen}
+				title="Reassign Ticket"
+				subtitle={req.ticket_title}
+				initialSelectedId={req.requested_to?.id}
+				isPending={transferApproveMutation.isPending}
+				confirmLabel="Confirm Reassign"
+				onConfirm={(id) => transferApproveMutation.mutate(id)}
+				onClose={() => setReassignOpen(false)}
+			/>
 
-			{/* Ticket */}
-			<td className="px-4 py-3 min-w-[180px]">
-				<Link
-					href={`/dashboard/tickets/${req.ticket_id}`}
-					className="text-xs font-medium text-ink hover:text-mint transition-colors line-clamp-1 flex items-center gap-1 group"
-				>
-					{req.ticket_title}
-					<ChevronRight className="w-3 h-3 opacity-0 group-hover:opacity-60 shrink-0" />
-				</Link>
-				<p className="text-[10px] text-ink-3 mt-0.5 capitalize">{req.ticket_type?.replace("_", " ")}</p>
-			</td>
-
-			{/* From */}
-			<td className="px-4 py-3">
-				<div className="flex items-center gap-1.5">
-					<div className="w-5 h-5 rounded-full bg-mint/20 flex items-center justify-center text-[9px] font-bold text-ink-2 shrink-0">
-						{initials}
-					</div>
-					<span className="text-xs text-ink truncate max-w-[110px]">{requesterLabel}</span>
-				</div>
-			</td>
-
-			{/* Type badge */}
-			<td className="px-4 py-3">
-				<span className={cn("inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold tracking-wide uppercase", TYPE_STYLES[req.type])}>
-					<Icon className="w-2.5 h-2.5" />
-					{TYPE_LABELS[req.type]}
-				</span>
-			</td>
-
-			{/* Details */}
-			<td className="px-4 py-3 text-xs text-ink-3">
-				{details()}
-				{req.reason && <p className="text-[10px] text-ink-3/70 truncate max-w-[140px] mt-0.5">{req.reason}</p>}
-			</td>
-
-			{/* Date */}
-			<td className="px-4 py-3 text-[11px] text-ink-3 whitespace-nowrap">
-				{formatDateTime(req.created_at)}
-			</td>
-
-			{/* Actions */}
-			<td className="px-4 py-3">
-				{showTransferPicker ? (
-					<TransferApprovePicker
-						ticketId={req.ticket_id}
-						suggestedEmployee={req.requested_to ?? null}
-						onDone={() => { setShowTransferPicker(false); onActionDone(); }}
-						onCancel={() => setShowTransferPicker(false)}
+			<tr className="border-b border-border/50 hover:bg-mint/3 transition-colors">
+				{/* Checkbox — only visible in bulk mode */}
+				<td className={cn("px-4 py-3 w-8", !bulkMode && "hidden")}>
+					<input
+						type="checkbox"
+						checked={selected}
+						onChange={(e) => onSelect(req.id, e.target.checked)}
+						className="w-3.5 h-3.5 rounded accent-mint cursor-pointer"
 					/>
-				) : (
+				</td>
+
+				{/* Ticket */}
+				<td className="px-4 py-3 min-w-[180px]">
+					<Link
+						href={`/dashboard/tickets/${req.ticket_id}`}
+						className="text-xs font-medium text-ink hover:text-mint transition-colors line-clamp-1 flex items-center gap-1 group"
+					>
+						{req.ticket_title}
+						<ChevronRight className="w-3 h-3 opacity-0 group-hover:opacity-60 shrink-0" />
+					</Link>
+					<p className="text-[10px] text-ink-3 mt-0.5 capitalize">{req.ticket_type?.replace("_", " ")}</p>
+				</td>
+
+				{/* From */}
+				<td className="px-4 py-3">
+					<div className="flex items-center gap-1.5">
+						<div className="w-5 h-5 rounded-full bg-mint/20 flex items-center justify-center text-[9px] font-bold text-ink-2 shrink-0">
+							{initials}
+						</div>
+						<span className="text-xs text-ink truncate max-w-[110px]">{requesterLabel}</span>
+					</div>
+				</td>
+
+				{/* Type badge */}
+				<td className="px-4 py-3">
+					<span className={cn("inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold tracking-wide uppercase", TYPE_STYLES[req.type])}>
+						<Icon className="w-2.5 h-2.5" />
+						{TYPE_LABELS[req.type]}
+					</span>
+				</td>
+
+				{/* Details */}
+				<td className="px-4 py-3 text-xs text-ink-3">
+					{details()}
+					{req.reason && <p className="text-[10px] text-ink-3/70 truncate max-w-[140px] mt-0.5">{req.reason}</p>}
+				</td>
+
+				{/* Date */}
+				<td className="px-4 py-3 text-[11px] text-ink-3 whitespace-nowrap">
+					{formatDateTime(req.created_at)}
+				</td>
+
+				{/* Actions */}
+				<td className="px-4 py-3">
 					<div className="flex items-center gap-1">
 						{req.type === "transfer" ? (
 							<Button
 								size="sm" variant="ghost"
-								className="h-7 px-2.5 text-xs text-sky-700 hover:bg-sky-500/10"
-								onClick={() => setShowTransferPicker(true)}
+								className="h-7 px-2.5 text-xs text-sky-700 hover:bg-sky-500/10 gap-1"
+								onClick={() => setReassignOpen(true)}
 							>
-								<Users className="w-3 h-3 mr-1" /> Reassign
+								<Users className="w-3 h-3" /> Reassign
 							</Button>
 						) : (
 							<Button
 								size="sm" variant="ghost"
-								className="h-7 px-2.5 text-xs text-green-700 hover:bg-green-500/10 hover:text-green-800"
+								className="h-7 px-2.5 text-xs text-green-700 hover:bg-green-500/10 hover:text-green-800 gap-1"
 								disabled={approveMutation.isPending} isLoading={approveMutation.isPending}
 								onClick={() => approveMutation.mutate()}
 							>
-								<Check className="w-3 h-3 mr-1" /> Approve
+								<Check className="w-3 h-3" /> Approve
 							</Button>
 						)}
 						<Button
 							size="sm" variant="ghost"
-							className="h-7 px-2.5 text-xs text-red-600 hover:bg-red-500/10 hover:text-red-700"
+							className="h-7 px-2.5 text-xs text-red-600 hover:bg-red-500/10 hover:text-red-700 gap-1"
 							disabled={rejectMutation.isPending} isLoading={rejectMutation.isPending}
 							onClick={() => rejectMutation.mutate()}
 						>
-							<X className="w-3 h-3 mr-1" /> Reject
+							<X className="w-3 h-3" /> Reject
 						</Button>
 					</div>
-				)}
-			</td>
-		</tr>
+				</td>
+			</tr>
+		</>
 	);
 }
 
@@ -281,6 +224,7 @@ export function TicketRequestsTable() {
 	const [search, setSearch] = useState("");
 	const [searchInput, setSearchInput] = useState("");
 	const [page, setPage] = useState(1);
+	const [bulkMode, setBulkMode] = useState(false);
 	const [selected, setSelected] = useState<Set<string>>(new Set());
 
 	const params = { page, limit: 20, type: typeFilter !== "all" ? typeFilter : undefined, search: search || undefined };
@@ -312,8 +256,8 @@ export function TicketRequestsTable() {
 	const bulkApproveMutation = useMutation({
 		mutationFn: async () => {
 			if (!data) return;
-			const selectedReqs = data.data.filter((r) => selected.has(r.id) && r.type !== "transfer");
-			await Promise.all(selectedReqs.map((r) => {
+			const approvable = data.data.filter((r) => selected.has(r.id) && r.type !== "transfer");
+			await Promise.all(approvable.map((r) => {
 				if (r.type === "reopen") return APIService.tasks.reopenRequest.approve(r.ticket_id);
 				return APIService.tasks.dueDateRequest.approve(r.ticket_id);
 			}));
@@ -325,6 +269,12 @@ export function TicketRequestsTable() {
 	const allSelected = rows.length > 0 && rows.every((r) => selected.has(r.id));
 	const someSelected = selected.size > 0;
 	const bulkApprovable = data?.data.filter((r) => selected.has(r.id) && r.type !== "transfer").length ?? 0;
+	const hasTransferSelected = data?.data.some((r) => selected.has(r.id) && r.type === "transfer") ?? false;
+
+	function toggleBulkMode() {
+		setBulkMode((v) => !v);
+		setSelected(new Set());
+	}
 
 	function toggleAll(checked: boolean) {
 		setSelected(checked ? new Set(rows.map((r) => r.id)) : new Set());
@@ -380,21 +330,33 @@ export function TicketRequestsTable() {
 					</div>
 					<Button type="submit" size="sm" variant="outline" className="h-8 text-xs">Search</Button>
 					{search && (
-						<Button type="button" size="sm" variant="ghost" className="h-8 text-xs text-ink-3" onClick={() => { setSearch(""); setSearchInput(""); setPage(1); }}>
+						<Button type="button" size="sm" variant="ghost" className="h-8 text-xs text-ink-3"
+							onClick={() => { setSearch(""); setSearchInput(""); setPage(1); }}>
 							Clear
 						</Button>
 					)}
 				</form>
 
-				{data && (
-					<span className="ml-auto text-xs text-ink-3">{data.total} pending</span>
-				)}
+				<div className="ml-auto flex items-center gap-2">
+					{data && <span className="text-xs text-ink-3">{data.total} pending</span>}
+					<Button
+						size="sm" variant={bulkMode ? "outline" : "ghost"}
+						className={cn("h-8 text-xs gap-1.5", bulkMode ? "border-mint/40 text-mint" : "text-ink-3")}
+						onClick={toggleBulkMode}
+					>
+						<CheckSquare className="w-3.5 h-3.5" />
+						{bulkMode ? "Exit Bulk" : "Bulk"}
+					</Button>
+				</div>
 			</div>
 
-			{/* Bulk actions bar */}
-			{someSelected && (
+			{/* Bulk actions bar — only visible in bulk mode with selections */}
+			{bulkMode && someSelected && (
 				<div className="flex items-center gap-3 px-4 py-2.5 rounded-xl bg-mint/8 border border-mint/20">
 					<span className="text-xs font-medium text-ink-2">{selected.size} selected</span>
+					{hasTransferSelected && (
+						<span className="text-[10px] text-ink-3/70">Transfer requests require individual reassignment</span>
+					)}
 					<div className="flex items-center gap-2 ml-auto">
 						{bulkApprovable > 0 && (
 							<Button
@@ -412,12 +374,9 @@ export function TicketRequestsTable() {
 							disabled={bulkRejectMutation.isPending} isLoading={bulkRejectMutation.isPending}
 							onClick={() => bulkRejectMutation.mutate()}
 						>
-							<X className="w-3 h-3" /> Reject all
+							<X className="w-3 h-3" /> Reject {selected.size}
 						</Button>
 					</div>
-					{bulkApprovable < selected.size && (
-						<p className="text-[10px] text-ink-3/70">Transfer requests require individual reassignment</p>
-					)}
 				</div>
 			)}
 
@@ -427,7 +386,7 @@ export function TicketRequestsTable() {
 					<table className="w-full text-left">
 						<thead>
 							<tr className="border-b border-border/60 bg-surface/50">
-								<th className="px-4 py-3 w-8">
+								<th className={cn("px-4 py-3 w-8", !bulkMode && "hidden")}>
 									<input
 										type="checkbox"
 										checked={allSelected}
@@ -461,6 +420,7 @@ export function TicketRequestsTable() {
 								<RequestRow
 									key={req.id}
 									req={req}
+									bulkMode={bulkMode}
 									selected={selected.has(req.id)}
 									onSelect={toggleOne}
 									onActionDone={invalidate}

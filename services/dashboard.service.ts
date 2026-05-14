@@ -31,12 +31,13 @@ export async function getDashboard(caller: Caller, dateParam?: string) {
 	sevenDaysAgo.setUTCDate(sevenDaysAgo.getUTCDate() - 6);
 
 	if (isAdmin) {
-		const [employeeCount, clockedInEntries, ticketCounts, pendingTransfers, pendingReopen, recentTickets, weeklyEntries] = await Promise.all([
+		const [employeeCount, clockedInEntries, ticketCounts, pendingTransfers, pendingReopen, pendingDueDate, recentTickets, weeklyEntries] = await Promise.all([
 			prisma.user.count({ where: { role: "employee", ...orgFilter } }),
 			prisma.timeEntry.findMany({ where: { ...orgFilter, end_time: null }, include: { user: { select: { id: true, name: true, email: true } } } }),
 			prisma.ticket.groupBy({ by: ["status"], where: orgFilter, _count: { id: true } }),
 			prisma.transferRequest.count({ where: { status: "pending", ...orgFilter } }),
 			prisma.reopenRequest.count({ where: { status: "pending", ...orgFilter } }),
+			prisma.dueDateRequest.count({ where: { status: "pending", ...orgFilter } }),
 			prisma.ticket.findMany({ where: orgFilter, orderBy: { created_at: "desc" }, take: 5, include: { assignee: { select: { id: true, name: true, email: true } } } }),
 			prisma.timeEntry.findMany({ where: { ...orgFilter, start_time: { gte: sevenDaysAgo, lte: today }, end_time: { not: null } }, select: { start_time: true, end_time: true } }),
 		]);
@@ -60,7 +61,7 @@ export async function getDashboard(caller: Caller, dateParam?: string) {
 				clocked_in_users: clockedInEntries.map((e) => ({ id: e.user.id, name: e.user.name, email: e.user.email, start_time: e.start_time.toISOString(), active_task_title: activeTaskByUser[e.user_id] ?? null, entry_title: e.title ?? null })),
 			},
 			tasks: { pending: ticketByStatus.pending ?? 0, assigned: ticketByStatus.assigned ?? 0, in_progress: ticketByStatus.in_progress ?? 0, completed: ticketByStatus.completed ?? 0 },
-			ticket_requests: { pending: pendingTransfers + pendingReopen },
+			ticket_requests: { pending: pendingTransfers + pendingReopen + pendingDueDate },
 			weekly_days: buildWeeklyDays(sevenDaysAgo, weeklyEntries),
 			recent_tasks: recentTickets,
 		};
