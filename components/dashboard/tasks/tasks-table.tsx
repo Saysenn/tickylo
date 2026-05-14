@@ -57,19 +57,6 @@ const PRIORITY_STYLES: Record<string, string> = {
 	critical: "bg-red-900/20 text-red-700 border-red-700/30",
 };
 
-const TICKET_TYPE_STYLES: Record<string, string> = {
-	incident:      "bg-red-500/10 text-red-600 border-red-500/20",
-	change:        "bg-orange-500/10 text-orange-600 border-orange-500/20",
-	request:       "bg-blue-500/10 text-blue-600 border-blue-500/20",
-	internal_task: "bg-accent text-ink-3 border-border/40",
-};
-
-const TICKET_TYPE_LABEL: Record<string, string> = {
-	incident:      "Incident",
-	change:        "RFC",
-	request:       "Request",
-	internal_task: "Internal",
-};
 
 const ALL_STATUSES = ["needs_approval", "pending", "assigned", "in_progress", "on_hold", "stale", "completed", "closed", "rejected", "overdue"];
 
@@ -487,9 +474,6 @@ export function TasksTable() {
 									<th className="text-left px-4 py-2 text-xs font-semibold text-ink-3 uppercase tracking-wider">
 										Title
 									</th>
-									<th className="text-left px-4 py-2 text-xs font-semibold text-ink-3 uppercase tracking-wider hidden lg:table-cell">
-										Type
-									</th>
 									<th className="text-left px-4 py-2 text-xs font-semibold text-ink-3 uppercase tracking-wider hidden md:table-cell">
 										Assignee
 									</th>
@@ -503,7 +487,7 @@ export function TasksTable() {
 										Due
 									</th>
 									<th className="text-left px-4 py-2 text-xs font-semibold text-ink-3 uppercase tracking-wider hidden lg:table-cell">
-										Time
+										Time Spent
 									</th>
 									<th className="px-4 py-2" />
 								</tr>
@@ -543,14 +527,6 @@ export function TasksTable() {
 											</div>
 										</td>
 
-										<td className="px-4 py-2 hidden lg:table-cell">
-											<Badge
-												variant="outline"
-												className={cn("text-[10px]", TICKET_TYPE_STYLES[task.ticket_type ?? "internal_task"])}
-											>
-												{TICKET_TYPE_LABEL[task.ticket_type ?? "internal_task"] ?? task.ticket_type}
-											</Badge>
-										</td>
 
 										<td className="px-4 py-2 hidden md:table-cell">
 											{task.assignee ? (
@@ -584,10 +560,10 @@ export function TasksTable() {
 											</Badge>
 										</td>
 
-										<td className="px-4 py-2 hidden md:table-cell">
+										<td className="px-4 py-2 hidden md:table-cell whitespace-nowrap">
 											{task.due_date ? (
 												<div className="flex flex-col gap-0.5">
-													<span className={cn("text-xs", task.status !== "completed" && new Date(task.due_date) < new Date() ? "text-red-600 font-medium" : "text-ink-3")}>
+													<span className={cn("text-xs whitespace-nowrap", task.status !== "completed" && new Date(task.due_date) < new Date() ? "text-red-600 font-medium" : "text-ink-3")}>
 														{formatDueDate(task.due_date)}
 													</span>
 													{task.status !== "completed" && new Date(task.due_date) < new Date() && (
