@@ -7,51 +7,7 @@ import APIService from "@/lib/infra/api";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { SelectRoot, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
-
-const TIMEZONES = [
-	"UTC",
-	"Asia/Manila",
-	"Asia/Bangkok",
-	"Asia/Singapore",
-	"Asia/Tokyo",
-	"Asia/Seoul",
-	"Asia/Shanghai",
-	"Asia/Kolkata",
-	"Asia/Dubai",
-	"Asia/Karachi",
-	"Asia/Dhaka",
-	"Asia/Jakarta",
-	"Asia/Ho_Chi_Minh",
-	"Asia/Kuala_Lumpur",
-	"Asia/Colombo",
-	"Asia/Kathmandu",
-	"Asia/Almaty",
-	"Australia/Sydney",
-	"Australia/Melbourne",
-	"Australia/Perth",
-	"Pacific/Auckland",
-	"Pacific/Honolulu",
-	"America/New_York",
-	"America/Chicago",
-	"America/Denver",
-	"America/Los_Angeles",
-	"America/Toronto",
-	"America/Vancouver",
-	"America/Sao_Paulo",
-	"America/Mexico_City",
-	"America/Bogota",
-	"America/Lima",
-	"Europe/London",
-	"Europe/Paris",
-	"Europe/Berlin",
-	"Europe/Madrid",
-	"Europe/Rome",
-	"Europe/Amsterdam",
-	"Europe/Moscow",
-	"Africa/Cairo",
-	"Africa/Lagos",
-	"Africa/Nairobi",
-];
+import { TIMEZONES } from "@/lib/utils/format";
 
 interface UserMe {
 	id: string;
@@ -112,7 +68,7 @@ export function TimezoneSection() {
 					</SelectTrigger>
 					<SelectContent>
 						{TIMEZONES.map((tz) => (
-							<SelectItem key={tz} value={tz}>{tz}</SelectItem>
+							<SelectItem key={tz.value} value={tz.value}>{tz.label}</SelectItem>
 						))}
 					</SelectContent>
 				</SelectRoot>

@@ -223,3 +223,64 @@ export function formatRelativeTime(iso: string): string {
 	if (days < 7) return `${days}d ago`;
 	return formatDate(iso);
 }
+
+// ── Timezones ─────────────────────────────────────────────────────────────────
+
+export const TIMEZONES: { value: string; label: string }[] = [
+	{ value: "UTC",                 label: "(UTC+0) UTC" },
+	// Asia Pacific
+	{ value: "Asia/Manila",         label: "(UTC+8) Manila" },
+	{ value: "Asia/Singapore",      label: "(UTC+8) Singapore" },
+	{ value: "Asia/Kuala_Lumpur",   label: "(UTC+8) Kuala Lumpur" },
+	{ value: "Asia/Hong_Kong",      label: "(UTC+8) Hong Kong" },
+	{ value: "Asia/Shanghai",       label: "(UTC+8) Beijing / Shanghai" },
+	{ value: "Asia/Taipei",         label: "(UTC+8) Taipei" },
+	{ value: "Asia/Tokyo",          label: "(UTC+9) Tokyo" },
+	{ value: "Asia/Seoul",          label: "(UTC+9) Seoul" },
+	{ value: "Asia/Bangkok",        label: "(UTC+7) Bangkok" },
+	{ value: "Asia/Ho_Chi_Minh",    label: "(UTC+7) Ho Chi Minh City" },
+	{ value: "Asia/Jakarta",        label: "(UTC+7) Jakarta" },
+	{ value: "Asia/Kolkata",        label: "(UTC+5:30) Mumbai / New Delhi" },
+	{ value: "Asia/Dhaka",          label: "(UTC+6) Dhaka" },
+	{ value: "Asia/Colombo",        label: "(UTC+5:30) Colombo" },
+	{ value: "Asia/Kathmandu",      label: "(UTC+5:45) Kathmandu" },
+	{ value: "Asia/Karachi",        label: "(UTC+5) Karachi" },
+	{ value: "Asia/Almaty",         label: "(UTC+6) Almaty" },
+	// Middle East
+	{ value: "Asia/Dubai",          label: "(UTC+4) Dubai" },
+	{ value: "Asia/Riyadh",         label: "(UTC+3) Riyadh" },
+	{ value: "Asia/Kuwait",         label: "(UTC+3) Kuwait City" },
+	{ value: "Asia/Beirut",         label: "(UTC+2) Beirut" },
+	{ value: "Asia/Jerusalem",      label: "(UTC+2) Jerusalem" },
+	// Africa
+	{ value: "Africa/Cairo",        label: "(UTC+2) Cairo" },
+	{ value: "Africa/Nairobi",      label: "(UTC+3) Nairobi" },
+	{ value: "Africa/Lagos",        label: "(UTC+1) Lagos" },
+	{ value: "Africa/Johannesburg", label: "(UTC+2) Johannesburg" },
+	// Europe
+	{ value: "Europe/London",       label: "(UTC+0) London" },
+	{ value: "Europe/Paris",        label: "(UTC+1) Paris" },
+	{ value: "Europe/Berlin",       label: "(UTC+1) Berlin" },
+	{ value: "Europe/Madrid",       label: "(UTC+1) Madrid" },
+	{ value: "Europe/Rome",         label: "(UTC+1) Rome" },
+	{ value: "Europe/Amsterdam",    label: "(UTC+1) Amsterdam" },
+	{ value: "Europe/Moscow",       label: "(UTC+3) Moscow" },
+	{ value: "Europe/Istanbul",     label: "(UTC+3) Istanbul" },
+	// Americas
+	{ value: "America/New_York",    label: "(UTC-5) New York" },
+	{ value: "America/Chicago",     label: "(UTC-6) Chicago" },
+	{ value: "America/Denver",      label: "(UTC-7) Denver" },
+	{ value: "America/Los_Angeles", label: "(UTC-8) Los Angeles" },
+	{ value: "America/Toronto",     label: "(UTC-5) Toronto" },
+	{ value: "America/Vancouver",   label: "(UTC-8) Vancouver" },
+	{ value: "America/Sao_Paulo",   label: "(UTC-3) São Paulo" },
+	{ value: "America/Mexico_City", label: "(UTC-6) Mexico City" },
+	{ value: "America/Bogota",      label: "(UTC-5) Bogotá" },
+	{ value: "America/Lima",        label: "(UTC-5) Lima" },
+	// Pacific & Oceania
+	{ value: "Australia/Sydney",    label: "(UTC+11) Sydney" },
+	{ value: "Australia/Melbourne", label: "(UTC+11) Melbourne" },
+	{ value: "Australia/Perth",     label: "(UTC+8) Perth" },
+	{ value: "Pacific/Auckland",    label: "(UTC+13) Auckland" },
+	{ value: "Pacific/Honolulu",    label: "(UTC-10) Honolulu" },
+];
