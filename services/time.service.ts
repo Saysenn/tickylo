@@ -75,6 +75,46 @@ export async function getActiveTimer(caller: Caller) {
 	});
 }
 
+export async function getAllActiveTimers(caller: Caller) {
+	if (!callerIsAdmin(caller)) throw Object.assign(new Error("Forbidden"), { status: 403 });
+	const orgId = callerOrgId(caller);
+	return prisma.timeEntry.findMany({
+		where: { ...(orgId ? { org_id: orgId } : {}), end_time: null },
+		orderBy: { start_time: "asc" },
+		include: {
+			ticket: { select: { id: true, title: true, ticket_type: true } },
+			user:   { select: { id: true, name: true, email: true } },
+		},
+	});
+}
+
+export async function adminForceStop(entryId: string, caller: Caller) {
+	if (!callerIsAdmin(caller)) throw Object.assign(new Error("Forbidden"), { status: 403 });
+	const orgId = callerOrgId(caller);
+	const entry = await prisma.timeEntry.findFirst({
+		where: { id: entryId, end_time: null, ...(orgId ? { org_id: orgId } : {}) },
+	});
+	if (!entry) throw Object.assign(new Error("Active entry not found"), { status: 404 });
+
+	const now = new Date();
+	const updated = await prisma.timeEntry.update({
+		where: { id: entryId },
+		data: { end_time: now, auto_closed: true },
+	});
+
+	auditLog({
+		org_id: orgId,
+		actor_id: caller.id,
+		actor_role: ROLES.ADMIN,
+		action: "UPDATE",
+		entity_type: "time_entry",
+		entity_id: entryId,
+		after: { end_time: now.toISOString(), auto_closed: true, force_stopped_by_admin: true },
+	});
+
+	return updated;
+}
+
 // ─── Start ────────────────────────────────────────────────────────────────────
 
 export type StartTimerData = {

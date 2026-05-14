@@ -91,6 +91,8 @@ class APIService {
 	public time = {
 		start: (data?: { title?: string; ticket_id?: string }) => axiosService.post(`${apiVersion}/time`, data ?? {}),
 		active: () => axiosService.get(`${apiVersion}/time/active`),
+		activeAll: () => axiosService.get(`${apiVersion}/time/active-all`),
+		forceStop: (id: string) => axiosService.post(`${apiVersion}/time/${id}/force-stop`, {}),
 		stop: (id: string, data: { title?: string; description?: string }) =>
 			axiosService.patch(`${apiVersion}/time/${id}`, data),
 		list: (page = 1, limit = 10, from?: string, to?: string, tzOffset?: number, userId?: string, flaggedOnly?: boolean) =>

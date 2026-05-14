@@ -1,17 +1,27 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useQuery } from "@tanstack/react-query";
-import { Clock, TicketCheck, Timer, AlertTriangle } from "lucide-react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Clock, TicketCheck, Timer, AlertTriangle, Square, Radio } from "lucide-react";
 import { Pagination } from "@/components/ui/pagination";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import APIService from "@/lib/infra/api";
-import { formatDate, formatTime, formatDurationBetween, todayDateStr, daysAgoDateStr } from "@/lib/utils/format";
+import { formatDate, formatTime, formatDurationBetween, formatDuration, todayDateStr, daysAgoDateStr } from "@/lib/utils/format";
 import type { TimeEntryPage } from "@/components/dashboard/time-tracker/types";
 
-interface TimeEntry {
+interface ActiveEntry {
+	id: string;
+	start_time: string;
+	end_time: null;
+	title: string | null;
+	ticket_id: string | null;
+	user: { id: string; name: string | null; email: string };
+	ticket?: { id: string; title: string; ticket_type: string } | null;
+}
+
+interface ClosedEntry {
 	id: string;
 	start_time: string;
 	end_time: string | null;
@@ -23,8 +33,20 @@ interface TimeEntry {
 	ticket?: { id: string; title: string; ticket_type: string } | null;
 }
 
+function LiveTimer({ startTime }: { startTime: string }) {
+	const [elapsed, setElapsed] = useState("");
+	useEffect(() => {
+		const tick = () => setElapsed(formatDuration(Date.now() - new Date(startTime).getTime()));
+		tick();
+		const iv = setInterval(tick, 1000);
+		return () => clearInterval(iv);
+	}, [startTime]);
+	return <span className="font-mono font-bold text-mint tabular-nums">{elapsed}</span>;
+}
+
 export function TimeLogsTable() {
 	const router = useRouter();
+	const queryClient = useQueryClient();
 	const tzOffset = new Date().getTimezoneOffset();
 	const [page, setPage] = useState(1);
 	const [from, setFrom] = useState(daysAgoDateStr(30));
@@ -32,12 +54,26 @@ export function TimeLogsTable() {
 	const [flaggedOnly, setFlaggedOnly] = useState(false);
 	const [applied, setApplied] = useState({ from: daysAgoDateStr(30), to: todayDateStr(), flaggedOnly: false });
 
+	const { data: activeEntries = [], isLoading: isLoadingActive } = useQuery<ActiveEntry[]>({
+		queryKey: ["time-active-all"],
+		queryFn: () => APIService.time.activeAll(),
+		refetchInterval: 30_000,
+	});
+
 	const { data, isLoading } = useQuery<TimeEntryPage>({
 		queryKey: ["time-logs", applied.from, applied.to, applied.flaggedOnly, page],
 		queryFn: () => APIService.time.list(page, 20, applied.from, applied.to, tzOffset, undefined, applied.flaggedOnly),
 	});
 
-	const entries = (data?.data ?? []) as unknown as TimeEntry[];
+	const { mutate: forceStop, variables: stoppingId } = useMutation({
+		mutationFn: (id: string) => APIService.time.forceStop(id),
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["time-active-all"] });
+			queryClient.invalidateQueries({ queryKey: ["time-logs"] });
+		},
+	});
+
+	const entries = (data?.data ?? []) as unknown as ClosedEntry[];
 	const totalPages = data?.totalPages ?? 1;
 
 	const apply = () => {
@@ -47,6 +83,67 @@ export function TimeLogsTable() {
 
 	return (
 		<div className="space-y-4">
+
+			{/* Live Now */}
+			<div className="rounded-lg border bg-background">
+				<div className="px-5 py-3.5 border-b flex items-center gap-2">
+					<Radio className="w-3.5 h-3.5 text-mint" />
+					<p className="text-xs font-semibold text-ink-3 uppercase tracking-wider">Live Now</p>
+					{activeEntries.length > 0 && (
+						<span className="ml-auto text-xs font-semibold text-mint bg-mint/10 px-2 py-0.5 rounded-full">
+							{activeEntries.length} active
+						</span>
+					)}
+				</div>
+
+				{isLoadingActive ? (
+					<div className="flex items-center justify-center py-6">
+						<div className="w-4 h-4 border-2 border-mint/40 border-t-mint rounded-full animate-spin" />
+					</div>
+				) : activeEntries.length === 0 ? (
+					<div className="flex items-center justify-center py-6 gap-2 text-ink-3">
+						<Clock className="w-4 h-4 opacity-30" strokeWidth={1.5} />
+						<p className="text-sm">No active timers right now</p>
+					</div>
+				) : (
+					<ul className="divide-y">
+						{activeEntries.map((entry) => (
+							<li key={entry.id} className="flex items-center gap-3 px-5 py-3">
+								<div className="relative w-7 h-7 rounded-lg bg-mint/15 flex items-center justify-center shrink-0">
+									<Timer className="w-3.5 h-3.5 text-mint" />
+									<span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-mint animate-ping" />
+									<span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-mint" />
+								</div>
+
+								<div className="flex-1 min-w-0">
+									<p className="text-sm font-medium text-ink truncate">
+										{entry.user.name ?? entry.user.email}
+									</p>
+									<p className="text-xs text-ink-3 truncate">
+										{entry.ticket?.title ?? entry.title ?? "General timer"}
+										{" · "}started {formatTime(entry.start_time)}
+									</p>
+								</div>
+
+								<LiveTimer startTime={entry.start_time} />
+
+								<Button
+									size="sm"
+									variant="ghost"
+									className="h-7 gap-1.5 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive shrink-0"
+									disabled={stoppingId === entry.id}
+									isLoading={stoppingId === entry.id}
+									onClick={() => forceStop(entry.id)}
+								>
+									<Square className="w-3 h-3 fill-current" />
+									Stop
+								</Button>
+							</li>
+						))}
+					</ul>
+				)}
+			</div>
+
 			{/* Filters */}
 			<div className="flex flex-wrap items-end gap-3">
 				<div className="space-y-1">
@@ -74,7 +171,7 @@ export function TimeLogsTable() {
 				</Button>
 			</div>
 
-			{/* Table */}
+			{/* Closed entries table */}
 			<div className="rounded-lg border bg-background">
 				<div className="px-5 py-3.5 border-b flex items-center justify-between">
 					<p className="text-xs font-semibold text-ink-3 uppercase tracking-wider">Entries</p>
@@ -110,11 +207,9 @@ export function TimeLogsTable() {
 									</div>
 
 									<div className="flex-1 min-w-0">
-										<div className="flex items-center gap-1.5">
-											<p className="text-sm font-medium text-ink truncate">
-												{entry.title ?? entry.ticket?.title ?? <span className="italic font-normal text-ink-3">General timer</span>}
-											</p>
-										</div>
+										<p className="text-sm font-medium text-ink truncate">
+											{entry.title ?? entry.ticket?.title ?? <span className="italic font-normal text-ink-3">General timer</span>}
+										</p>
 										<div className="flex items-center gap-2 mt-0.5 flex-wrap">
 											<span className="text-xs text-ink-3 font-medium">{entry.user.name ?? entry.user.email}</span>
 											<span className="text-ink-3/40 text-xs">·</span>

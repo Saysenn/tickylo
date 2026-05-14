@@ -14,7 +14,7 @@ export default function AuditLogsPage() {
 			/>
 
 			<div>
-				<h1 className="text-2xl font-bold text-ink">Audit Logs</h1>
+				<h1 className="text-2xl font-bold text-ink">Ticket Logs</h1>
 				<p className="text-ink-3 mt-1 text-sm">
 					Immutable record of all actions performed in your organization.
 				</p>

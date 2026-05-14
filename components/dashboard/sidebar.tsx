@@ -98,7 +98,7 @@ const navGroups: NavGroup[] = [
 				roles: ["admin"],
 			},
 			{
-				label: "Audit Logs",
+				label: "Ticket Logs",
 				href: "/dashboard/audit-logs",
 				icon: Shield,
 				roles: ["admin"],
