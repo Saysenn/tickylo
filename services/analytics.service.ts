@@ -64,6 +64,37 @@ export async function getPerformance(admin: Caller, from?: string, to?: string) 
 	});
 }
 
+// ─── Employee Detail Report ───────────────────────────────────────────────────
+
+export async function getEmployeeReport(admin: Caller, userId: string, from?: string, to?: string) {
+	const orgId = callerOrgId(admin);
+	const orgFilter = orgId ? { org_id: orgId } : {};
+
+	const fromDate = from ? new Date(from + "T00:00:00") : new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+	const toDate   = to   ? new Date(to   + "T23:59:59.999") : new Date();
+
+	const [employee, tickets, timeEntries] = await Promise.all([
+		prisma.user.findFirst({ where: { id: userId, ...orgFilter }, select: { id: true, name: true, email: true } }),
+		prisma.ticket.findMany({
+			where: { ...orgFilter, user_id: userId, created_at: { gte: fromDate, lte: toDate } },
+			select: { id: true, title: true, ticket_type: true, status: true, priority: true, due_date: true, started_at: true, completed_at: true, created_at: true },
+			orderBy: { created_at: "desc" },
+		}),
+		prisma.timeEntry.findMany({
+			where: { user_id: userId, start_time: { gte: fromDate, lte: toDate }, end_time: { not: null } },
+			select: { id: true, ticket_id: true, start_time: true, end_time: true, title: true, auto_closed: true },
+			orderBy: { start_time: "desc" },
+		}),
+	]);
+
+	if (!employee) throw Object.assign(new Error("Employee not found"), { status: 404 });
+
+	const totalMs = timeEntries.reduce((sum, e) => sum + (e.end_time!.getTime() - e.start_time.getTime()), 0);
+	const completed = tickets.filter((t) => t.status === "completed").length;
+
+	return { employee, tickets, timeEntries, totalMs, completed, from: fromDate, to: toDate };
+}
+
 // ─── Reports ──────────────────────────────────────────────────────────────────
 
 export async function getReports(admin: Caller) {

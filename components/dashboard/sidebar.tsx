@@ -5,7 +5,6 @@ import { usePathname } from "next/navigation";
 import { Logo } from "@/components/logo";
 import {
 	LayoutDashboard,
-	TrendingUp,
 	Users,
 	Clock,
 	AlarmClock,
@@ -46,12 +45,6 @@ const navGroups: NavGroup[] = [
 				icon: Clock,
 				roles: ["admin"],
 			},
-			{
-				label: "Performance",
-				href: "/dashboard/performance",
-				icon: TrendingUp,
-				roles: ["admin"],
-			},
 		],
 	},
 	{
@@ -65,7 +58,7 @@ const navGroups: NavGroup[] = [
 			},
 			{
 				label: "Reports",
-				href: "/dashboard/reports",
+				href: "/dashboard/performance",
 				icon: BarChart2,
 				roles: ["admin"],
 			},

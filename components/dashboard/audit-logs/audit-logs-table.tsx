@@ -177,42 +177,42 @@ function AuditLogRow({ log }: { log: AuditLogEntry }) {
 				onClick={() => hasDiff && setExpanded((v) => !v)}
 			>
 				{/* Timestamp */}
-				<td className="px-4 py-3 text-xs text-ink-3 whitespace-nowrap">
+				<td className="px-4 py-2 text-[11px] text-ink-3 whitespace-nowrap">
 					{formatDateTime(log.created_at)}
 				</td>
 
 				{/* Actor */}
-				<td className="px-4 py-3">
+				<td className="px-4 py-2">
 					<div className="flex items-center gap-2">
-						<div className="w-6 h-6 rounded-full bg-mint/20 flex items-center justify-center text-[10px] font-bold text-ink-2 shrink-0">
+						<div className="w-5 h-5 rounded-full bg-mint/20 flex items-center justify-center text-[9px] font-bold text-ink-2 shrink-0">
 							{initials}
 						</div>
 						<div className="min-w-0">
-							<p className="text-xs font-medium text-ink truncate">{actorName}</p>
+							<p className="text-[11px] font-medium text-ink truncate">{actorName}</p>
 							<p className="text-[10px] text-ink-3 capitalize">{log.actor_role.replace("_", " ")}</p>
 						</div>
 					</div>
 				</td>
 
 				{/* Action */}
-				<td className="px-4 py-3">
-					<span className={cn("inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold tracking-wide uppercase", ACTION_STYLES[log.action] ?? "bg-gray-100 text-gray-600")}>
+				<td className="px-4 py-2">
+					<span className={cn("inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold tracking-wide uppercase", ACTION_STYLES[log.action] ?? "bg-gray-100 text-gray-600")}>
 						{log.action}
 					</span>
 				</td>
 
 				{/* Entity type */}
-				<td className="px-4 py-3 text-xs text-ink-2">
+				<td className="px-4 py-2 text-[11px] text-ink-2">
 					{ENTITY_LABELS[log.entity_type] ?? log.entity_type}
 				</td>
 
 				{/* Entity ID */}
-				<td className="px-4 py-3 font-mono text-[11px] text-ink-3 max-w-[140px] truncate">
+				<td className="px-4 py-2 font-mono text-[10px] text-ink-3 max-w-[140px] truncate">
 					{log.entity_id}
 				</td>
 
 				{/* Expand toggle */}
-				<td className="px-4 py-3 w-8">
+				<td className="px-4 py-2 w-8">
 					{hasDiff && (
 						<span className="text-ink-3">
 							{expanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}

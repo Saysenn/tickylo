@@ -305,6 +305,8 @@ class APIService {
 	public performance = {
 		list: (from: string, to: string) =>
 			axiosService.get(`${apiVersion}/performance`, { from, to }),
+		employeeReport: (userId: string, from: string, to: string) =>
+			axiosService.get(`${apiVersion}/performance/employee-report`, { user_id: userId, from, to }),
 	};
 
 	// ---------------------------------------------------------------------------
