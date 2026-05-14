@@ -95,6 +95,25 @@ const ENTITY_LABELS: Record<string, string> = {
 
 // ─── Diff viewer ──────────────────────────────────────────────────────────────
 
+function formatValue(v: unknown): string {
+	if (v === null || v === undefined) return "";
+	if (typeof v === "string") {
+		if (/^\d{4}-\d{2}-\d{2}T/.test(v)) {
+			const d = new Date(v);
+			return isNaN(d.getTime()) ? v : d.toLocaleString();
+		}
+		return v;
+	}
+	if (typeof v === "boolean" || typeof v === "number") return String(v);
+	if (Array.isArray(v)) return v.length ? v.join(", ") : "(empty)";
+	if (typeof v === "object") return JSON.stringify(v);
+	return String(v);
+}
+
+function changed(a: unknown, b: unknown) {
+	return JSON.stringify(a) !== JSON.stringify(b);
+}
+
 function DiffPanel({ before, after }: { before?: Record<string, unknown> | null; after?: Record<string, unknown> | null }) {
 	if (!before && !after) return <p className="text-xs text-ink-3 italic">No details recorded.</p>;
 
@@ -111,8 +130,8 @@ function DiffPanel({ before, after }: { before?: Record<string, unknown> | null;
 						{allKeys.map((k) => (
 							<div key={k} className="flex gap-2 text-xs font-mono">
 								<span className="text-ink-3 shrink-0">{k}:</span>
-								<span className={cn("break-all", before[k] !== (after ?? {})[k] ? "text-red-500" : "text-ink-2")}>
-									{before[k] === null || before[k] === undefined ? <em className="text-ink-3/50">null</em> : String(before[k])}
+								<span className={cn("break-all", changed(before[k], (after ?? {})[k]) ? "text-red-500" : "text-ink-2")}>
+									{before[k] === null || before[k] === undefined ? <em className="text-ink-3/50">null</em> : formatValue(before[k])}
 								</span>
 							</div>
 						))}
@@ -126,8 +145,8 @@ function DiffPanel({ before, after }: { before?: Record<string, unknown> | null;
 						{allKeys.map((k) => (
 							<div key={k} className="flex gap-2 text-xs font-mono">
 								<span className="text-ink-3 shrink-0">{k}:</span>
-								<span className={cn("break-all", (before ?? {})[k] !== after[k] ? "text-emerald-600" : "text-ink-2")}>
-									{after[k] === null || after[k] === undefined ? <em className="text-ink-3/50">null</em> : String(after[k])}
+								<span className={cn("break-all", changed((before ?? {})[k], after[k]) ? "text-emerald-600" : "text-ink-2")}>
+									{after[k] === null || after[k] === undefined ? <em className="text-ink-3/50">null</em> : formatValue(after[k])}
 								</span>
 							</div>
 						))}

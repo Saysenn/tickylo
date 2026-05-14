@@ -185,7 +185,7 @@ export async function stopTimer(id: string, caller: Caller, data: StopTimerData)
 		action: "UPDATE",
 		entity_type: "time_entry",
 		entity_id: id,
-		after: { end_time: updated.end_time },
+		after: { end_time: updated.end_time?.toISOString() },
 	});
 
 	return updated;
@@ -230,8 +230,8 @@ export async function updateEntry(id: string, caller: Caller, data: UpdateEntryD
 		action: "UPDATE",
 		entity_type: "time_entry",
 		entity_id: id,
-		before: { start_time: entry.start_time, end_time: entry.end_time, title: entry.title },
-		after: { start_time: newStart, end_time: newEnd, title: updated.title },
+		before: { start_time: entry.start_time.toISOString(), end_time: entry.end_time?.toISOString(), title: entry.title },
+		after: { start_time: newStart.toISOString(), end_time: newEnd.toISOString(), title: updated.title },
 	});
 
 	return updated;

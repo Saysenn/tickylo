@@ -1308,7 +1308,7 @@ export async function submitDueDateRequest(ticketId: string, caller: Caller, req
 		action: "SUBMIT",
 		entity_type: "ticket",
 		entity_id: ticketId,
-		after: { request_type: "due_date", requested_date: requestedDate, reason },
+		after: { request_type: "due_date", requested_date: requestedDate.toISOString(), reason },
 	});
 
 	notifyAdmins({ type: "task_updated", title: "Due date change requested", body: `${actorName} requested a new due date for "${ticket.title}".`, link: `/dashboard/tickets/${ticketId}` }).catch(() => {});
@@ -1336,8 +1336,8 @@ export async function approveDueDateRequest(ticketId: string, admin: Caller) {
 		action: "APPROVE",
 		entity_type: "ticket",
 		entity_id: ticketId,
-		before: { due_date: request.ticket.due_date },
-		after: { request_type: "due_date", due_date: request.requested_date },
+		before: { due_date: request.ticket.due_date?.toISOString() ?? null },
+		after: { request_type: "due_date", due_date: request.requested_date.toISOString() },
 	});
 
 	if (request.ticket.user_id)
