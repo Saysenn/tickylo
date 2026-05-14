@@ -98,6 +98,97 @@ export async function getReports(admin: Caller) {
 	};
 }
 
+// ─── Ticket Requests ──────────────────────────────────────────────────────────
+
+export interface TicketRequestsParams {
+	page?: number;
+	limit?: number;
+	type?: string;
+	search?: string;
+}
+
+export async function getTicketRequests(admin: Caller, params: TicketRequestsParams = {}) {
+	const orgId = callerOrgId(admin);
+	const orgFilter = orgId ? { org_id: orgId } : {};
+	const page = Math.max(1, params.page ?? 1);
+	const limit = Math.min(50, Math.max(1, params.limit ?? 20));
+	const typeFilter = params.type && params.type !== "all" ? params.type : null;
+
+	const [reopens, transfers, dueDates] = await Promise.all([
+		typeFilter && typeFilter !== "reopen" ? [] : prisma.reopenRequest.findMany({
+			where: { status: "pending", ...orgFilter },
+			include: {
+				ticket: { select: { id: true, title: true, ticket_type: true, status: true } },
+				requester: { select: { id: true, name: true, email: true } },
+			},
+		}),
+		typeFilter && typeFilter !== "transfer" ? [] : prisma.transferRequest.findMany({
+			where: { status: "pending", ...orgFilter },
+			include: {
+				ticket: { select: { id: true, title: true, ticket_type: true, status: true } },
+				requester: { select: { id: true, name: true, email: true } },
+				targetEmployee: { select: { id: true, name: true, email: true } },
+			},
+		}),
+		typeFilter && typeFilter !== "due_date" ? [] : prisma.dueDateRequest.findMany({
+			where: { status: "pending", ...orgFilter },
+			include: {
+				ticket: { select: { id: true, title: true, ticket_type: true, status: true } },
+				requester: { select: { id: true, name: true, email: true } },
+			},
+		}),
+	]);
+
+	const unified = [
+		...(reopens as Awaited<ReturnType<typeof prisma.reopenRequest.findMany<{ include: { ticket: true; requester: true } }>>>).map((r) => ({
+			id: r.id,
+			type: "reopen" as const,
+			ticket_id: r.task_id,
+			ticket_title: (r as any).ticket.title as string,
+			ticket_type: (r as any).ticket.ticket_type as string,
+			ticket_status: (r as any).ticket.status as string,
+			requester: (r as any).requester as { id: string; name: string | null; email: string },
+			created_at: r.created_at.toISOString(),
+		})),
+		...(transfers as any[]).map((r) => ({
+			id: r.id,
+			type: "transfer" as const,
+			ticket_id: r.task_id,
+			ticket_title: r.ticket.title as string,
+			ticket_type: r.ticket.ticket_type as string,
+			ticket_status: r.ticket.status as string,
+			requester: r.requester as { id: string; name: string | null; email: string },
+			created_at: r.created_at.toISOString(),
+			requested_to: r.targetEmployee as { id: string; name: string | null; email: string } | null,
+		})),
+		...(dueDates as any[]).map((r) => ({
+			id: r.id,
+			type: "due_date" as const,
+			ticket_id: r.task_id,
+			ticket_title: r.ticket.title as string,
+			ticket_type: r.ticket.ticket_type as string,
+			ticket_status: r.ticket.status as string,
+			requester: r.requester as { id: string; name: string | null; email: string },
+			created_at: r.created_at.toISOString(),
+			requested_date: (r.requested_date as Date).toISOString(),
+			reason: r.reason as string | null,
+		})),
+	];
+
+	const searched = params.search
+		? unified.filter((r) => {
+				const q = params.search!.toLowerCase();
+				return r.ticket_title.toLowerCase().includes(q) || (r.requester.name ?? r.requester.email).toLowerCase().includes(q);
+			})
+		: unified;
+
+	searched.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+	const total = searched.length;
+	const data = searched.slice((page - 1) * limit, page * limit);
+	return { data, total, page, totalPages: Math.ceil(total / limit) || 1 };
+}
+
 // ─── Audit Logs ───────────────────────────────────────────────────────────────
 
 export interface AuditLogsFilters {

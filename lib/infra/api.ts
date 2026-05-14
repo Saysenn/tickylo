@@ -310,6 +310,14 @@ class APIService {
 	};
 
 	// ---------------------------------------------------------------------------
+	// Ticket Requests (admin only)
+	// ---------------------------------------------------------------------------
+	public ticketRequests = {
+		list: (params?: { page?: number; limit?: number; type?: string; search?: string }) =>
+			axiosService.get(`${apiVersion}/ticket-requests`, params ?? {}),
+	};
+
+	// ---------------------------------------------------------------------------
 	// Super Admin
 	// ---------------------------------------------------------------------------
 	public superAdmin = {

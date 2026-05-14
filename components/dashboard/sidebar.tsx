@@ -12,6 +12,7 @@ import {
 	ClipboardList,
 	BarChart2,
 	Shield,
+	Inbox,
 } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import type { Role } from "@/configs/rbac.config";
@@ -66,6 +67,12 @@ const navGroups: NavGroup[] = [
 				label: "Reports",
 				href: "/dashboard/reports",
 				icon: BarChart2,
+				roles: ["admin"],
+			},
+			{
+				label: "Requests",
+				href: "/dashboard/ticket-requests",
+				icon: Inbox,
 				roles: ["admin"],
 			},
 			{

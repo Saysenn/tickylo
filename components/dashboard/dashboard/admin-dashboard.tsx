@@ -88,7 +88,7 @@ export function AdminDashboard() {
 					value={data.ticket_requests.pending}
 					subtext="pending review"
 					icon={ClipboardList}
-					href="/dashboard/tickets"
+					href="/dashboard/ticket-requests"
 				/>
 			</div>
 
