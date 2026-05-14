@@ -15,8 +15,19 @@ export interface AuditParams {
 		| "COMPLETE"
 		| "HOLD"
 		| "REOPEN"
-		| "TRANSFER";
-	entity_type: "ticket" | "employee" | "leave_request" | "time_entry";
+		| "TRANSFER"
+		| "START"
+		| "STALE"
+		| "CANCEL"
+		| "SUBMIT"
+		| "MERGE";
+	entity_type:
+		| "ticket"
+		| "employee"
+		| "leave_request"
+		| "time_entry"
+		| "department"
+		| "org_application";
 	entity_id: string;
 	before?: object;
 	after?: object;

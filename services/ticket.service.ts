@@ -420,6 +420,17 @@ export async function startTicket(id: string, caller: Caller) {
 		data: { status: "in_progress", started_at: new Date() },
 	});
 
+	auditLog({
+		org_id: callerOrgId(caller),
+		actor_id: caller.id,
+		actor_role: ROLES.EMPLOYEE,
+		action: "START",
+		entity_type: "ticket",
+		entity_id: id,
+		before: { status: ticket.status },
+		after: { status: "in_progress" },
+	});
+
 	notifyAdmins({
 		type: "task_started",
 		title: "Ticket started",
@@ -601,6 +612,17 @@ export async function staleTicket(id: string, admin: Caller) {
 		body: `"${ticket.title}" has been marked as stale.`,
 		link: `/dashboard/tickets/${id}`,
 	};
+
+	auditLog({
+		org_id: callerOrgId(admin),
+		actor_id: admin.id,
+		actor_role: ROLES.ADMIN,
+		action: "STALE",
+		entity_type: "ticket",
+		entity_id: id,
+		before: { status: ticket.status },
+		after: { status: "stale" },
+	});
 
 	if (ticket.user_id) createNotification({ user_id: ticket.user_id, ...notifPayload }).catch(() => {});
 	notifyWatchers(id, notifPayload, ticket.user_id ? [ticket.user_id] : []).catch(() => {});
@@ -789,7 +811,20 @@ export async function updateBillable(id: string, caller: Caller, billableHours: 
 	if (!isAdminCaller && ticket.user_id !== caller.id)
 		throw Object.assign(new Error("Forbidden"), { status: 403 });
 
-	return prisma.ticket.update({ where: { id }, data: { billable_hours: billableHours } });
+	const updated = await prisma.ticket.update({ where: { id }, data: { billable_hours: billableHours } });
+
+	auditLog({
+		org_id: callerOrgId(caller),
+		actor_id: caller.id,
+		actor_role: isAdminCaller ? ROLES.ADMIN : ROLES.EMPLOYEE,
+		action: "UPDATE",
+		entity_type: "ticket",
+		entity_id: id,
+		before: { billable_hours: ticket.billable_hours },
+		after: { billable_hours: billableHours },
+	});
+
+	return updated;
 }
 
 // ─── Comments ─────────────────────────────────────────────────────────────────
@@ -848,6 +883,16 @@ export async function deleteComment(commentId: string, caller: Caller) {
 		throw Object.assign(new Error("Forbidden"), { status: 403 });
 
 	await prisma.ticketComment.delete({ where: { id: commentId } });
+
+	auditLog({
+		org_id: callerOrgId(caller),
+		actor_id: caller.id,
+		actor_role: isAdmin ? ROLES.ADMIN : ROLES.EMPLOYEE,
+		action: "DELETE",
+		entity_type: "ticket",
+		entity_id: comment.task_id,
+		after: { deleted_comment_id: commentId },
+	});
 }
 
 export async function clearComments(ticketId: string, caller: Caller) {
@@ -859,6 +904,16 @@ export async function clearComments(ticketId: string, caller: Caller) {
 	if (!isAdmin && !isCreator) throw Object.assign(new Error("Forbidden"), { status: 403 });
 
 	await prisma.ticketComment.deleteMany({ where: { task_id: ticketId, is_system: false } });
+
+	auditLog({
+		org_id: callerOrgId(caller),
+		actor_id: caller.id,
+		actor_role: isAdmin ? ROLES.ADMIN : ROLES.EMPLOYEE,
+		action: "DELETE",
+		entity_type: "ticket",
+		entity_id: ticketId,
+		after: { cleared_comments: true },
+	});
 }
 
 // ─── Reactions ────────────────────────────────────────────────────────────────
@@ -992,14 +1047,17 @@ export async function bulkTicketAction(action: BulkAction, ids: string[], admin:
 					prisma.ticket.update({ where: { id }, data: { user_id: userId!, status: "assigned", assigned_at: new Date(), started_at: null } }),
 					prisma.ticketComment.create({ data: { task_id: id, user_id: null, body: `Ticket reassigned from ${oldName} to ${newAssignee.name ?? newAssignee.email} by admin.`, is_system: true } }),
 				]);
+				auditLog({ org_id: callerOrgId(admin), actor_id: admin.id, actor_role: ROLES.ADMIN, action: "TRANSFER", entity_type: "ticket", entity_id: id, before: { user_id: ticket.user_id }, after: { user_id: userId } });
 				createNotification({ user_id: userId!, type: ticket.user_id ? "task_reassigned" : "task_assigned", title: ticket.user_id ? "Ticket reassigned to you" : "New ticket assigned", body: `"${ticket.title}" has been assigned to you.`, link: `/dashboard/tickets/${id}` }).catch(() => {});
 			} else if (action === "complete") {
 				if (ticket.status === "completed") { succeeded.push(id); continue; }
 				await prisma.ticket.update({ where: { id }, data: { status: "completed", completed_at: new Date() } });
+				auditLog({ org_id: callerOrgId(admin), actor_id: admin.id, actor_role: ROLES.ADMIN, action: "COMPLETE", entity_type: "ticket", entity_id: id, before: { status: ticket.status }, after: { status: "completed" } });
 				if (ticket.created_by !== admin.id)
 					createNotification({ user_id: ticket.created_by, type: "task_completed", title: "Ticket resolved", body: `"${ticket.title}" has been marked complete.`, link: `/dashboard/tickets/${id}` }).catch(() => {});
 			} else if (action === "delete") {
 				await prisma.ticket.delete({ where: { id } });
+				auditLog({ org_id: callerOrgId(admin), actor_id: admin.id, actor_role: ROLES.ADMIN, action: "DELETE", entity_type: "ticket", entity_id: id });
 				if (ticket.user_id && ticket.user_id !== admin.id)
 					createNotification({ user_id: ticket.user_id, type: "task_deleted", title: "Ticket deleted", body: `"${ticket.title}" has been deleted by admin.` }).catch(() => {});
 				else if (!ticket.user_id)
@@ -1039,6 +1097,16 @@ export async function submitReopenRequest(ticketId: string, caller: Caller) {
 		prisma.ticketComment.create({ data: { task_id: ticketId, user_id: caller.id, body: `${actorName} requested to reopen this ticket — currently ${ticket.status === "on_hold" ? "on hold" : "stale"}.`, is_system: true } }),
 	]);
 
+	auditLog({
+		org_id: orgId,
+		actor_id: caller.id,
+		actor_role: ROLES.EMPLOYEE,
+		action: "SUBMIT",
+		entity_type: "ticket",
+		entity_id: ticketId,
+		after: { request_type: "reopen", ticket_status: ticket.status },
+	});
+
 	notifyAdmins({ type: "task_updated", title: "Reopen requested", body: `${actorName} requested to reopen "${ticket.title}".`, link: `/dashboard/tickets/${ticketId}` }).catch(() => {});
 }
 
@@ -1056,6 +1124,16 @@ export async function approveReopenRequest(ticketId: string, admin: Caller) {
 		prisma.ticketComment.create({ data: { task_id: ticketId, user_id: admin.id, body: `${adminName} approved the reopen request — ticket is now ${newStatus === "assigned" ? "assigned" : "open"}.`, is_system: true } }),
 	]);
 
+	auditLog({
+		org_id: callerOrgId(admin),
+		actor_id: admin.id,
+		actor_role: ROLES.ADMIN,
+		action: "APPROVE",
+		entity_type: "ticket",
+		entity_id: ticketId,
+		after: { request_type: "reopen", new_status: newStatus },
+	});
+
 	if (request.ticket.user_id)
 		createNotification({ user_id: request.ticket.user_id, type: "task_updated", title: "Reopen request approved", body: `Your reopen request for "${request.ticket.title}" was approved.`, link: `/dashboard/tickets/${ticketId}` }).catch(() => {});
 }
@@ -1071,6 +1149,16 @@ export async function rejectReopenRequest(ticketId: string, admin: Caller, reaso
 		prisma.reopenRequest.update({ where: { id: request.id }, data: { status: "rejected", reviewed_by: admin.id, reviewed_at: now } }),
 		prisma.ticketComment.create({ data: { task_id: ticketId, user_id: admin.id, body: `${adminName} rejected the reopen request${reason ? ` — "${reason}"` : ""}.`, is_system: true } }),
 	]);
+
+	auditLog({
+		org_id: callerOrgId(admin),
+		actor_id: admin.id,
+		actor_role: ROLES.ADMIN,
+		action: "REJECT",
+		entity_type: "ticket",
+		entity_id: ticketId,
+		after: { request_type: "reopen", reason },
+	});
 
 	if (request.ticket.user_id)
 		createNotification({ user_id: request.ticket.user_id, type: "task_updated", title: "Reopen request rejected", body: `Your reopen request for "${request.ticket.title}" was rejected${reason ? `: ${reason}` : ""}.`, link: `/dashboard/tickets/${ticketId}` }).catch(() => {});
@@ -1109,6 +1197,16 @@ export async function submitTransferRequest(ticketId: string, caller: Caller, re
 		prisma.ticketComment.create({ data: { task_id: ticketId, user_id: null, body: `${requesterName} requested to transfer this task to ${targetName}.`, is_system: true } }),
 	]);
 
+	auditLog({
+		org_id: orgId,
+		actor_id: caller.id,
+		actor_role: ROLES.EMPLOYEE,
+		action: "SUBMIT",
+		entity_type: "ticket",
+		entity_id: ticketId,
+		after: { request_type: "transfer", requested_to: requestedTo ?? null },
+	});
+
 	createNotification({ user_id: ticket.created_by, type: "transfer_requested", title: "Transfer request", body: `${requesterName} requested to transfer "${ticket.title}" to ${targetName}.`, link: `/dashboard/tickets/${ticketId}` }).catch(() => {});
 	notifyAdmins({ type: "transfer_requested", title: "Transfer request", body: `${requesterName} requested to transfer "${ticket.title}" to ${targetName}.`, link: `/dashboard/tickets/${ticketId}`, excludeId: ticket.created_by }).catch(() => {});
 
@@ -1133,6 +1231,16 @@ export async function approveTransferRequest(ticketId: string, admin: Caller, as
 		await tx.ticketComment.create({ data: { task_id: ticketId, user_id: admin.id, body: `${adminName} approved the transfer request — reassigned to ${targetName}.`, is_system: true } });
 	});
 
+	auditLog({
+		org_id: callerOrgId(admin),
+		actor_id: admin.id,
+		actor_role: ROLES.ADMIN,
+		action: "APPROVE",
+		entity_type: "ticket",
+		entity_id: ticketId,
+		after: { request_type: "transfer", new_assignee_id: assigneeId },
+	});
+
 	if (request.ticket.user_id)
 		createNotification({ user_id: request.ticket.user_id, type: "task_updated", title: "Transfer request approved", body: `Your transfer request for "${request.ticket.title}" was approved — reassigned to ${targetName}.`, link: `/dashboard/tickets/${ticketId}` }).catch(() => {});
 	if (assigneeId !== request.ticket.user_id)
@@ -1150,6 +1258,16 @@ export async function rejectTransferRequest(ticketId: string, admin: Caller, rea
 		prisma.transferRequest.update({ where: { id: request.id }, data: { status: "rejected", reviewed_by: admin.id, reviewed_at: now } }),
 		prisma.ticketComment.create({ data: { task_id: ticketId, user_id: admin.id, body: `${adminName} rejected the transfer request${reason ? ` — "${reason}"` : ""}.`, is_system: true } }),
 	]);
+
+	auditLog({
+		org_id: callerOrgId(admin),
+		actor_id: admin.id,
+		actor_role: ROLES.ADMIN,
+		action: "REJECT",
+		entity_type: "ticket",
+		entity_id: ticketId,
+		after: { request_type: "transfer", reason },
+	});
 
 	if (request.ticket.user_id)
 		createNotification({ user_id: request.ticket.user_id, type: "task_updated", title: "Transfer request rejected", body: `Your transfer request for "${request.ticket.title}" was rejected${reason ? `: ${reason}` : ""}.`, link: `/dashboard/tickets/${ticketId}` }).catch(() => {});
@@ -1183,6 +1301,16 @@ export async function submitDueDateRequest(ticketId: string, caller: Caller, req
 		prisma.ticketComment.create({ data: { task_id: ticketId, user_id: caller.id, body: `${actorName} requested a due date change${reason ? ` — "${reason}"` : ""}.`, is_system: true } }),
 	]);
 
+	auditLog({
+		org_id: orgId,
+		actor_id: caller.id,
+		actor_role: ROLES.EMPLOYEE,
+		action: "SUBMIT",
+		entity_type: "ticket",
+		entity_id: ticketId,
+		after: { request_type: "due_date", requested_date: requestedDate, reason },
+	});
+
 	notifyAdmins({ type: "task_updated", title: "Due date change requested", body: `${actorName} requested a new due date for "${ticket.title}".`, link: `/dashboard/tickets/${ticketId}` }).catch(() => {});
 
 	return request;
@@ -1201,6 +1329,17 @@ export async function approveDueDateRequest(ticketId: string, admin: Caller) {
 		prisma.ticketComment.create({ data: { task_id: ticketId, user_id: admin.id, body: `${adminName} approved the due date change request.`, is_system: true } }),
 	]);
 
+	auditLog({
+		org_id: callerOrgId(admin),
+		actor_id: admin.id,
+		actor_role: ROLES.ADMIN,
+		action: "APPROVE",
+		entity_type: "ticket",
+		entity_id: ticketId,
+		before: { due_date: request.ticket.due_date },
+		after: { request_type: "due_date", due_date: request.requested_date },
+	});
+
 	if (request.ticket.user_id)
 		createNotification({ user_id: request.ticket.user_id, type: "task_updated", title: "Due date change approved", body: `Your due date change request for "${request.ticket.title}" was approved.`, link: `/dashboard/tickets/${ticketId}` }).catch(() => {});
 }
@@ -1216,6 +1355,16 @@ export async function rejectDueDateRequest(ticketId: string, admin: Caller, reas
 		prisma.dueDateRequest.update({ where: { id: request.id }, data: { status: "rejected", reviewed_by: admin.id, reviewed_at: now, reject_reason: reason ?? null } }),
 		prisma.ticketComment.create({ data: { task_id: ticketId, user_id: admin.id, body: `${adminName} rejected the due date change request${reason ? ` — "${reason}"` : ""}.`, is_system: true } }),
 	]);
+
+	auditLog({
+		org_id: callerOrgId(admin),
+		actor_id: admin.id,
+		actor_role: ROLES.ADMIN,
+		action: "REJECT",
+		entity_type: "ticket",
+		entity_id: ticketId,
+		after: { request_type: "due_date", reason },
+	});
 
 	if (request.ticket.user_id)
 		createNotification({ user_id: request.ticket.user_id, type: "task_updated", title: "Due date change rejected", body: `Your due date change request for "${request.ticket.title}" was rejected${reason ? `: ${reason}` : ""}.`, link: `/dashboard/tickets/${ticketId}` }).catch(() => {});

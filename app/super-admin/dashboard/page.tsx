@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { prisma } from "@/lib/infra/prisma";
-import { Building2, Users, Clock } from "lucide-react";
+import { Building2, Users, Clock, Shield } from "lucide-react";
 
 export default async function SuperAdminDashboard() {
 	const [orgCount, pendingCount, userCount] = await Promise.all([
@@ -45,6 +45,13 @@ export default async function SuperAdminDashboard() {
 					className="text-sm font-medium bg-accent hover:bg-accent/80 text-ink px-4 py-2 rounded-lg transition-colors"
 				>
 					Company Applications
+				</Link>
+				<Link
+					href="/super-admin/audit-logs"
+					className="flex items-center gap-1.5 text-sm font-medium bg-accent hover:bg-accent/80 text-ink px-4 py-2 rounded-lg transition-colors"
+				>
+					<Shield className="w-3.5 h-3.5" />
+					Audit Logs
 				</Link>
 			</div>
 		</div>

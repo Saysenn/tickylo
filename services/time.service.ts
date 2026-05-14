@@ -122,6 +122,16 @@ export async function startTimer(caller: Caller, data: StartTimerData) {
 		}
 	}
 
+	auditLog({
+		org_id: orgId,
+		actor_id: caller.id,
+		actor_role: callerIsAdmin(caller) ? ROLES.ADMIN : ROLES.EMPLOYEE,
+		action: "CREATE",
+		entity_type: "time_entry",
+		entity_id: entry.id,
+		after: { ticket_id: data.ticket_id ?? null, title: resolvedTitle },
+	});
+
 	return entry;
 }
 
@@ -203,7 +213,7 @@ export async function updateEntry(id: string, caller: Caller, data: UpdateEntryD
 
 	if (newEnd <= newStart) throw Object.assign(new Error("End time must be after start time"), { status: 400 });
 
-	return prisma.timeEntry.update({
+	const updated = await prisma.timeEntry.update({
 		where: { id },
 		data: {
 			...(data.title !== undefined ? { title: data.title } : {}),
@@ -212,6 +222,19 @@ export async function updateEntry(id: string, caller: Caller, data: UpdateEntryD
 			end_time: newEnd,
 		},
 	});
+
+	auditLog({
+		org_id: callerOrgId(caller),
+		actor_id: caller.id,
+		actor_role: callerIsAdmin(caller) ? ROLES.ADMIN : ROLES.EMPLOYEE,
+		action: "UPDATE",
+		entity_type: "time_entry",
+		entity_id: id,
+		before: { start_time: entry.start_time, end_time: entry.end_time, title: entry.title },
+		after: { start_time: newStart, end_time: newEnd, title: updated.title },
+	});
+
+	return updated;
 }
 
 // ─── Delete Entry ─────────────────────────────────────────────────────────────
@@ -226,6 +249,15 @@ export async function deleteEntry(id: string, caller: Caller) {
 	if (!entry.end_time) throw Object.assign(new Error("Cannot delete an active timer"), { status: 400 });
 
 	await prisma.timeEntry.delete({ where: { id } });
+
+	auditLog({
+		org_id: callerOrgId(caller),
+		actor_id: caller.id,
+		actor_role: callerIsAdmin(caller) ? ROLES.ADMIN : ROLES.EMPLOYEE,
+		action: "DELETE",
+		entity_type: "time_entry",
+		entity_id: id,
+	});
 }
 
 // ─── Bulk Delete ──────────────────────────────────────────────────────────────
@@ -242,6 +274,17 @@ export async function bulkDelete(ids: string[], caller: Caller) {
 
 	const validIds = entries.map((e) => e.id);
 	await prisma.timeEntry.deleteMany({ where: { id: { in: validIds } } });
+
+	auditLog({
+		org_id: callerOrgId(caller),
+		actor_id: caller.id,
+		actor_role: callerIsAdmin(caller) ? ROLES.ADMIN : ROLES.EMPLOYEE,
+		action: "DELETE",
+		entity_type: "time_entry",
+		entity_id: "bulk",
+		after: { deleted_ids: validIds, count: validIds.length },
+	});
+
 	return { deleted: validIds.length };
 }
 
@@ -273,7 +316,7 @@ export async function mergeEntries(ids: string[], caller: Caller, title?: string
 	const ticketIds = new Set(entries.map((e) => e.ticket_id));
 	const sharedTicketId = ticketIds.size === 1 ? entries[0].ticket_id : null;
 
-	return prisma.$transaction(async (tx) => {
+	const merged = await prisma.$transaction(async (tx) => {
 		await tx.timeEntry.deleteMany({ where: { id: { in: ids } } });
 		return tx.timeEntry.create({
 			data: {
@@ -285,4 +328,16 @@ export async function mergeEntries(ids: string[], caller: Caller, title?: string
 			},
 		});
 	});
+
+	auditLog({
+		org_id: callerOrgId(caller),
+		actor_id: caller.id,
+		actor_role: isAdmin ? ROLES.ADMIN : ROLES.EMPLOYEE,
+		action: "MERGE",
+		entity_type: "time_entry",
+		entity_id: merged.id,
+		after: { merged_from: ids, count: ids.length, total_ms: totalMs },
+	});
+
+	return merged;
 }

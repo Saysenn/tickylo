@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/infra/prisma";
 import { ok, errorResponse } from "@/lib/utils/response";
 import { sendEmail } from "@/lib/email/send";
+import { auditLog } from "@/lib/utils/audit";
 import { z } from "zod";
 
 async function requireSuperAdmin() {
@@ -50,6 +51,15 @@ export async function POST(
 				<p>If you believe this was a mistake or would like to reapply, please contact our support team.</p>
 				<p>— The Tickworks Team</p>
 			`,
+		});
+
+		auditLog({
+			actor_id: caller.id,
+			actor_role: "super_admin",
+			action: "REJECT",
+			entity_type: "org_application",
+			entity_id: id,
+			after: { company_name: application.company_name, reason },
 		});
 
 		return ok({ message: "Application rejected" });

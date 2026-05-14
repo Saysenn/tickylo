@@ -19,6 +19,7 @@ export const DEFAULT_ROLE: Role = ROLES.EMPLOYEE;
 export const ROUTE_PERMISSIONS: Record<string, Role[]> = {
 	"/dashboard/employees": [ROLES.ADMIN],
 	"/dashboard/reports": [ROLES.ADMIN],
+	"/dashboard/audit-logs": [ROLES.ADMIN, ROLES.SUPER_ADMIN],
 };
 
 export const UNAUTHORIZED_REDIRECT = "/dashboard";

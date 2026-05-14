@@ -302,6 +302,14 @@ class APIService {
 	};
 
 	// ---------------------------------------------------------------------------
+	// Audit Logs (admin + super_admin only)
+	// ---------------------------------------------------------------------------
+	public auditLogs = {
+		list: (params?: { page?: number; limit?: number; action?: string; entity_type?: string; actor_id?: string; from?: string; to?: string }) =>
+			axiosService.get(`${apiVersion}/audit-logs`, params ?? {}),
+	};
+
+	// ---------------------------------------------------------------------------
 	// Super Admin
 	// ---------------------------------------------------------------------------
 	public superAdmin = {

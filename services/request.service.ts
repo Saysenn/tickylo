@@ -67,6 +67,16 @@ export async function createRequest(caller: Caller, data: CreateRequestData) {
 		},
 	});
 
+	auditLog({
+		org_id: orgId,
+		actor_id: caller.id,
+		actor_role: ROLES.EMPLOYEE,
+		action: "CREATE",
+		entity_type: "leave_request",
+		entity_id: leave.id,
+		after: { type: data.type, start: data.startDate, end: data.endDate },
+	});
+
 	const name = (caller.user_metadata?.name as string | undefined) ?? caller.email ?? "An employee";
 	notifyAdmins({
 		type: "leave_requested",
@@ -176,7 +186,20 @@ export async function cancelRequest(id: string, caller: Caller, reason?: string)
 	if (leave.status !== "pending")
 		throw Object.assign(new Error("Only pending leave requests can be cancelled"), { status: 400 });
 
-	return prisma.leave.update({ where: { id }, data: { status: "cancelled", reason } });
+	const updated = await prisma.leave.update({ where: { id }, data: { status: "cancelled", reason } });
+
+	const orgId = caller.app_metadata?.org_id as string | undefined;
+	auditLog({
+		org_id: orgId,
+		actor_id: caller.id,
+		actor_role: ROLES.EMPLOYEE,
+		action: "CANCEL",
+		entity_type: "leave_request",
+		entity_id: id,
+		after: { status: "cancelled", reason },
+	});
+
+	return updated;
 }
 
 // ─── Delete ───────────────────────────────────────────────────────────────────
@@ -200,4 +223,14 @@ export async function deleteRequest(id: string, caller: Caller) {
 	}
 
 	await prisma.leave.delete({ where: { id } });
+
+	const orgId = caller.app_metadata?.org_id as string | undefined;
+	auditLog({
+		org_id: orgId,
+		actor_id: caller.id,
+		actor_role: isAdminCaller ? ROLES.ADMIN : ROLES.EMPLOYEE,
+		action: "DELETE",
+		entity_type: "leave_request",
+		entity_id: id,
+	});
 }

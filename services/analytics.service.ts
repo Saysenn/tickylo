@@ -97,3 +97,59 @@ export async function getReports(admin: Caller) {
 		recent: { leaves: recentLeaves, tasks: recentTickets },
 	};
 }
+
+// ─── Audit Logs ───────────────────────────────────────────────────────────────
+
+export interface AuditLogsFilters {
+	action?: string;
+	entity_type?: string;
+	actor_id?: string;
+	from?: string;
+	to?: string;
+	page?: number;
+	limit?: number;
+}
+
+export async function getAuditLogs(caller: Caller, filters: AuditLogsFilters = {}) {
+	const orgId = callerOrgId(caller);
+	const orgFilter = orgId ? { org_id: orgId } : {};
+
+	const page = Math.max(1, filters.page ?? 1);
+	const limit = Math.min(100, Math.max(1, filters.limit ?? 20));
+	const skip = (page - 1) * limit;
+
+	const where: Record<string, unknown> = { ...orgFilter };
+	if (filters.action) where.action = filters.action;
+	if (filters.entity_type) where.entity_type = filters.entity_type;
+	if (filters.actor_id) where.actor_id = filters.actor_id;
+	if (filters.from || filters.to) {
+		where.created_at = {
+			...(filters.from ? { gte: new Date(filters.from + "T00:00:00") } : {}),
+			...(filters.to ? { lte: new Date(filters.to + "T23:59:59.999") } : {}),
+		};
+	}
+
+	const [logs, total] = await Promise.all([
+		prisma.auditLog.findMany({
+			where,
+			orderBy: { created_at: "desc" },
+			skip,
+			take: limit,
+		}),
+		prisma.auditLog.count({ where }),
+	]);
+
+	const actorIds = [...new Set(logs.map((l) => l.actor_id))];
+	const actors = await prisma.user.findMany({
+		where: { id: { in: actorIds } },
+		select: { id: true, name: true, email: true },
+	});
+	const actorMap = Object.fromEntries(actors.map((a) => [a.id, a]));
+
+	return {
+		data: logs.map((l) => ({ ...l, actor: actorMap[l.actor_id] ?? null })),
+		total,
+		page,
+		totalPages: Math.ceil(total / limit),
+	};
+}
