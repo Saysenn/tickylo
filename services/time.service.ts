@@ -15,10 +15,11 @@ export type ListEntriesParams = {
 	to?: string;
 	tz_offset?: number;
 	user_id?: string;
+	flagged_only?: boolean;
 };
 
 export async function listEntries(caller: Caller, params: ListEntriesParams) {
-	const { page = 1, limit = 10, from, to, tz_offset = 0, user_id } = params;
+	const { page = 1, limit = 10, from, to, tz_offset = 0, user_id, flagged_only } = params;
 	const skip = (Math.max(1, page) - 1) * Math.min(50, Math.max(1, limit));
 	const take = Math.min(50, Math.max(1, limit));
 	const isAdmin = callerIsAdmin(caller);
@@ -27,10 +28,16 @@ export async function listEntries(caller: Caller, params: ListEntriesParams) {
 	const localMidnightUTC = (d: string) =>
 		new Date(new Date(d + "T00:00:00Z").getTime() + tz_offset * 60000);
 
+	// Admin with no user_id → show all org entries; employee always sees only their own
+	const userFilter = isAdmin
+		? (user_id ? { user_id } : {})
+		: { user_id: caller.id };
+
 	const where = {
 		...(orgId ? { org_id: orgId } : {}),
-		user_id: (isAdmin ? user_id : undefined) ?? caller.id,
+		...userFilter,
 		end_time: { not: null as null },
+		...(flagged_only && isAdmin ? { flagged: true } : {}),
 		...(from && to
 			? {
 					start_time: {
@@ -47,7 +54,10 @@ export async function listEntries(caller: Caller, params: ListEntriesParams) {
 			orderBy: { start_time: "desc" },
 			take,
 			skip,
-			include: { ticket: { select: { id: true, title: true, ticket_type: true } } },
+			include: {
+				ticket: { select: { id: true, title: true, ticket_type: true } },
+				user:   { select: { id: true, name: true, email: true } },
+			},
 		}),
 		prisma.timeEntry.count({ where }),
 	]);

@@ -112,13 +112,20 @@ export function EmployeeSessionLog({ userId, from, to }: Props) {
 									</div>
 								</div>
 
-								{/* Duration */}
-								<span className="text-xs font-semibold text-ink shrink-0">
-									{entry.end_time
-										? formatDurationBetween(entry.start_time, entry.end_time)
-										: <span className="text-mint animate-pulse text-xs">Live</span>
-									}
-								</span>
+								{/* Duration + auto-close badge */}
+								<div className="flex flex-col items-end gap-0.5 shrink-0">
+									<span className="text-xs font-semibold text-ink">
+										{entry.end_time
+											? formatDurationBetween(entry.start_time, entry.end_time)
+											: <span className="text-mint animate-pulse text-xs">Live</span>
+										}
+									</span>
+									{entry.auto_closed && (
+										<span className="text-[10px] font-medium text-orange-500 bg-orange-500/10 border border-orange-500/20 px-1.5 py-0.5 rounded">
+											Auto-closed
+										</span>
+									)}
+								</div>
 							</li>
 						);
 					})}

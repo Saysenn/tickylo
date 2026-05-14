@@ -6,6 +6,8 @@ export interface TimeEntry {
   end_time: string | null;
   title: string | null;
   description: string | null;
+  auto_closed: boolean;
+  flagged: boolean;
   created_at: string;
   updated_at: string;
   ticket?: { id: string; title: string; ticket_type: string } | null;

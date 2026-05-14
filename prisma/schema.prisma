@@ -24,8 +24,25 @@ model Organization {
 
   users         User[]
   join_requests UserJoinRequest[]
+  work_schedule WorkSchedule?
 
   @@map("organizations")
+}
+
+model WorkSchedule {
+  id           String   @id @default(cuid())
+  org_id       String   @unique
+  timezone     String   @default("UTC")
+  shift_start  String   @default("09:00")
+  shift_end    String   @default("17:00")
+  working_days Int[]    @default([1,2,3,4,5])
+  daily_cap_h  Float    @default(8)
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+
+  org Organization @relation(fields: [org_id], references: [id], onDelete: Cascade)
+
+  @@map("work_schedules")
 }
 
 model OrganizationApplication {
@@ -104,6 +121,7 @@ model User {
   name          String?
   avatar_url    String?
   role          String?
+  timezone      String?  // personal display timezone, e.g. "Asia/Manila"
 
   TimeEntries              TimeEntry[]
   createdTickets           Ticket[]          @relation("TaskCreatedBy")
@@ -154,6 +172,8 @@ model TimeEntry {
   end_time    DateTime?
   title       String?
   description String?
+  auto_closed Boolean   @default(false)
+  flagged     Boolean   @default(false)
 
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt

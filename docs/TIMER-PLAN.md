@@ -2,89 +2,98 @@
 
 ## Problem
 - Employees can leave timers running indefinitely (forgotten clock-out)
-- No way to distinguish regular hours from overtime
-- No system awareness of working days, shifts, or holidays
+- No system awareness of working days, shifts, or what "normal" hours look like
+- Admin and employees may be in different timezones — times must display correctly for each
 
 ---
 
-## Phase 1 — Work Schedule Config (Build First)
+## Timezone Strategy
+
+Two separate timezone concepts:
+
+| | Field | Purpose |
+|---|---|---|
+| **Org timezone** | `WorkSchedule.timezone` | Defines when the shift runs (e.g. `Asia/Manila`). All shift/auto-close calculations use this. Set by admin. |
+| **Personal timezone** | `User.timezone` | Display only — each user sees times in their local clock. Admin in Bangkok sees `Asia/Bangkok`, employees in PH see `Asia/Manila`. Same data, different display. |
+
+Admin sets the org timezone when configuring the work schedule.
+Each user sets their personal timezone in their profile/settings.
+If personal timezone is not set, fall back to org timezone, then UTC.
+
+---
+
+## Phase 1 — Work Schedule Config + Auto-Close (Build First)
 
 Admin sets per-org schedule:
 
 | Setting | Example |
 |---|---|
-| Daily cap | 8 hours |
+| Org timezone | Asia/Manila |
 | Shift start | 09:00 |
 | Shift end | 17:00 |
 | Working days | Mon–Fri |
+| Daily cap | 8 hours |
 
-**Auto-close rule:** If a timer is still running at `shift_end`, the system auto-stops it at that time and flags the entry as `auto_closed: true` for admin review. No infinite timers.
+**Auto-close rule:** Cron runs hourly. Any entry still open past `shift_end` (evaluated in org timezone) gets auto-stopped at `shift_end` and flagged `auto_closed: true` for admin review.
 
-**Where:** New "Work Schedule" settings page under admin Settings.
+**Anomaly flag:** Any single entry longer than the shift window (e.g. timer ran 15h on a 8h shift day) is flagged `flagged: true`. Admin sees these in Time Manager and can trim or leave them.
 
-**Schema addition:**
+**Schema additions:**
+
 ```prisma
 model WorkSchedule {
-  id           String  @id @default(cuid())
-  org_id       String  @unique
-  daily_cap_h  Float   @default(8)
-  shift_start  String  @default("09:00")  // HH:MM
-  shift_end    String  @default("17:00")  // HH:MM
-  working_days Int[]   @default([1,2,3,4,5]) // 0=Sun, 6=Sat
+  id           String   @id @default(cuid())
+  org_id       String   @unique
+  timezone     String   @default("UTC")         // IANA tz, e.g. "Asia/Manila"
+  shift_start  String   @default("09:00")       // HH:MM in org timezone
+  shift_end    String   @default("17:00")
+  working_days Int[]    @default([1,2,3,4,5])   // 0=Sun … 6=Sat
+  daily_cap_h  Float    @default(8)
   created_at   DateTime @default(now())
   updated_at   DateTime @updatedAt
+  @@map("work_schedules")
 }
 ```
 
-Add `auto_closed Boolean @default(false)` to `TimeEntry`.
+Add to `User`:
+```prisma
+timezone  String?   // personal display timezone, e.g. "Asia/Bangkok"
+```
 
-**Cron job:** Runs at `shift_end` daily — finds all open entries for the org, closes them at `shift_end`, marks `auto_closed: true`, notifies admin.
-
----
-
-## Phase 2 — Overtime Classification
-
-After Phase 1, at clock-out compute:
-
-- `regular_ms` = min(actual duration, daily cap)
-- `overtime_ms` = max(0, actual duration − daily cap)
-- Weekend entries → fully overtime if that day is not a working day
-
-Store both on `TimeEntry`. Surface in time reports.
+Add to `TimeEntry`:
+```prisma
+auto_closed  Boolean @default(false)
+flagged      Boolean @default(false)
+```
 
 ---
 
-## Phase 3 — Org Calendar
+## Phase 2 — Org Calendar (Future)
 
 Admin manages a calendar with day types:
 
 | Day Type | Description |
 |---|---|
 | Regular | Normal working day |
-| Holiday | Unpaid off |
+| Holiday | Day off |
 | Paid Holiday | Off but paid |
-| Double Pay | Holiday with 2× rate |
 | Rest Day | Weekend override |
 
 Employees can view the calendar (read-only).
-Any time worked on a holiday is fully overtime / flagged by type.
 
 ---
 
-## Phase 4 — Anomaly Flagging (Anti-Cheat)
+## Phase 3 — Per-Employee Timezone Override (Future)
 
-- Flag any single time entry over `daily_cap × 1.5`
-- Flag any ticket with total logged time over `estimated_hours × 2`
-- Flagged entries appear in a dedicated admin review queue
-- Admin can approve, trim, or reject flagged entries
+If the org expands to a fully remote team across multiple continents, allow each employee to have their own shift window derived from their personal timezone rather than the org timezone. Low priority — most small teams share one shift timezone.
 
 ---
 
 ## Build Order
 
-1. `WorkSchedule` model + admin settings UI
-2. Auto-close cron at shift end
-3. `auto_closed` flag + admin review in Time Manager
-4. Overtime fields on `TimeEntry` + classification logic
-5. Org calendar UI + holiday day types
-6. Anomaly flagging queue
+1. `WorkSchedule` model + `User.timezone` field → `npx prisma db push`
+2. Admin work schedule settings UI + employee read-only view
+3. Personal timezone selector in user profile/settings (both admin + employee)
+4. Auto-close cron (hourly) — closes open entries past shift end in org timezone
+5. Anomaly flag — entries longer than shift window flagged in Time Manager
+6. Org calendar UI (Phase 2)

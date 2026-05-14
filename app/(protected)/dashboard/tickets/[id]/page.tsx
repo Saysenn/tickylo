@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { useAppSelector } from "@/store/hooks";
-import { formatDate, formatDuration, formatDueDate, toDatetimeInput } from "@/lib/utils/format";
+import { formatDate, formatDuration, formatDueDate, toDatetimeInput, formatTime, formatDurationBetween } from "@/lib/utils/format";
 import type { TimeEntry } from "@/components/dashboard/time-tracker/types";
 import { cn } from "@/lib/utils/cn";
 import {
@@ -105,6 +105,14 @@ const PROSE_CLS = [
 interface Employee { id: string; name: string | null; email: string }
 interface TicketDetail extends Task {
 	creator?: { id: string; name: string | null; email: string } | null;
+}
+interface TicketTimeEntry {
+	id: string;
+	start_time: string;
+	end_time: string | null;
+	auto_closed: boolean;
+	flagged: boolean;
+	user: { id: string; name: string | null; email: string };
 }
 
 // ── Page ──────────────────────────────────────────────────────────────────
@@ -210,6 +218,12 @@ export default function TicketDetailPage() {
 		refetchOnWindowFocus: true,
 		refetchOnMount: true,
 		staleTime: 0,
+	});
+
+	const { data: ticketTimeEntries = [] } = useQuery<TicketTimeEntry[]>({
+		queryKey: ["ticket-time", id],
+		queryFn: () => APIService.time.ticketEntries(id),
+		enabled: !!id,
 	});
 
 	const isDone           = DONE_STATUSES.includes(ticket?.status ?? "");
@@ -322,6 +336,7 @@ export default function TicketDetailPage() {
 		onSuccess: async () => {
 			await refetchTimer();
 			queryClient.invalidateQueries({ queryKey: ["time"] });
+			queryClient.invalidateQueries({ queryKey: ["ticket-time", id] });
 			invalidate(); // ticket reverts to assigned
 		},
 	});
@@ -894,6 +909,33 @@ export default function TicketDetailPage() {
 							</div>
 						)}
 					</div>
+
+					{/* Time log — all sessions for this ticket */}
+					{ticketTimeEntries.length > 0 && (
+						<div className="rounded-xl border bg-background shadow-sm divide-y">
+							<div className="px-5 py-3">
+								<p className="text-[10px] font-semibold text-ink-3 uppercase tracking-widest">Time Logged</p>
+							</div>
+							<ul className="divide-y max-h-56 overflow-y-auto">
+								{ticketTimeEntries.map((e) => (
+									<li key={e.id} className="px-5 py-2.5 flex items-center justify-between gap-3">
+										<div className="min-w-0">
+											<p className="text-xs font-medium text-ink truncate">{e.user.name ?? e.user.email}</p>
+											<p className="text-[10px] text-ink-3">{formatDate(e.start_time)} · {formatTime(e.start_time)} → {e.end_time ? formatTime(e.end_time) : "ongoing"}</p>
+										</div>
+										<div className="flex flex-col items-end gap-0.5 shrink-0">
+											<span className="text-xs font-semibold text-ink">
+												{e.end_time ? formatDurationBetween(e.start_time, e.end_time) : <span className="text-mint text-xs">Live</span>}
+											</span>
+											{e.auto_closed && (
+												<span className="text-[10px] text-orange-500 bg-orange-500/10 border border-orange-500/20 px-1.5 py-0.5 rounded font-medium">Auto-closed</span>
+											)}
+										</div>
+									</li>
+								))}
+							</ul>
+						</div>
+					)}
 
 					{/* Stale lock notice — informational only */}
 					{!isAdmin && isStale && (

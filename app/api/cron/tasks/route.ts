@@ -2,15 +2,15 @@ import { NextRequest } from "next/server";
 import { ok, errorResponse } from "@/lib/utils/response";
 import { prisma } from "@/lib/infra/prisma";
 import { createNotification } from "@/lib/utils/create-notification";
+import { getShiftEndUtc, getDayOfWeekInTz } from "@/services/work-schedule.service";
 
 /**
  * GET /api/cron/tasks
- * Protected cron job — call daily at 08:00 via Vercel Cron or external scheduler.
- * Requires: Authorization: Bearer <CRON_SECRET>
+ * Runs hourly via Vercel Cron. Protected by CRON_SECRET.
  *
- * Does two things:
  * 1. Due date reminders — notifies assignees whose task is due within 24h
- * 2. Priority escalation — bumps overdue tasks to "high" + posts system comment
+ * 2. Priority escalation — bumps overdue tasks to "high"
+ * 3. Auto-close — closes timers still running past shift_end in org timezone
  */
 export async function GET(request: NextRequest) {
 	const auth = request.headers.get("authorization");
@@ -79,8 +79,57 @@ export async function GET(request: NextRequest) {
 		}
 	}
 
+	// ── 3. Auto-close runaway timers ──────────────────────────────────────────
+	let autoClosed = 0;
+
+	const schedules = await prisma.workSchedule.findMany();
+
+	for (const schedule of schedules) {
+		const shiftEndUtc = getShiftEndUtc(schedule, now);
+
+		// Only act if we're within [shiftEndUtc, shiftEndUtc + 65min]
+		const windowEnd = new Date(shiftEndUtc.getTime() + 65 * 60 * 1000);
+		if (now < shiftEndUtc || now > windowEnd) continue;
+
+		// Only on working days
+		const dayOfWeek = getDayOfWeekInTz(shiftEndUtc, schedule.timezone);
+		if (!schedule.working_days.includes(dayOfWeek)) continue;
+
+		// Find all open entries for this org
+		const openEntries = await prisma.timeEntry.findMany({
+			where: { org_id: schedule.org_id, end_time: null },
+		});
+
+		for (const entry of openEntries) {
+			const durationMs = shiftEndUtc.getTime() - entry.start_time.getTime();
+			const shiftMs = schedule.daily_cap_h * 3600 * 1000;
+			const flagged = durationMs > shiftMs * 1.5;
+
+			await prisma.timeEntry.update({
+				where: { id: entry.id },
+				data: {
+					end_time: shiftEndUtc,
+					auto_closed: true,
+					flagged,
+				},
+			});
+
+			// Notify the employee their timer was auto-closed
+			await createNotification({
+				user_id: entry.user_id,
+				type: "timer_auto_closed",
+				title: "Timer auto-closed",
+				body: "Your timer was automatically stopped at the end of your shift.",
+				link: `/dashboard/time-tracker`,
+			}).catch(() => {});
+
+			autoClosed++;
+		}
+	}
+
 	return ok({
 		reminders_sent: dueSoonTasks.length,
 		escalated: overdueTasks.length,
+		auto_closed: autoClosed,
 	});
 }

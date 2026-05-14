@@ -23,6 +23,8 @@ class APIService {
 	// ---------------------------------------------------------------------------
 	public users = {
 		me: () => axiosService.get(`${apiVersion}/users/me`),
+		updateTimezone: (timezone: string) =>
+			axiosService.patch(`${apiVersion}/users/me`, { timezone }),
 		getMeta: () => axiosService.get(`${apiVersion}/users/meta`),
 		updateMeta: (data: {
 			phone?: string;
@@ -91,8 +93,8 @@ class APIService {
 		active: () => axiosService.get(`${apiVersion}/time/active`),
 		stop: (id: string, data: { title?: string; description?: string }) =>
 			axiosService.patch(`${apiVersion}/time/${id}`, data),
-		list: (page = 1, limit = 10, from?: string, to?: string, tzOffset?: number, userId?: string) =>
-			axiosService.get(`${apiVersion}/time`, { page, limit, from, to, tz_offset: tzOffset, user_id: userId || undefined }),
+		list: (page = 1, limit = 10, from?: string, to?: string, tzOffset?: number, userId?: string, flaggedOnly?: boolean) =>
+			axiosService.get(`${apiVersion}/time`, { page, limit, from, to, tz_offset: tzOffset, user_id: userId || undefined, flagged_only: flaggedOnly || undefined }),
 		summary: (from: string, to: string, userId?: string, tzOffset?: number) =>
 			axiosService.get(`${apiVersion}/time/summary`, {
 				from,
@@ -114,6 +116,8 @@ class APIService {
 			axiosService.delete(`${apiVersion}/time/bulk`, undefined, { ids }),
 		merge: (ids: string[], title?: string) =>
 			axiosService.post(`${apiVersion}/time/merge`, { ids, title }),
+		ticketEntries: (ticketId: string) =>
+			axiosService.get(`${apiVersion}/ticket/${ticketId}/time`),
 	};
 
 	// ---------------------------------------------------------------------------
@@ -307,6 +311,20 @@ class APIService {
 	public auditLogs = {
 		list: (params?: { page?: number; limit?: number; action?: string; entity_type?: string; actor_id?: string; from?: string; to?: string }) =>
 			axiosService.get(`${apiVersion}/audit-logs`, params ?? {}),
+	};
+
+	// ---------------------------------------------------------------------------
+	// Work Schedule
+	// ---------------------------------------------------------------------------
+	public workSchedule = {
+		get: () => axiosService.get(`${apiVersion}/work-schedule`),
+		update: (data: {
+			timezone: string;
+			shift_start: string;
+			shift_end: string;
+			working_days: number[];
+			daily_cap_h: number;
+		}) => axiosService.put(`${apiVersion}/work-schedule`, data),
 	};
 
 	// ---------------------------------------------------------------------------

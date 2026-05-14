@@ -22,6 +22,7 @@ export async function GET(request: NextRequest) {
 			to: searchParams.get("to") ?? undefined,
 			tz_offset: parseInt(searchParams.get("tz_offset") ?? "0", 10),
 			user_id: searchParams.get("user_id") ?? undefined,
+			flagged_only: searchParams.get("flagged_only") === "true",
 		});
 
 		return ok(result);
