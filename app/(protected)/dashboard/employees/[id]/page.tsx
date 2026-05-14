@@ -56,7 +56,7 @@ export default async function EmployeeDetailPage({
 			orderBy: { created_at: "desc" },
 			take: 10,
 		}),
-		prisma.task.findMany({
+		prisma.ticket.findMany({
 			where: { user_id: id },
 			orderBy: { created_at: "desc" },
 			take: 10,

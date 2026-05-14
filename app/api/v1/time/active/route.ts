@@ -1,25 +1,13 @@
-import { createClient } from "@/lib/supabase/server";
-import { prisma } from "@/lib/infra/prisma";
 import { ok, errorResponse } from "@/lib/utils/response";
+import { requireUser } from "@/lib/auth/require-user";
+import * as TimeService from "@/services/time.service";
 
-// GET /api/v1/time/active — returns the current user's open time entry or null
 export async function GET() {
 	try {
-		const supabase = await createClient();
-		const {
-			data: { user },
-		} = await supabase.auth.getUser();
+		const user = await requireUser();
 		if (!user) return errorResponse("Unauthorized", 401);
 
-		const entry = await prisma.timeEntry.findFirst({
-			where: { user_id: user.id, end_time: null },
-			orderBy: { start_time: "desc" },
-			include: {
-				ticket: { select: { id: true, title: true, ticket_type: true } },
-			},
-		});
-
-		/** this will return the left time in seconds and will make sure whatever happens your timer continues */
+		const entry = await TimeService.getActiveTimer(user);
 		return ok(entry);
 	} catch (err) {
 		console.error("[time/active:GET]", err);

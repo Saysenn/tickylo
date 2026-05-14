@@ -1,135 +1,49 @@
 import { NextRequest } from "next/server";
 import { z } from "zod";
-import { prisma } from "@/lib/infra/prisma";
 import { ok, errorResponse } from "@/lib/utils/response";
 import { requireUser } from "@/lib/auth/require-user";
+import * as TimeService from "@/services/time.service";
 
 const startSchema = z.object({
 	title: z.string().max(200).optional(),
 	ticket_id: z.string().optional(),
 });
 
-// GET /api/v1/time?page=1&limit=10&from=YYYY-MM-DD&to=YYYY-MM-DD&tz_offset=<min>&user_id=<id>
-// Paginated list of completed entries, optionally filtered by local date range.
-// Admins can pass user_id to view a specific employee's entries.
 export async function GET(request: NextRequest) {
 	try {
 		const user = await requireUser();
 		if (!user) return errorResponse("Unauthorized", 401);
 
-		const isAdmin = user.app_metadata?.role === "admin";
-
 		const { searchParams } = new URL(request.url);
-		const page = Math.max(1, parseInt(searchParams.get("page") ?? "1", 10));
-		const limit = Math.min(
-			50,
-			Math.max(1, parseInt(searchParams.get("limit") ?? "10", 10)),
-		);
-		const skip = (page - 1) * limit;
-
-		const fromParam = searchParams.get("from");
-		const toParam = searchParams.get("to");
-		const tzOffset = parseInt(searchParams.get("tz_offset") ?? "0", 10);
-		const filterUserId = isAdmin ? (searchParams.get("user_id") ?? null) : null;
-
-		const localMidnightUTC = (d: string) =>
-			new Date(new Date(d + "T00:00:00Z").getTime() + tzOffset * 60000);
-
-		const orgId = user.app_metadata?.org_id as string | undefined;
-		const where = {
-			...(orgId ? { org_id: orgId } : {}),
-			user_id: filterUserId ?? user.id,
-			end_time: { not: null as null },
-			...(fromParam && toParam
-				? {
-						start_time: {
-							gte: localMidnightUTC(fromParam),
-							lte: new Date(localMidnightUTC(toParam).getTime() + 24 * 60 * 60 * 1000 - 1),
-						},
-					}
-				: {}),
-		};
-
-		const [entries, total] = await Promise.all([
-			prisma.timeEntry.findMany({
-				where,
-				orderBy: { start_time: "desc" },
-				take: limit,
-				skip,
-				include: {
-					ticket: { select: { id: true, title: true, ticket_type: true } },
-				},
-			}),
-			prisma.timeEntry.count({ where }),
-		]);
-
-		return ok({
-			data: entries,
-			page,
-			totalPages: Math.ceil(total / limit) || 1,
+		const result = await TimeService.listEntries(user, {
+			page: parseInt(searchParams.get("page") ?? "1", 10),
+			limit: parseInt(searchParams.get("limit") ?? "10", 10),
+			from: searchParams.get("from") ?? undefined,
+			to: searchParams.get("to") ?? undefined,
+			tz_offset: parseInt(searchParams.get("tz_offset") ?? "0", 10),
+			user_id: searchParams.get("user_id") ?? undefined,
 		});
+
+		return ok(result);
 	} catch (err) {
 		console.error("[time:GET]", err);
 		return errorResponse("Internal server error", 500);
 	}
 }
 
-// POST /api/v1/time — start timer (optionally pre-fill title from task)
 export async function POST(request: NextRequest) {
 	try {
 		const user = await requireUser();
 		if (!user) return errorResponse("Unauthorized", 401);
 
-		// Guard: prevent duplicate active sessions
-		const active = await prisma.timeEntry.findFirst({
-			where: { user_id: user.id, end_time: null },
-		});
-		if (active) return errorResponse("You already have an active session", 409);
-
 		const body = await request.json().catch(() => ({}));
-		const { title, ticket_id } = startSchema.parse(body);
+		const validated = startSchema.safeParse(body);
+		if (!validated.success) return errorResponse(validated.error.issues[0]?.message ?? "Invalid input", 400);
 
-		// If ticket_id supplied, resolve its title as fallback label; also guard stale tickets
-		let resolvedTitle = title ?? null;
-		if (ticket_id) {
-			const ticket = await prisma.task.findUnique({ where: { id: ticket_id }, select: { title: true, status: true } });
-			if (ticket?.status === "stale") {
-				return errorResponse("Cannot start a timer on a stale ticket", 403);
-			}
-			if (!resolvedTitle) resolvedTitle = ticket?.title ?? null;
-		}
-
-		const orgId = user.app_metadata?.org_id as string | undefined;
-		const entry = await prisma.timeEntry.create({
-			data: {
-				...(orgId ? { org_id: orgId } : {}),
-				user_id: user.id,
-				start_time: new Date(),
-				title: resolvedTitle,
-				ticket_id: ticket_id ?? null,
-			},
-		});
-
-		// If linked to a ticket in "assigned" or "on_hold" state, auto-transition to in_progress
-		if (ticket_id) {
-			const ticket = await prisma.task.findUnique({ where: { id: ticket_id }, select: { id: true, status: true, user_id: true } });
-			if (ticket && ticket.user_id === user.id && (ticket.status === "assigned" || ticket.status === "on_hold")) {
-				await prisma.$transaction([
-					prisma.task.update({ where: { id: ticket_id }, data: { status: "in_progress" } }),
-					prisma.taskComment.create({
-						data: {
-							task_id: ticket_id,
-							user_id: user.id,
-							body: `${user.user_metadata?.name ?? user.email ?? "Employee"} started the timer — ticket is now in progress.`,
-							is_system: true,
-						},
-					}),
-				]);
-			}
-		}
-
+		const entry = await TimeService.startTimer(user, validated.data);
 		return ok(entry, 201);
-	} catch (err) {
+	} catch (err: any) {
+		if (err.status) return errorResponse(err.message, err.status);
 		console.error("[time:POST]", err);
 		return errorResponse("Internal server error", 500);
 	}

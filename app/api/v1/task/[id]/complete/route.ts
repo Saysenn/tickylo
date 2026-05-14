@@ -1,64 +1,22 @@
-import { errorResponse, ok } from "@/lib/utils/response";
-import { prisma } from "@/lib/infra/prisma";
-import { requireUser } from "@/lib/auth/require-user";
 import { NextRequest } from "next/server";
-import { createNotification, notifyAdmins, notifyWatchers } from "@/lib/utils/create-notification";
+import { errorResponse, ok } from "@/lib/utils/response";
+import { requireUser } from "@/lib/auth/require-user";
+import * as TicketService from "@/services/ticket.service";
 
 export async function PATCH(
-	request: NextRequest,
+	_request: NextRequest,
 	{ params }: { params: Promise<{ id: string }> },
 ) {
 	try {
-		// get current user
+		const { id } = await params;
 		const user = await requireUser();
 		if (!user) return errorResponse("Unauthorized", 401);
 
-		// get id from params
-		const { id } = await params;
-		// check if task really exist
-		const task = await prisma.task.findUnique({ where: { id } });
-		if (!task) return errorResponse("Task not found", 404);
-
-		// Only assigned worker can complete; stale tickets are locked
-		if (task.user_id !== user.id) return errorResponse("Not allowed", 403);
-		if (task.status === "stale") return errorResponse("Stale tickets cannot be completed by employees", 403);
-
-		// mark task as completed
-		const updated = await prisma.task.update({
-			where: { id },
-			data: { status: "completed", completed_at: new Date() },
-		});
-
-		const completerName = user.user_metadata?.name ?? user.email ?? "An employee";
-		const completionBody = `"${task.title}" has been marked as complete by ${completerName}.`;
-
-		// Notify creator (fire-and-forget)
-		if (task.created_by !== user.id) {
-			createNotification({
-				user_id: task.created_by,
-				type: "task_completed",
-				title: "Ticket resolved",
-				body: completionBody,
-				link: `/dashboard/tickets/${id}`,
-			}).catch(() => {});
-		}
-		// Notify all admins
-		notifyAdmins({
-			type: "task_completed",
-			title: "Ticket resolved",
-			body: completionBody,
-			link: `/dashboard/tickets/${id}`,
-		}).catch(() => {});
-		// Notify watchers (exclude completer, creator, admins already covered above)
-		notifyWatchers(id, {
-			type: "task_completed",
-			title: "Ticket resolved",
-			body: completionBody,
-			link: `/dashboard/tickets/${id}`,
-		}, [user.id, task.created_by]).catch(() => {});
-
+		const updated = await TicketService.completeTicket(id, user);
 		return ok(updated);
-	} catch (error) {
-		return errorResponse("Failed to Mark task as Completed", 500);
+	} catch (err: any) {
+		if (err.status) return errorResponse(err.message, err.status);
+		console.error("[task:complete]", err);
+		return errorResponse("Failed to complete ticket", 500);
 	}
 }

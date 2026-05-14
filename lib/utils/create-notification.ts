@@ -62,7 +62,7 @@ export async function notifyWatchers(
 	data: Omit<NotificationData, "user_id">,
 	excludeIds: string[] = [],
 ) {
-	const watchers = await prisma.taskWatcher.findMany({
+	const watchers = await prisma.ticketWatcher.findMany({
 		where: { task_id: taskId },
 		select: { user_id: true, user: { select: { org_id: true } } },
 	});

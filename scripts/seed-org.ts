@@ -97,7 +97,7 @@ async function main() {
 	console.log(`  ✓ users: ${usersUpdated.count} rows`);
 
 	// Tasks
-	const tasksUpdated = await prisma.task.updateMany({
+	const tasksUpdated = await prisma.ticket.updateMany({
 		where: { org_id: null },
 		data:  { org_id: orgId },
 	});

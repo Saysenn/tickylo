@@ -105,16 +105,16 @@ model User {
   avatar_url    String?
   role          String?
 
-  TimeEntries            TimeEntry[]
-  createdTasks           Task[]            @relation("TaskCreatedBy")
-  assignedTasks          Task[]            @relation("TaskAssignedTo")
-  taskComments           TaskComment[]
-  notifications          Notification[]
-  meta                   UserMetaData?
-  leave                  Leave[]
-  taskWatchers           TaskWatcher[]
-  commentReactions       CommentReaction[]
-  joinRequests           UserJoinRequest[]
+  TimeEntries              TimeEntry[]
+  createdTickets           Ticket[]          @relation("TaskCreatedBy")
+  assignedTickets          Ticket[]          @relation("TaskAssignedTo")
+  ticketComments           TicketComment[]
+  notifications            Notification[]
+  meta                     UserMetaData?
+  leave                    Leave[]
+  ticketWatchers           TicketWatcher[]
+  commentReactions         CommentReaction[]
+  joinRequests             UserJoinRequest[]
   dueDateRequestsMade      DueDateRequest[]  @relation("DueDateRequester")
   dueDateRequestsReviewed  DueDateRequest[]  @relation("DueDateReviewer")
   reopenRequestsMade       ReopenRequest[]   @relation("ReopenRequester")
@@ -123,10 +123,10 @@ model User {
   transferRequestsReviewed TransferRequest[] @relation("TransferReviewer")
   transferRequestsTargeted TransferRequest[] @relation("TransferTarget")
 
-  created_at DateTime     @default(now())
-  updated_at DateTime     @updatedAt
+  created_at DateTime      @default(now())
+  updated_at DateTime      @updatedAt
   org        Organization? @relation(fields: [org_id], references: [id], onDelete: SetNull)
-  department Department?  @relation(fields: [department_id], references: [id])
+  department Department?   @relation(fields: [department_id], references: [id])
 
   @@index([org_id])
   @@index([department_id])
@@ -159,7 +159,7 @@ model TimeEntry {
   updated_at DateTime @updatedAt
 
   user   User  @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  ticket Task? @relation("TicketTimeEntries", fields: [ticket_id], references: [id], onDelete: SetNull)
+  ticket Ticket? @relation("TicketTimeEntries", fields: [ticket_id], references: [id], onDelete: SetNull)
 
   @@index([org_id])
   @@index([user_id])
@@ -193,7 +193,7 @@ model UserMetaData {
   @@map("user_metadata")
 }
 
-model Task {
+model Ticket {
   id           String        @id @default(cuid())
   org_id       String?
   created_by   String
@@ -223,14 +223,14 @@ model Task {
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
-  creator          User             @relation("TaskCreatedBy",  fields: [created_by], references: [id])
-  assignee         User?            @relation("TaskAssignedTo", fields: [user_id],    references: [id])
-  comments         TaskComment[]
-  watchers         TaskWatcher[]
-  subtasks         TaskSubtask[]
-  relatedTicket    Task?            @relation("RelatedTickets", fields: [related_to], references: [id], onDelete: SetNull)
-  relatedFrom      Task[]           @relation("RelatedTickets")
-  timeEntries      TimeEntry[]      @relation("TicketTimeEntries")
+  creator          User              @relation("TaskCreatedBy",  fields: [created_by], references: [id])
+  assignee         User?             @relation("TaskAssignedTo", fields: [user_id],    references: [id])
+  comments         TicketComment[]
+  watchers         TicketWatcher[]
+  subtasks         TicketSubtask[]
+  relatedTicket    Ticket?           @relation("RelatedTickets", fields: [related_to], references: [id], onDelete: SetNull)
+  relatedFrom      Ticket[]          @relation("RelatedTickets")
+  timeEntries      TimeEntry[]       @relation("TicketTimeEntries")
   dueDateRequests  DueDateRequest[]
   reopenRequests   ReopenRequest[]
   transferRequests TransferRequest[]
@@ -244,8 +244,8 @@ model Task {
   @@map("tasks")
 }
 
-model TaskComment {
-  id        String  @id @default(cuid())
+model TicketComment {
+  id        String   @id @default(cuid())
   task_id   String
   user_id   String?  // null for system-generated comments
   body      String
@@ -253,7 +253,7 @@ model TaskComment {
 
   created_at DateTime @default(now())
 
-  task      Task              @relation(fields: [task_id], references: [id], onDelete: Cascade)
+  ticket    Ticket            @relation(fields: [task_id], references: [id], onDelete: Cascade)
   author    User?             @relation(fields: [user_id], references: [id], onDelete: SetNull)
   reactions CommentReaction[]
 
@@ -262,14 +262,14 @@ model TaskComment {
   @@map("task_comments")
 }
 
-model TaskWatcher {
+model TicketWatcher {
   id         String   @id @default(cuid())
   task_id    String
   user_id    String
   created_at DateTime @default(now())
 
-  task Task @relation(fields: [task_id], references: [id], onDelete: Cascade)
-  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  ticket Ticket @relation(fields: [task_id], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
   @@unique([task_id, user_id])
   @@index([task_id])
@@ -284,15 +284,15 @@ model CommentReaction {
 
   created_at DateTime @default(now())
 
-  comment TaskComment @relation(fields: [comment_id], references: [id], onDelete: Cascade)
-  user    User        @relation(fields: [user_id],    references: [id], onDelete: Cascade)
+  comment TicketComment @relation(fields: [comment_id], references: [id], onDelete: Cascade)
+  user    User          @relation(fields: [user_id],    references: [id], onDelete: Cascade)
 
   @@unique([comment_id, user_id, emoji])
   @@index([comment_id])
   @@map("comment_reactions")
 }
 
-model TaskSubtask {
+model TicketSubtask {
   id        String  @id @default(cuid())
   task_id   String
   title     String
@@ -302,7 +302,7 @@ model TaskSubtask {
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
-  task Task @relation(fields: [task_id], references: [id], onDelete: Cascade)
+  ticket Ticket @relation(fields: [task_id], references: [id], onDelete: Cascade)
 
   @@index([task_id])
   @@map("task_subtasks")
@@ -362,9 +362,9 @@ model DueDateRequest {
   created_at     DateTime  @default(now())
   updated_at     DateTime  @updatedAt
 
-  task      Task  @relation(fields: [task_id], references: [id], onDelete: Cascade)
-  requester User  @relation("DueDateRequester", fields: [requested_by], references: [id])
-  reviewer  User? @relation("DueDateReviewer",  fields: [reviewed_by],  references: [id])
+  ticket    Ticket @relation(fields: [task_id], references: [id], onDelete: Cascade)
+  requester User   @relation("DueDateRequester", fields: [requested_by], references: [id])
+  reviewer  User?  @relation("DueDateReviewer",  fields: [reviewed_by],  references: [id])
 
   @@index([task_id, status])
   @@index([org_id])
@@ -382,9 +382,9 @@ model ReopenRequest {
   created_at   DateTime  @default(now())
   updated_at   DateTime  @updatedAt
 
-  task      Task  @relation(fields: [task_id], references: [id], onDelete: Cascade)
-  requester User  @relation("ReopenRequester", fields: [requested_by], references: [id])
-  reviewer  User? @relation("ReopenReviewer",  fields: [reviewed_by],  references: [id])
+  ticket    Ticket @relation(fields: [task_id], references: [id], onDelete: Cascade)
+  requester User   @relation("ReopenRequester", fields: [requested_by], references: [id])
+  reviewer  User?  @relation("ReopenReviewer",  fields: [reviewed_by],  references: [id])
 
   @@index([task_id, status])
   @@index([org_id])
@@ -403,10 +403,10 @@ model TransferRequest {
   created_at   DateTime  @default(now())
   updated_at   DateTime  @updatedAt
 
-  task           Task  @relation(fields: [task_id], references: [id], onDelete: Cascade)
-  requester      User  @relation("TransferRequester", fields: [requested_by], references: [id])
-  reviewer       User? @relation("TransferReviewer",  fields: [reviewed_by],  references: [id])
-  targetEmployee User? @relation("TransferTarget",    fields: [requested_to], references: [id])
+  ticket         Ticket @relation(fields: [task_id], references: [id], onDelete: Cascade)
+  requester      User   @relation("TransferRequester", fields: [requested_by], references: [id])
+  reviewer       User?  @relation("TransferReviewer",  fields: [reviewed_by],  references: [id])
+  targetEmployee User?  @relation("TransferTarget",    fields: [requested_to], references: [id])
 
   @@index([task_id, status])
   @@index([org_id])
@@ -416,7 +416,7 @@ model TransferRequest {
 model TicketTypeConfig {
   id         String   @id @default(cuid())
   org_id     String?
-  key        String            // stored in Task.ticket_type; e.g. "internal_task", "change"
+  key        String            // stored in Ticket.ticket_type; e.g. "internal_task", "change"
   name       String            // "Internal Task", "Request for Change"
   prefix     String            // "TASK", "RFC"
   color      String   @default("gray") // "gray" | "blue" | "red" | "orange" | "purple" | "green" | "yellow"
@@ -428,4 +428,20 @@ model TicketTypeConfig {
   @@unique([org_id, key])
   @@index([org_id, active])
   @@map("ticket_type_configs")
+}
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  org_id      String?
+  actor_id    String
+  actor_role  String
+  action      String   // CREATE | UPDATE | DELETE | APPROVE | REJECT | CLAIM | COMPLETE | HOLD | REOPEN | TRANSFER
+  entity_type String   // ticket | employee | leave_request | time_entry
+  entity_id   String
+  before      Json?
+  after       Json?
+  created_at  DateTime @default(now())
+
+  @@index([org_id, entity_type, created_at])
+  @@map("audit_logs")
 }

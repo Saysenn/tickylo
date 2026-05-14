@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
 	const in24h = new Date(now.getTime() + 24 * 60 * 60 * 1000);
 
 	// ── 1. Due date reminders ─────────────────────────────────────────────────
-	const dueSoonTasks = await prisma.task.findMany({
+	const dueSoonTasks = await prisma.ticket.findMany({
 		where: {
 			status: { not: "completed" },
 			user_id: { not: null },
@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
 	}
 
 	// ── 2. Priority escalation ────────────────────────────────────────────────
-	const overdueTasks = await prisma.task.findMany({
+	const overdueTasks = await prisma.ticket.findMany({
 		where: {
 			status: { not: "completed" },
 			due_date: { lt: now },
@@ -54,11 +54,11 @@ export async function GET(request: NextRequest) {
 
 	for (const task of overdueTasks) {
 		await prisma.$transaction([
-			prisma.task.update({
+			prisma.ticket.update({
 				where: { id: task.id },
 				data: { priority: "high" },
 			}),
-			prisma.taskComment.create({
+			prisma.ticketComment.create({
 				data: {
 					task_id: task.id,
 					user_id: null,

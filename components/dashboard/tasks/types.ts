@@ -7,7 +7,7 @@ export interface TicketLink {
 	label?: string;
 }
 
-export interface Task {
+export interface Ticket {
 	id: string;
 	created_by: string;
 	user_id: string | null;
@@ -35,8 +35,10 @@ export interface Task {
 	pending_actions?: string[];
 }
 
+export type Task = Ticket; // backward-compat alias — remove after all imports updated
+
 export interface TaskPage {
-	data: Task[];
+	data: Ticket[];
 	page: number;
 	totalPages: number;
 }

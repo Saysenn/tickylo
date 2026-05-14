@@ -1,44 +1,15 @@
 import { NextRequest } from "next/server";
 import { errorResponse, ok } from "@/lib/utils/response";
-import { prisma } from "@/lib/infra/prisma";
 import z from "zod";
 import { requireUser } from "@/lib/auth/require-user";
 import { requireAdmin } from "@/lib/auth/require-admin";
 import { ROLES } from "@/configs/rbac.config";
-import { createNotification, notifyEmployees } from "@/lib/utils/create-notification";
+import * as TicketService from "@/services/ticket.service";
 
-/**
- * GET /api/v1/task/[id]
- * Admin: any task. Employee: own assigned tasks or unassigned tasks.
- */
-export async function GET(
-	_request: NextRequest,
-	{ params }: { params: Promise<{ id: string }> },
-) {
-	try {
-		const { id } = await params;
-
-		const user = await requireUser();
-		if (!user) return errorResponse("Unauthorized", 401);
-
-		const isAdmin = user.app_metadata?.role === ROLES.ADMIN;
-
-		const task = await prisma.task.findUnique({
-			where: { id },
-			include: {
-				assignee: { select: { id: true, name: true, email: true } },
-				creator: { select: { id: true, name: true, email: true } },
-			},
-		});
-
-		if (!task) return errorResponse("Task not found", 404);
-
-		return ok(task);
-	} catch (error) {
-		console.error("[task:GET]", error);
-		return errorResponse("Failed to fetch task", 500);
-	}
-}
+const linkSchema = z.object({
+	url: z.string().url().max(2000),
+	label: z.string().max(100).optional(),
+});
 
 const adminUpdateSchema = z.object({
 	title: z.string().min(1).max(200).optional(),
@@ -53,12 +24,11 @@ const adminUpdateSchema = z.object({
 	billable_hours: z.number().nonnegative().nullable().optional(),
 	implementation_plan: z.string().max(5000).nullable().optional(),
 	rollback_plan: z.string().max(5000).nullable().optional(),
-	links: z.array(z.object({ url: z.string().url().max(2000), label: z.string().max(100).optional() })).max(20).nullable().optional(),
+	links: z.array(linkSchema).max(20).nullable().optional(),
 	source: z.enum(["sms", "email", "in_system"]).nullable().optional(),
 	assignee_permission: z.enum(["viewer", "editor"]).optional(),
 });
 
-// Fields an editor-role assignee is allowed to change
 const employeeUpdateSchema = z.object({
 	title: z.string().min(1).max(200).optional(),
 	description: z.string().max(1000).nullable().optional(),
@@ -66,140 +36,64 @@ const employeeUpdateSchema = z.object({
 	due_date: z.coerce.date().nullable().optional(),
 	implementation_plan: z.string().max(5000).nullable().optional(),
 	rollback_plan: z.string().max(5000).nullable().optional(),
-	links: z.array(z.object({ url: z.string().url().max(2000), label: z.string().max(100).optional() })).max(20).nullable().optional(),
+	links: z.array(linkSchema).max(20).nullable().optional(),
 	billable_hours: z.number().nonnegative().nullable().optional(),
 });
 
-/**
- * PATCH /api/v1/task/[id]
- * Admin: update any field.
- * Employee with editor permission: update a restricted subset of fields.
- */
+export async function GET(
+	_request: NextRequest,
+	{ params }: { params: Promise<{ id: string }> },
+) {
+	try {
+		const { id } = await params;
+		const user = await requireUser();
+		if (!user) return errorResponse("Unauthorized", 401);
+		const ticket = await TicketService.getTicket(id, user);
+		return ok(ticket);
+	} catch (err: any) {
+		if (err.status) return errorResponse(err.message, err.status);
+		console.error("[task:GET:id]", err);
+		return errorResponse("Failed to fetch ticket", 500);
+	}
+}
+
 export async function PATCH(
 	request: NextRequest,
 	{ params }: { params: Promise<{ id: string }> },
 ) {
 	try {
 		const { id } = await params;
-
 		const user = await requireUser();
 		if (!user) return errorResponse("Unauthorized", 401);
 
 		const isAdmin = user.app_metadata?.role === ROLES.ADMIN;
-
-		const task = await prisma.task.findUnique({ where: { id } });
-		if (!task) return errorResponse("Task not found", 404);
-
-		// Employee path — must be the assignee with editor permission
-		if (!isAdmin) {
-			if (task.user_id !== user.id) return errorResponse("Forbidden", 403);
-			if (task.assignee_permission !== "editor") return errorResponse("You have viewer access to this ticket", 403);
-
-			const body = await request.json().catch(() => ({}));
-			const validated = employeeUpdateSchema.safeParse(body);
-			if (!validated.success) return errorResponse("Invalid request body", 400);
-
-			const { links, ...rest } = validated.data;
-			const updatedTask = await prisma.task.update({
-				where: { id },
-				data: {
-					...rest,
-					...(links !== undefined ? { links: links ?? [] } : {}),
-				},
-				include: { assignee: { select: { id: true, name: true, email: true } } },
-			});
-			return ok(updatedTask);
-		}
-
+		const schema = isAdmin ? adminUpdateSchema : employeeUpdateSchema;
 		const body = await request.json().catch(() => ({}));
-		const validated = adminUpdateSchema.safeParse(body);
+		const validated = schema.safeParse(body);
 		if (!validated.success) return errorResponse("Invalid request body", 400);
 
-		const { links, status, ...rest } = validated.data;
-
-		// Auto-clear timestamp fields when status changes away from their trigger
-		const statusOverrides: Record<string, unknown> = {};
-		if (status !== undefined && status !== task.status) {
-			if (status !== "completed" && status !== "closed") {
-				statusOverrides.completed_at = null;
-			}
-			if (status === "pending" || status === "assigned") {
-				statusOverrides.started_at = null;
-			}
-			if (status === "pending") {
-				statusOverrides.assigned_at = null;
-			}
-		}
-
-		const updatedTask = await prisma.task.update({
-			where: { id },
-			data: {
-				...rest,
-				...(status !== undefined ? { status } : {}),
-				...statusOverrides,
-				// Prisma Json field: null → empty array, undefined → unchanged
-				...(links !== undefined ? { links: links ?? [] } : {}),
-			},
-			include: {
-				assignee: { select: { id: true, name: true, email: true } },
-			},
-		});
-
-		// Notify assignee if task has one (fire-and-forget)
-		if (updatedTask.user_id) {
-			createNotification({
-				user_id: updatedTask.user_id,
-				type: "task_updated",
-				title: "Ticket updated",
-				body: `"${updatedTask.title}" has been updated by admin.`,
-				link: `/dashboard/tickets/${id}`,
-			}).catch(() => {});
-		}
-
-		return ok(updatedTask);
-	} catch (error) {
-		console.error("[task:PATCH]", error);
-		return errorResponse("Failed to update task", 500);
+		const updated = await TicketService.updateTicket(id, user, validated.data);
+		return ok(updated);
+	} catch (err: any) {
+		if (err.status) return errorResponse(err.message, err.status);
+		console.error("[task:PATCH:id]", err);
+		return errorResponse("Failed to update ticket", 500);
 	}
 }
 
-/**
- * DELETE /api/v1/task/[id] — admin only
- */
 export async function DELETE(
 	_request: NextRequest,
 	{ params }: { params: Promise<{ id: string }> },
 ) {
 	try {
 		const { id } = await params;
-
 		const admin = await requireAdmin();
 		if (!admin) return errorResponse("Forbidden", 403);
-
-		const task = await prisma.task.findUnique({ where: { id } });
-		if (!task) return errorResponse("Task not found", 404);
-
-		await prisma.task.delete({ where: { id } });
-
-		// Notify whoever was affected — skip the admin who performed the action
-		if (task.user_id && task.user_id !== admin.id) {
-			createNotification({
-				user_id: task.user_id,
-				type: "task_deleted",
-				title: "Ticket deleted",
-				body: `"${task.title}" has been deleted by admin.`,
-			}).catch(() => {});
-		} else if (!task.user_id) {
-			notifyEmployees({
-				type: "task_deleted",
-				title: "Ticket deleted",
-				body: `"${task.title}" has been removed by admin.`,
-			}).catch(() => {});
-		}
-
+		await TicketService.deleteTicket(id, admin);
 		return ok({ success: true });
-	} catch (error) {
-		console.error("[task:DELETE]", error);
-		return errorResponse("Failed to delete task", 500);
+	} catch (err: any) {
+		if (err.status) return errorResponse(err.message, err.status);
+		console.error("[task:DELETE:id]", err);
+		return errorResponse("Failed to delete ticket", 500);
 	}
 }
