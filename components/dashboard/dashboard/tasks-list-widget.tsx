@@ -93,17 +93,17 @@ export function TasksListWidget({
 										)}
 									/>
 									<div className="flex-1 min-w-0">
-										<p className="text-sm font-medium text-ink group-hover:text-mint transition-colors truncate">
+										<p className="text-xs font-medium text-ink group-hover:text-mint transition-colors truncate">
 											{task.title}
 										</p>
 										<div className="flex items-center gap-2 mt-0.5">
 											{task.assignee && (
-												<span className="text-xs text-ink-3 truncate">
+												<span className="text-[10px] text-ink-3 truncate uppercase tracking-wide">
 													{task.assignee.name ?? task.assignee.email}
 												</span>
 											)}
 											{task.due_date && (
-												<span className="text-xs text-ink-3">
+												<span className="text-[10px] text-ink-3">
 													Due {formatDate(task.due_date)}
 												</span>
 											)}

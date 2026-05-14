@@ -82,7 +82,7 @@ export function TaskDonutChart({ pending, assigned, in_progress, completed }: Ta
 
 					{/* Center text — sits inside the inner hole of the arc mouth */}
 					<div className="absolute bottom-0 left-0 right-0 flex flex-col items-center pointer-events-none">
-						<span className="text-2xl font-bold text-ink">{displayPct}%</span>
+						<span className="text-lg font-bold text-ink">{displayPct}%</span>
 						<span className="text-[10px] text-ink-3">Completed</span>
 					</div>
 				</div>
