@@ -232,7 +232,7 @@ export function PerformanceTable() {
 		<div className="space-y-4">
 			<div className="flex flex-wrap items-end justify-between gap-3">
 				<TimeDateRange from={from} to={to} onChange={(f, t) => { setFrom(f); setTo(t); }} />
-				<div className="flex items-center gap-2 flex-wrap">
+				<div className="flex items-center gap-2 flex-wrap" suppressHydrationWarning>
 					<input
 						type="text"
 						placeholder="Search employee…"
