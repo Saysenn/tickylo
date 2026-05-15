@@ -171,8 +171,8 @@ class APIService {
 		comments: {
 			list: (taskId: string) =>
 				axiosService.get(`${apiVersion}/ticket/${taskId}/comments`),
-			post: (taskId: string, body: string) =>
-				axiosService.post(`${apiVersion}/ticket/${taskId}/comments`, { body }),
+			post: (taskId: string, body: string, attachmentIds?: string[]) =>
+				axiosService.post(`${apiVersion}/ticket/${taskId}/comments`, { body, attachment_ids: attachmentIds }),
 			remove: (taskId: string, commentId: string) =>
 				axiosService.delete(`${apiVersion}/ticket/${taskId}/comments/${commentId}`),
 			clear: (taskId: string) =>
@@ -315,6 +315,44 @@ class APIService {
 	public auditLogs = {
 		list: (params?: { page?: number; limit?: number; action?: string; entity_type?: string; actor_id?: string; from?: string; to?: string }) =>
 			axiosService.get(`${apiVersion}/audit-logs`, params ?? {}),
+	};
+
+	// ---------------------------------------------------------------------------
+	// Storage Config (admin only)
+	// ---------------------------------------------------------------------------
+	public orgStorage = {
+		get: () => axiosService.get(`${apiVersion}/org/storage`),
+		update: (data: object) => axiosService.put(`${apiVersion}/org/storage`, data),
+		test: (data: object) => axiosService.post(`${apiVersion}/org/storage`, data),
+	};
+
+	// ---------------------------------------------------------------------------
+	// File Upload
+	// ---------------------------------------------------------------------------
+	public upload = {
+		// Uses fetch directly — axios's default Content-Type: application/json header
+		// would suppress the browser-generated multipart boundary, breaking form parsing.
+		file: async (formData: FormData): Promise<{ id: string; url: string; file_name: string; mime_type: string; file_size: number }> => {
+			const res = await fetch(`/api/${apiVersion}/upload`, {
+				method: "POST",
+				body: formData,
+				credentials: "include",
+			});
+			if (!res.ok) {
+				const json = await res.json().catch(() => ({}));
+				throw Object.assign(new Error(json?.error ?? "Upload failed"), { response: { data: json } });
+			}
+			return res.json();
+		},
+	};
+
+	// ---------------------------------------------------------------------------
+	// Attachments
+	// ---------------------------------------------------------------------------
+	public attachments = {
+		delete: (id: string) => axiosService.delete(`${apiVersion}/attachment/${id}`),
+		byTicket: (ticketId: string) => axiosService.get(`${apiVersion}/ticket/${ticketId}/attachments`),
+		deleteAllForTicket: (ticketId: string) => axiosService.delete(`${apiVersion}/ticket/${ticketId}/attachments`),
 	};
 
 	// ---------------------------------------------------------------------------

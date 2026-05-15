@@ -4,6 +4,7 @@ import { TwoFactorSettings } from "@/components/dashboard/settings/two-factor-se
 import { TimezoneSection } from "@/components/dashboard/settings/timezone-section";
 import { WorkScheduleAdminSection } from "@/components/dashboard/settings/work-schedule-admin-section";
 import { WorkScheduleReadonlySection } from "@/components/dashboard/settings/work-schedule-readonly-section";
+import { StorageAdminSection } from "@/components/dashboard/settings/storage-admin-section";
 
 export const metadata = { title: "Settings" };
 
@@ -24,6 +25,8 @@ export default async function SettingsPage() {
 				? <WorkScheduleAdminSection />
 				: <WorkScheduleReadonlySection />
 			}
+
+			{isAdmin && <StorageAdminSection />}
 
 			<ProfileMetaSection />
 			<TwoFactorSettings />

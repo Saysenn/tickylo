@@ -36,6 +36,7 @@ import ReactMarkdown from "react-markdown";
 import type { Task, TicketType, TicketLink } from "@/components/dashboard/tasks/types";
 import { TaskThread } from "@/components/dashboard/tasks/task-thread";
 import { TaskSubtasks } from "@/components/dashboard/tasks/task-subtasks";
+import { TicketAttachmentsPanel } from "@/components/dashboard/attachments/ticket-attachments-panel";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { LinksEditor } from "@/components/dashboard/tasks/links-editor";
 
@@ -936,6 +937,9 @@ export default function TicketDetailPage() {
 							</ul>
 						</div>
 					)}
+
+					{/* Attachments panel */}
+					<TicketAttachmentsPanel ticketId={id} />
 
 					{/* Stale lock notice — informational only */}
 					{!isAdmin && isStale && (

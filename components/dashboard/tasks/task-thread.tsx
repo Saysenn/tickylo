@@ -1,9 +1,9 @@
 "use client";
 
-import { useRef, useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { isAxiosError } from "axios";
-import { Trash2, AlertCircle, Info, Eraser, ArrowRightLeft, Smile } from "lucide-react";
+import { Trash2, AlertCircle, Info, Eraser, ArrowRightLeft, Smile, Paperclip } from "lucide-react";
 import APIService from "@/lib/infra/api";
 import { useAppSelector } from "@/store/hooks";
 import { formatInitials, formatDate, formatTime } from "@/lib/utils/format";
@@ -11,16 +11,26 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils/cn";
 import { ROLES } from "@/configs/rbac.config";
+import { RichTextEditor, type AttachmentPreview } from "@/components/ui/rich-text-editor";
 
 const FIXED_EMOJIS = ["👍", "❤️", "😂", "😮", "😢", "🔥"];
-
-const COMMENT_DELETE_WINDOW_MS = 5 * 60 * 1000; // 5 minutes
+const COMMENT_DELETE_WINDOW_MS = 5 * 60 * 1000;
 
 interface CommentAuthor {
 	id: string;
 	name: string | null;
 	email: string;
 	role?: string | null;
+}
+
+interface CommentAttachment {
+	id: string;
+	file_name: string;
+	file_size: number;
+	mime_type: string;
+	url: string;
+	created_at: string;
+	author: { id: string; name: string | null; email: string } | null;
 }
 
 interface Comment {
@@ -31,14 +41,13 @@ interface Comment {
 	is_system: boolean;
 	created_at: string;
 	author: CommentAuthor | null;
+	attachments: CommentAttachment[];
 }
 
 interface TaskThreadProps {
 	taskId: string;
 	taskCreatedBy: string;
-	/** "thread" = user comments only, "activity" = system events only, undefined = all */
 	view?: "thread" | "activity";
-	/** When true the compose box is hidden — used for stale/locked tickets */
 	readOnly?: boolean;
 }
 
@@ -106,31 +115,11 @@ function CommentReactions({ taskId, commentId }: { taskId: string; commentId: st
 	);
 }
 
-function getSystemEventMeta(body: string): {
-	icon: React.ReactNode;
-	dotClass: string;
-	labelClass: string;
-} {
+function getSystemEventMeta(body: string): { icon: React.ReactNode; dotClass: string; labelClass: string } {
 	const lower = body.toLowerCase();
-	if (lower.includes("reassigned")) {
-		return {
-			icon: <AlertCircle className="w-3.5 h-3.5" />,
-			dotClass: "bg-orange-400",
-			labelClass: "text-orange-600",
-		};
-	}
-	if (lower.includes("requested to transfer")) {
-		return {
-			icon: <ArrowRightLeft className="w-3.5 h-3.5" />,
-			dotClass: "bg-purple-400",
-			labelClass: "text-purple-600",
-		};
-	}
-	return {
-		icon: <Info className="w-3.5 h-3.5" />,
-		dotClass: "bg-blue-400",
-		labelClass: "text-blue-600",
-	};
+	if (lower.includes("reassigned")) return { icon: <AlertCircle className="w-3.5 h-3.5" />, dotClass: "bg-orange-400", labelClass: "text-orange-600" };
+	if (lower.includes("requested to transfer")) return { icon: <ArrowRightLeft className="w-3.5 h-3.5" />, dotClass: "bg-purple-400", labelClass: "text-purple-600" };
+	return { icon: <Info className="w-3.5 h-3.5" />, dotClass: "bg-blue-400", labelClass: "text-blue-600" };
 }
 
 export function TaskThread({ taskId, taskCreatedBy, view, readOnly = false }: TaskThreadProps) {
@@ -142,53 +131,10 @@ export function TaskThread({ taskId, taskCreatedBy, view, readOnly = false }: Ta
 
 	const [draft, setDraft] = useState("");
 	const [error, setError] = useState<string | null>(null);
-	const textareaRef = useRef<HTMLTextAreaElement>(null);
-
-	// @mention autocomplete
-	const [mentionQuery, setMentionQuery] = useState<string | null>(null); // null = closed
-	const { data: employeesResult } = useQuery<{ data: { id: string; name: string | null; email: string }[] }>({
-		queryKey: ["employees-list"],
-		queryFn: () => APIService.employees.list(1, 50),
-		enabled: mentionQuery !== null,
-	});
-	const mentionSuggestions = (employeesResult?.data ?? []).filter((e) => {
-		if (!mentionQuery) return true;
-		const q = mentionQuery.toLowerCase();
-		return (e.name ?? e.email).toLowerCase().includes(q);
-	}).slice(0, 6);
-
-	useEffect(() => {
-		const handleKey = (e: KeyboardEvent) => {
-			if (e.key === "Escape") setMentionQuery(null);
-		};
-		document.addEventListener("keydown", handleKey);
-		return () => document.removeEventListener("keydown", handleKey);
-	}, []);
-
-	const handleDraftChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-		const val = e.target.value;
-		setDraft(val);
-		setError(null);
-		// Detect @mention: look for @ followed by word chars at cursor
-		const cursor = e.target.selectionStart ?? val.length;
-		const before = val.slice(0, cursor);
-		const match = before.match(/@(\w*)$/);
-		if (match) {
-			setMentionQuery(match[1]);
-		} else {
-			setMentionQuery(null);
-		}
-	};
-
-	const insertMention = (name: string) => {
-		const cursor = textareaRef.current?.selectionStart ?? draft.length;
-		const before = draft.slice(0, cursor);
-		const after = draft.slice(cursor);
-		const replaced = before.replace(/@(\w*)$/, `@${name} `);
-		setDraft(replaced + after);
-		setMentionQuery(null);
-		setTimeout(() => textareaRef.current?.focus(), 0);
-	};
+	// Attachments uploaded but not yet linked to a comment
+	const [pendingAttachments, setPendingAttachments] = useState<AttachmentPreview[]>([]);
+	const [isUploading, setIsUploading] = useState(false);
+	const [storageWarning, setStorageWarning] = useState("");
 
 	const { data: allComments = [], isLoading } = useQuery<Comment[]>({
 		queryKey: ["task-comments", taskId],
@@ -205,28 +151,24 @@ export function TaskThread({ taskId, taskCreatedBy, view, readOnly = false }: Ta
 
 	const userCommentCount = allComments.filter((c) => !c.is_system).length;
 
-	const invalidate = () =>
-		queryClient.invalidateQueries({ queryKey: ["task-comments", taskId] });
+	const invalidate = () => queryClient.invalidateQueries({ queryKey: ["task-comments", taskId] });
 
 	const { mutateAsync: postComment, isPending: isPosting } = useMutation({
-		mutationFn: (body: string) => APIService.tasks.comments.post(taskId, body),
+		mutationFn: ({ body, attachmentIds }: { body: string; attachmentIds: string[] }) =>
+			APIService.tasks.comments.post(taskId, body, attachmentIds),
 		onSuccess: () => {
 			setDraft("");
 			setError(null);
+			setPendingAttachments([]);
 			invalidate();
 		},
 		onError: (err) => {
-			setError(
-				isAxiosError(err)
-					? (err.response?.data?.error ?? "Failed to post comment.")
-					: "Something went wrong.",
-			);
+			setError(isAxiosError(err) ? (err.response?.data?.error ?? "Failed to post comment.") : "Something went wrong.");
 		},
 	});
 
 	const { mutateAsync: deleteComment } = useMutation({
-		mutationFn: (commentId: string) =>
-			APIService.tasks.comments.remove(taskId, commentId),
+		mutationFn: (commentId: string) => APIService.tasks.comments.remove(taskId, commentId),
 		onSuccess: invalidate,
 	});
 
@@ -235,26 +177,59 @@ export function TaskThread({ taskId, taskCreatedBy, view, readOnly = false }: Ta
 		onSuccess: invalidate,
 	});
 
-	const handleSubmit = (e: React.SyntheticEvent) => {
-		e.preventDefault();
-		const body = draft.trim();
-		if (!body) return;
-		postComment(body);
+	const { mutate: deleteAttachment } = useMutation({
+		mutationFn: (id: string) => APIService.attachments.delete(id),
+		onSuccess: (_, id) => {
+			setPendingAttachments((prev) => prev.filter((a) => a.id !== id));
+			invalidate();
+		},
+	});
+
+	const handleAttach = async (files: File[]) => {
+		setStorageWarning("");
+		setIsUploading(true);
+		try {
+			for (const file of files) {
+				const fd = new FormData();
+				fd.append("file", file);
+				const result: AttachmentPreview = await APIService.upload.file(fd);
+				setPendingAttachments((prev) => [...prev, result]);
+			}
+		} catch (err: any) {
+			const msg = isAxiosError(err) ? (err.response?.data?.error ?? "") : "";
+			if (msg.includes("No storage configured")) {
+				setStorageWarning("Your organization hasn't configured file storage yet. Contact an admin.");
+			} else {
+				setStorageWarning(msg || "Upload failed.");
+			}
+		} finally {
+			setIsUploading(false);
+		}
 	};
 
-	const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-		if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
-			e.preventDefault();
-			const body = draft.trim();
-			if (body) postComment(body);
+	const handleSubmit = (e: React.SyntheticEvent) => {
+		e.preventDefault();
+		// Check if body has actual content (TipTap JSON or plain text)
+		let body = draft.trim();
+		if (!body) return;
+		// Don't submit if body is an empty TipTap doc
+		try {
+			const parsed = JSON.parse(body);
+			const text = parsed?.content?.[0]?.content?.[0]?.text ?? "";
+			const hasContent = parsed?.content?.some((node: any) =>
+				node.content?.length > 0 || node.type === "codeBlock",
+			);
+			if (!hasContent && pendingAttachments.length === 0) return;
+		} catch {
+			// plain text — fine
 		}
+		postComment({ body, attachmentIds: pendingAttachments.map((a) => a.id) });
 	};
 
 	const canDeleteComment = (c: Comment) => {
 		if (c.is_system) return false;
 		if (isAdmin) return true;
 		if (c.user_id !== user?.id) return false;
-		// Non-admins: only within 5-min window
 		return Date.now() - new Date(c.created_at).getTime() < COMMENT_DELETE_WINDOW_MS;
 	};
 
@@ -299,31 +274,20 @@ export function TaskThread({ taskId, taskCreatedBy, view, readOnly = false }: Ta
 						const name = c.author?.name ?? c.author?.email ?? "Unknown";
 						const initials = formatInitials(c.author?.name ?? null, c.author?.email ?? "");
 						const authorRole = c.author?.role ?? ROLES.EMPLOYEE;
+						const canDeleteOwn = isOwn && !isAdmin;
 
 						return (
 							<div key={c.id} className="group flex items-start gap-2.5 py-1.5">
-								<div
-									className={cn(
-										"w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-bold shrink-0 mt-0.5",
-										isOwn ? "bg-mint/20 text-mint" : "bg-ink/8 text-ink-3",
-									)}
-								>
+								<div className={cn("w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-bold shrink-0 mt-0.5", isOwn ? "bg-mint/20 text-mint" : "bg-ink/8 text-ink-3")}>
 									{initials}
 								</div>
 
 								<div className="flex-1 min-w-0">
 									<div className="flex items-center gap-1.5 mb-1">
-										<span className="text-xs font-semibold text-ink leading-none">
-											{isOwn ? "You" : name}
-										</span>
+										<span className="text-xs font-semibold text-ink leading-none">{isOwn ? "You" : name}</span>
 										<Badge
 											variant="outline"
-											className={cn(
-												"text-[9px] px-1 py-0 h-3.5 leading-none uppercase tracking-wide",
-												authorRole === ROLES.ADMIN
-													? "bg-mint/10 text-mint border-mint/20"
-													: "bg-ink/5 text-ink-3 border-border/30",
-											)}
+											className={cn("text-[9px] px-1 py-0 h-3.5 leading-none uppercase tracking-wide", authorRole === ROLES.ADMIN ? "bg-mint/10 text-mint border-mint/20" : "bg-ink/5 text-ink-3 border-border/30")}
 										>
 											{authorRole === ROLES.ADMIN ? "Admin" : "Employee"}
 										</Badge>
@@ -344,9 +308,15 @@ export function TaskThread({ taskId, taskCreatedBy, view, readOnly = false }: Ta
 									</div>
 
 									<div className="relative rounded-lg border border-border/40 bg-accent/30 px-3 py-2">
-										<p className="text-xs text-ink-2 whitespace-pre-wrap wrap-break-word leading-relaxed">
-											{c.body}
-										</p>
+										<RichTextEditor
+											value={c.body}
+											readOnly
+											attachments={c.attachments.map((a) => ({
+												id: a.id, url: a.url, file_name: a.file_name,
+												mime_type: a.mime_type, file_size: a.file_size,
+											}))}
+											onDeleteAttachment={isAdmin || canDeleteOwn ? (id) => deleteAttachment(id) : undefined}
+										/>
 										{canDeleteComment(c) && (
 											<button
 												type="button"
@@ -370,49 +340,37 @@ export function TaskThread({ taskId, taskCreatedBy, view, readOnly = false }: Ta
 			{view !== "activity" && !readOnly && (
 				<form onSubmit={handleSubmit} className="pt-2 border-t border-border/30">
 					{error && <p className="text-xs text-destructive mb-2">{error}</p>}
+					{storageWarning && <p className="text-xs text-amber-600 mb-2">{storageWarning}</p>}
 					<div className="flex items-start gap-2.5">
-						<div className="w-6 h-6 rounded-full bg-mint/20 flex items-center justify-center text-[9px] font-bold text-mint shrink-0 mt-1">
+						<div className="w-6 h-6 rounded-full bg-mint/20 flex items-center justify-center text-[9px] font-bold text-mint shrink-0 mt-2">
 							{formatInitials(user?.name ?? null, user?.email ?? "")}
 						</div>
 
 						<div className="flex-1 space-y-1.5">
-							<div className="relative">
-								<textarea
-									ref={textareaRef}
-									value={draft}
-									onChange={handleDraftChange}
-									onKeyDown={handleKeyDown}
-									placeholder="Add a comment… (use @ to mention)"
-									maxLength={2000}
-									rows={2}
-									className={cn(
-										"w-full resize-none rounded-lg border border-border/40 bg-background px-3 py-2 text-xs text-ink placeholder:text-ink-3/50",
-										"focus:outline-none focus:ring-1 focus:ring-mint/50 focus:border-mint/40 transition-colors",
-									)}
-								/>
-								{mentionQuery !== null && mentionSuggestions.length > 0 && (
-									<div className="absolute bottom-full left-0 mb-1 z-20 min-w-[160px] rounded-lg border bg-background shadow-md overflow-hidden">
-										{mentionSuggestions.map((e) => (
-											<button
-												key={e.id}
-												type="button"
-												onMouseDown={(ev) => { ev.preventDefault(); insertMention(e.name ?? e.email); }}
-												className="w-full text-left px-3 py-1.5 text-xs text-ink hover:bg-accent/50 transition-colors"
-											>
-												{e.name ?? e.email}
-											</button>
-										))}
-									</div>
-								)}
-							</div>
+							<RichTextEditor
+								value={draft}
+								onChange={setDraft}
+								onAttach={handleAttach}
+								placeholder="Add a comment… (use the toolbar to format)"
+								attachments={pendingAttachments}
+								onDeleteAttachment={(id) => deleteAttachment(id)}
+								minHeight={72}
+							/>
 							<div className="flex items-center justify-between">
-								<span className="text-[10px] text-ink-3/60">
-									{draft.length > 0 ? `${draft.length}/2000` : "⌘↵ to send"}
+								<span className="text-[10px] text-ink-3/60 flex items-center gap-1">
+									{isUploading && (
+										<span className="flex items-center gap-1">
+											<div className="w-2.5 h-2.5 border border-mint/40 border-t-mint rounded-full animate-spin" />
+											Uploading…
+										</span>
+									)}
+									{!isUploading && pendingAttachments.length === 0 && "⌘↵ to send"}
+									{!isUploading && pendingAttachments.length > 0 && `${pendingAttachments.length} file${pendingAttachments.length > 1 ? "s" : ""} attached`}
 								</span>
 								<Button
 									type="submit"
 									size="sm"
-									disabled={!draft.trim() || isPosting}
+									disabled={isPosting || isUploading}
 									isLoading={isPosting}
 									className="h-7 px-3 text-xs"
 								>

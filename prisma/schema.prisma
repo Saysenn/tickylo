@@ -25,6 +25,7 @@ model Organization {
   users         User[]
   join_requests UserJoinRequest[]
   work_schedule WorkSchedule?
+  storage       OrgStorage?
 
   @@map("organizations")
 }
@@ -43,6 +44,19 @@ model WorkSchedule {
   org Organization @relation(fields: [org_id], references: [id], onDelete: Cascade)
 
   @@map("work_schedules")
+}
+
+model OrgStorage {
+  id         String   @id @default(cuid())
+  org_id     String   @unique
+  provider   String   // "supabase" | "s3"
+  config     Json     // AES-GCM encrypted credentials
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  org Organization @relation(fields: [org_id], references: [id], onDelete: Cascade)
+
+  @@map("org_storage")
 }
 
 model OrganizationApplication {
@@ -127,6 +141,7 @@ model User {
   createdTickets           Ticket[]          @relation("TaskCreatedBy")
   assignedTickets          Ticket[]          @relation("TaskAssignedTo")
   ticketComments           TicketComment[]
+  ticketAttachments        TicketAttachment[]
   notifications            Notification[]
   meta                     UserMetaData?
   leave                    Leave[]
@@ -268,18 +283,39 @@ model TicketComment {
   id        String   @id @default(cuid())
   task_id   String
   user_id   String?  // null for system-generated comments
-  body      String
+  body      String   @db.Text  // stores TipTap JSON (stringified) or plain text
   is_system Boolean  @default(false)
 
   created_at DateTime @default(now())
 
-  ticket    Ticket            @relation(fields: [task_id], references: [id], onDelete: Cascade)
-  author    User?             @relation(fields: [user_id], references: [id], onDelete: SetNull)
-  reactions CommentReaction[]
+  ticket      Ticket              @relation(fields: [task_id], references: [id], onDelete: Cascade)
+  author      User?               @relation(fields: [user_id], references: [id], onDelete: SetNull)
+  reactions   CommentReaction[]
+  attachments TicketAttachment[]
 
   @@index([task_id])
   @@index([user_id])
   @@map("task_comments")
+}
+
+model TicketAttachment {
+  id          String  @id @default(cuid())
+  comment_id  String? // null until comment is submitted
+  user_id     String?
+  file_name   String
+  file_size   Int
+  mime_type   String
+  storage_key String
+  url         String
+
+  created_at DateTime @default(now())
+
+  comment TicketComment? @relation(fields: [comment_id], references: [id], onDelete: Cascade)
+  author  User?          @relation(fields: [user_id], references: [id], onDelete: SetNull)
+
+  @@index([comment_id])
+  @@index([user_id])
+  @@map("ticket_attachments")
 }
 
 model TicketWatcher {

@@ -9,6 +9,22 @@ import {
 } from "@/lib/utils/create-notification";
 import { ROLES } from "@/configs/rbac.config";
 
+// Extracts readable plain text from a TipTap JSON body (or returns the string as-is for legacy plain text)
+function extractPlainText(body: string): string {
+	try {
+		const doc = JSON.parse(body);
+		const texts: string[] = [];
+		function walk(node: any) {
+			if (node.type === "text") { texts.push(node.text ?? ""); return; }
+			if (Array.isArray(node.content)) node.content.forEach(walk);
+		}
+		walk(doc);
+		return texts.join("").trim();
+	} catch {
+		return body;
+	}
+}
+
 // Minimal caller shape — compatible with Supabase AuthUser
 export type Caller = {
 	id: string;
@@ -836,21 +852,43 @@ export async function listComments(ticketId: string, caller: Caller) {
 	return prisma.ticketComment.findMany({
 		where: { task_id: ticketId },
 		orderBy: { created_at: "asc" },
-		include: { author: { select: { id: true, name: true, email: true } } },
+		include: {
+			author: { select: { id: true, name: true, email: true } },
+			attachments: {
+				orderBy: { created_at: "asc" },
+				select: { id: true, file_name: true, file_size: true, mime_type: true, url: true, created_at: true,
+					author: { select: { id: true, name: true, email: true } } },
+			},
+		},
 	});
 }
 
-export async function addComment(ticketId: string, caller: Caller, body: string) {
+export async function addComment(ticketId: string, caller: Caller, body: string, attachmentIds?: string[]) {
 	const ticket = await prisma.ticket.findUnique({ where: { id: ticketId } });
 	if (!ticket) throw Object.assign(new Error("Ticket not found"), { status: 404 });
 
 	const comment = await prisma.ticketComment.create({
 		data: { task_id: ticketId, user_id: caller.id, body, is_system: false },
-		include: { author: { select: { id: true, name: true, email: true } } },
+		include: {
+			author: { select: { id: true, name: true, email: true } },
+			attachments: {
+				select: { id: true, file_name: true, file_size: true, mime_type: true, url: true, created_at: true,
+					author: { select: { id: true, name: true, email: true } } },
+			},
+		},
 	});
 
+	// Link pre-uploaded attachments to this comment (only own, unlinked)
+	if (attachmentIds?.length) {
+		await prisma.ticketAttachment.updateMany({
+			where: { id: { in: attachmentIds }, user_id: caller.id, comment_id: null },
+			data: { comment_id: comment.id },
+		});
+	}
+
 	const commenterName = callerName(caller);
-	const snippet = body.length > 60 ? `${body.slice(0, 60)}…` : body;
+	const plainText = extractPlainText(body);
+	const snippet = plainText.length > 60 ? `${plainText.slice(0, 60)}…` : plainText;
 	const recipientIds = new Set<string>();
 	if (ticket.user_id && ticket.user_id !== caller.id) recipientIds.add(ticket.user_id);
 	if (ticket.created_by !== caller.id) recipientIds.add(ticket.created_by);
