@@ -51,8 +51,8 @@ class APIService {
 	// Employees
 	// ---------------------------------------------------------------------------
 	public employees = {
-		list: (page = 1, limit = 10) =>
-			axiosService.get(`${apiVersion}/employees`, { page, limit }),
+		list: (page = 1, limit = 10, search?: string) =>
+			axiosService.get(`${apiVersion}/employees`, { page, limit, search }),
 		workload: () =>
 			axiosService.get<Record<string, number>>(`${apiVersion}/employees/workload`),
 		get: (id: string) => axiosService.get(`${apiVersion}/employees/${id}`),
@@ -126,6 +126,7 @@ class APIService {
 	// Tickets (canonical — old /task routes kept for backward compat)
 	// ---------------------------------------------------------------------------
 	public tasks = {
+		stats: () => axiosService.get(`${apiVersion}/task/stats`),
 		list: (page = 1, limit = 10, status?: string, search?: string, view?: string, filters?: {
 			type?: string; priority?: string; assignee?: string; due?: string;
 		}) =>

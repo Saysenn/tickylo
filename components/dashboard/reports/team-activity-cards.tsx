@@ -21,6 +21,10 @@ const TASK_STATUS_STYLES: Record<string, string> = {
 };
 
 export function TeamActivityCards() {
+	return <RecentTasksCard />;
+}
+
+export function RecentTasksCard() {
 	const { data: report, isLoading } = useQuery<any>({
 		queryKey: ["reports"],
 		queryFn: () => APIService.reports.summary(),
@@ -37,87 +41,50 @@ export function TeamActivityCards() {
 	if (!report) return null;
 
 	return (
-		<div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-
-			{/* Leave Requests — Coming Soon */}
-			<div className="glass rounded-2xl flex flex-col overflow-hidden">
-				<div className="px-5 pt-5 pb-4 border-b border-mint/10">
-					<h2 className="font-semibold text-ink">Leave Requests</h2>
-					<p className="text-xs text-ink-3 mt-0.5">All-time summary</p>
-				</div>
-				<div className="flex flex-col items-center justify-center flex-1 py-10 gap-3 text-center">
-					<span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-mint/10 text-mint text-xs font-medium">
-						Coming Soon
-					</span>
-					<p className="text-sm text-ink-3 max-w-xs">Leave management is coming soon.</p>
+		<div className="glass rounded-2xl flex flex-col overflow-hidden">
+			<div className="px-5 pt-5 pb-4 border-b border-mint/10">
+				<div className="flex items-center justify-between">
+					<div>
+						<h2 className="font-semibold text-ink">Recent Tasks</h2>
+						<p className="text-xs text-ink-3 mt-0.5">All-time summary</p>
+					</div>
+					<Link href="/dashboard/tickets" className="text-xs font-medium text-mint hover:text-mint/70 transition-colors">
+						View all →
+					</Link>
 				</div>
 			</div>
-
-			{/* Tasks */}
-			<div className="glass rounded-2xl flex flex-col overflow-hidden">
-				<div className="px-5 pt-5 pb-4 border-b border-mint/10">
-					<div className="flex items-center justify-between">
-						<div>
-							<h2 className="font-semibold text-ink">Tasks</h2>
-							<p className="text-xs text-ink-3 mt-0.5">All-time summary</p>
-						</div>
-						<Link href="/dashboard/tickets" className="text-xs font-medium text-mint hover:text-mint/70 transition-colors">
-							View all →
-						</Link>
-					</div>
-					<div className="flex items-center gap-2 mt-3">
-						<div className="flex flex-1 flex-col items-center px-3 py-1.5 rounded-lg bg-ink/5">
-							<span className="text-lg font-bold text-ink leading-none">{report.tasks.total}</span>
-							<span className="text-[10px] text-ink-3 mt-0.5 uppercase tracking-wide">Total</span>
-						</div>
-						<div className="flex flex-1 flex-col items-center px-3 py-1.5 rounded-lg bg-ink/5">
-							<span className="text-lg font-bold text-ink leading-none">{report.tasks.pending}</span>
-							<span className="text-[10px] text-ink-3 mt-0.5 uppercase tracking-wide">Unassigned</span>
-						</div>
-						<div className="flex flex-1 flex-col items-center px-3 py-1.5 rounded-lg bg-yellow-500/8">
-							<span className="text-lg font-bold text-yellow-700 leading-none">{report.tasks.in_progress}</span>
-							<span className="text-[10px] text-yellow-600/70 mt-0.5 uppercase tracking-wide">In Progress</span>
-						</div>
-						<div className="flex flex-1 flex-col items-center px-3 py-1.5 rounded-lg bg-mint/10">
-							<span className="text-lg font-bold text-mint leading-none">{report.tasks.completed}</span>
-							<span className="text-[10px] text-mint/60 mt-0.5 uppercase tracking-wide">Done</span>
-						</div>
-					</div>
-				</div>
-				<div className="flex-1 overflow-x-auto">
-					{report.recent.tasks.length > 0 ? (
-						<table className="w-full text-sm">
-							<thead>
-								<tr className="border-b border-mint/8">
-									<th className="text-left px-5 py-2 text-[10px] font-semibold text-ink-3 uppercase tracking-wider">Title</th>
-									<th className="text-left px-3 py-2 text-[10px] font-semibold text-ink-3 uppercase tracking-wider">Assignee</th>
-									<th className="text-right px-5 py-2 text-[10px] font-semibold text-ink-3 uppercase tracking-wider">Status</th>
+			<div className="flex-1 overflow-x-auto">
+				{report.recent.tasks.length > 0 ? (
+					<table className="w-full text-sm">
+						<thead>
+							<tr className="border-b border-mint/8">
+								<th className="text-left px-5 py-2 text-[10px] font-semibold text-ink-3 uppercase tracking-wider">Title</th>
+								<th className="text-left px-3 py-2 text-[10px] font-semibold text-ink-3 uppercase tracking-wider">Assignee</th>
+								<th className="text-right px-5 py-2 text-[10px] font-semibold text-ink-3 uppercase tracking-wider">Status</th>
+							</tr>
+						</thead>
+						<tbody className="divide-y divide-mint/6">
+							{report.recent.tasks.map((t: any) => (
+								<tr key={t.id} className="hover:bg-mint/5 transition-colors">
+									<td className="px-5 py-2.5">
+										<p className="text-xs font-medium text-ink truncate max-w-[140px]">{t.title}</p>
+									</td>
+									<td className="px-3 py-2.5 text-xs text-ink-3 truncate max-w-[100px]">
+										{t.assignee?.name ?? t.assignee?.email ?? "Unassigned"}
+									</td>
+									<td className="px-5 py-2.5 text-right">
+										<Badge variant="outline" className={cn("text-[10px] px-1.5 py-0", TASK_STATUS_STYLES[t.status])}>
+											{t.status.replace("_", " ")}
+										</Badge>
+									</td>
 								</tr>
-							</thead>
-							<tbody className="divide-y divide-mint/6">
-								{report.recent.tasks.map((t: any) => (
-									<tr key={t.id} className="hover:bg-mint/5 transition-colors">
-										<td className="px-5 py-2.5">
-											<p className="text-xs font-medium text-ink truncate max-w-[140px]">{t.title}</p>
-										</td>
-										<td className="px-3 py-2.5 text-xs text-ink-3 truncate max-w-[100px]">
-											{t.assignee?.name ?? t.assignee?.email ?? "Unassigned"}
-										</td>
-										<td className="px-5 py-2.5 text-right">
-											<Badge variant="outline" className={cn("text-[10px] px-1.5 py-0", TASK_STATUS_STYLES[t.status])}>
-												{t.status.replace("_", " ")}
-											</Badge>
-										</td>
-									</tr>
-								))}
-							</tbody>
-						</table>
-					) : (
-						<p className="px-5 py-6 text-xs text-ink-3">No tasks yet.</p>
-					)}
-				</div>
+							))}
+						</tbody>
+					</table>
+				) : (
+					<p className="px-5 py-6 text-xs text-ink-3">No tasks yet.</p>
+				)}
 			</div>
-
 		</div>
 	);
 }

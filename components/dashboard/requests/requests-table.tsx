@@ -18,7 +18,7 @@ import { RequestFormDialog } from "./request-form-dialog";
 import { useAppSelector } from "@/store/hooks";
 import { formatDate } from "@/lib/utils/format";
 import { cn } from "@/lib/utils/cn";
-import { Inbox, Plus, Trash2, BellRing, CheckCircle2 } from "lucide-react";
+import { Inbox, Plus, Trash2, BellRing, CheckCircle2, SlidersHorizontal } from "lucide-react";
 import { ROWS_PER_PAGE } from "@/configs/pagination.config";
 import type { LeaveRequest, LeaveRequestPage } from "./types";
 
@@ -49,6 +49,7 @@ export function RequestsTable() {
 
 	// Bulk selection state (admin only)
 	const [selected, setSelected] = useState<Set<string>>(new Set());
+	const [filtersOpen, setFiltersOpen] = useState(false);
 
 	// Insufficient leave dialog state
 	const [insufficientDialog, setInsufficientDialog] = useState<{
@@ -187,20 +188,27 @@ export function RequestsTable() {
 	return (
 		<div className="space-y-3">
 			{/* Toolbar */}
-			<div className="flex flex-wrap items-center gap-2 justify-between">
-				<div className="flex items-center gap-2 flex-wrap">
-					<select
-						value={statusFilter}
-						onChange={(e) => updateParam("status", e.target.value)}
-						className="h-8 rounded-md border border-border bg-background px-2 text-sm focus:outline-none focus:ring-1 focus:ring-mint"
+			<div className="space-y-2">
+				<div className="flex flex-wrap items-center gap-2">
+					{/* Filter toggle */}
+					<button
+						type="button"
+						onClick={() => setFiltersOpen((v) => !v)}
+						className={cn(
+							"relative h-8 w-8 flex items-center justify-center rounded-md border transition-colors",
+							filtersOpen || !!statusFilter
+								? "border-mint/50 bg-mint/10 text-mint"
+								: "border-border bg-background text-ink-3 hover:text-ink hover:border-border/80",
+						)}
+						title="Filters"
 					>
-						<option value="">All statuses</option>
-						{ALL_STATUSES.map((s) => (
-							<option key={s} value={s} className="capitalize">
-								{s.charAt(0).toUpperCase() + s.slice(1)}
-							</option>
-						))}
-					</select>
+						<SlidersHorizontal className="w-3.5 h-3.5" />
+						{!!statusFilter && (
+							<span className="absolute -top-1.5 -right-1.5 h-3.5 w-3.5 rounded-full bg-mint text-[9px] font-bold text-black flex items-center justify-center leading-none">
+								1
+							</span>
+						)}
+					</button>
 
 					{/* Admin bulk delete */}
 					{isAdmin && selected.size > 0 && (
@@ -215,25 +223,52 @@ export function RequestsTable() {
 							Delete {selected.size} selected
 						</Button>
 					)}
+
+					<div className="flex items-center gap-2 ml-auto">
+						<p className="text-sm text-ink-3">
+							{list.length} {list.length === 1 ? "request" : "requests"}
+						</p>
+						{!isAdmin && (
+							<RequestFormDialog
+								isPending={isCreating}
+								onSubmit={async (data) => { await createRequest(data); }}
+								trigger={
+									<Button size="sm">
+										<Plus className="w-4 h-4" />
+										New request
+									</Button>
+								}
+							/>
+						)}
+					</div>
 				</div>
 
-				<div className="flex items-center gap-2">
-					<p className="text-sm text-ink-3">
-						{list.length} {list.length === 1 ? "request" : "requests"}
-					</p>
-					{!isAdmin && (
-						<RequestFormDialog
-							isPending={isCreating}
-							onSubmit={async (data) => { await createRequest(data); }}
-							trigger={
-								<Button size="sm">
-									<Plus className="w-4 h-4" />
-									New request
-								</Button>
-							}
-						/>
-					)}
-				</div>
+				{/* Filter row */}
+				{filtersOpen && (
+					<div className="flex items-center gap-2 flex-wrap">
+						<select
+							value={statusFilter}
+							onChange={(e) => updateParam("status", e.target.value)}
+							className="h-8 rounded-md border border-border bg-background px-2 text-sm focus:outline-none focus:ring-1 focus:ring-mint"
+						>
+							<option value="">All statuses</option>
+							{ALL_STATUSES.map((s) => (
+								<option key={s} value={s} className="capitalize">
+									{s.charAt(0).toUpperCase() + s.slice(1)}
+								</option>
+							))}
+						</select>
+						{statusFilter && (
+							<button
+								type="button"
+								onClick={() => updateParam("status", "")}
+								className="flex items-center gap-1 h-8 px-2 text-xs text-ink-3 hover:text-destructive transition-colors"
+							>
+								Clear
+							</button>
+						)}
+					</div>
+				)}
 			</div>
 
 			{/* Empty state */}

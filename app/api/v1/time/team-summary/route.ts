@@ -60,22 +60,34 @@ export async function GET(request: NextRequest) {
 				start_time: { gte: start },
 				end_time: { lte: end, not: null },
 			},
-			select: {
-				user_id: true,
-				start_time: true,
-				end_time: true,
-			},
+			select: { user_id: true, start_time: true, end_time: true },
+		});
+
+		// Also fetch currently running entries that started in the range
+		// (end_time: null means timer is still going — user is actively clocked in)
+		const openEntries = await prisma.timeEntry.findMany({
+			where: { ...orgFilter, start_time: { gte: start }, end_time: null },
+			select: { user_id: true, start_time: true },
 		});
 
 		// Aggregate per user by local day
 		const stats: Record<string, { totalMs: number; dates: Set<string> }> = {};
+
 		for (const entry of entries) {
 			if (!entry.end_time) continue;
 			const ms = entry.end_time.getTime() - entry.start_time.getTime();
 			const dateKey = toLocalDateKey(entry.start_time);
-			if (!stats[entry.user_id]) {
-				stats[entry.user_id] = { totalMs: 0, dates: new Set() };
-			}
+			if (!stats[entry.user_id]) stats[entry.user_id] = { totalMs: 0, dates: new Set() };
+			stats[entry.user_id].totalMs += ms;
+			stats[entry.user_id].dates.add(dateKey);
+		}
+
+		// Add elapsed time from still-running entries
+		const now = Date.now();
+		for (const entry of openEntries) {
+			const ms = now - entry.start_time.getTime();
+			const dateKey = toLocalDateKey(entry.start_time);
+			if (!stats[entry.user_id]) stats[entry.user_id] = { totalMs: 0, dates: new Set() };
 			stats[entry.user_id].totalMs += ms;
 			stats[entry.user_id].dates.add(dateKey);
 		}

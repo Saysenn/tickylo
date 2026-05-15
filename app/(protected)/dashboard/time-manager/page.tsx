@@ -15,7 +15,7 @@ import {
 	startOfMonthDateStr, startOfLastMonthDateStr, endOfLastMonthDateStr,
 } from "@/lib/utils/format";
 import { useAppSelector } from "@/store/hooks";
-import { TeamActivityCards } from "@/components/dashboard/reports/team-activity-cards";
+import { RecentTasksCard } from "@/components/dashboard/reports/team-activity-cards";
 import { EmployeeSessionLog } from "@/components/dashboard/time-manager/employee-session-log";
 
 const DATE_PRESETS = [
@@ -48,6 +48,7 @@ export default function TimeManagerPage() {
 		queryFn: () => APIService.time.teamSummary(from, to, tzOffset),
 		enabled: !selectedEmployee,
 	});
+
 
 	const { data: summary, isLoading: summaryLoading } = useQuery<TimeSummary>({
 		queryKey: ["time-summary", from, to, selectedEmployee],
@@ -108,6 +109,7 @@ export default function TimeManagerPage() {
 			) : !showEmployee && teamData ? (
 				<div className="space-y-6">
 					<div className="grid grid-cols-2 gap-4">
+						{/* Featured — total hours */}
 						<div
 							className="rounded-xl border border-mint/30 p-5 relative overflow-hidden shadow-[0_0_40px_rgba(128,237,153,0.22)]"
 							style={{ background: "linear-gradient(135deg, #1c3a1c 0%, #143018 50%, #0d200d 100%)" }}
@@ -120,6 +122,8 @@ export default function TimeManagerPage() {
 							</p>
 							<p className="relative text-3xl font-bold text-white">{formatDurationMs(teamData.totalTeamMs)}</p>
 						</div>
+
+						{/* Active members */}
 						<div className="glass rounded-xl border-mint/25 p-5">
 							<p className="text-xs font-medium text-ink-3 uppercase tracking-wider mb-2 flex items-center gap-1.5">
 								<span className="relative flex h-2 w-2 shrink-0">
@@ -134,6 +138,7 @@ export default function TimeManagerPage() {
 							</p>
 						</div>
 					</div>
+
 					<div className="space-y-2">
 						<h2 className="text-sm font-semibold text-ink">Employee Breakdown</h2>
 						<TimeEmployeeTable
@@ -143,7 +148,7 @@ export default function TimeManagerPage() {
 							search={search}
 						/>
 					</div>
-					<TeamActivityCards />
+					<RecentTasksCard />
 				</div>
 			) : showEmployee && summary ? (
 				<div className="space-y-4">

@@ -9,7 +9,7 @@ import { TeamActivityWidget } from "./team-activity-widget";
 import { TasksListWidget } from "./tasks-list-widget";
 import { TimerCard } from "./timer-card";
 import { WorkloadChart } from "@/components/dashboard/tasks/workload-chart";
-import { Users, CheckSquare, ClipboardList } from "lucide-react";
+import { Users, BarChart2, ClipboardList } from "lucide-react";
 
 interface AdminDashboardData {
 	employees: { total: number };
@@ -55,8 +55,6 @@ export function AdminDashboard() {
 		);
 	}
 
-	const openTasks = data.tasks.assigned + data.tasks.in_progress;
-
 	return (
 		<div className="space-y-4">
 			{/* Row 1 — KPI Cards */}
@@ -77,11 +75,11 @@ export function AdminDashboard() {
 					href="/dashboard/time-manager"
 				/>
 				<StatCard
-					label="Open Tasks"
-					value={openTasks}
-					subtext={`${data.tasks.in_progress} in progress`}
-					icon={CheckSquare}
-					href="/dashboard/tickets"
+					label="Reports"
+					value={data.tasks.completed}
+					subtext="tasks completed"
+					icon={BarChart2}
+					href="/dashboard/performance"
 				/>
 				<StatCard
 					label="Ticket Requests"

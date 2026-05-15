@@ -22,6 +22,7 @@ export async function GET(request: NextRequest) {
 			caller,
 			parseInt(searchParams.get("page") ?? "1", 10),
 			parseInt(searchParams.get("limit") ?? "10", 10),
+			searchParams.get("search") ?? undefined,
 		);
 
 		return ok(result);

@@ -83,6 +83,8 @@ export async function listTickets(caller: Caller, params: ListTicketsParams) {
 					{ title: { contains: search.trim(), mode: "insensitive" as const } },
 					{ description: { contains: search.trim(), mode: "insensitive" as const } },
 					{ client_name: { contains: search.trim(), mode: "insensitive" as const } },
+					{ assignee: { name: { contains: search.trim(), mode: "insensitive" as const } } },
+					{ assignee: { email: { contains: search.trim(), mode: "insensitive" as const } } },
 				],
 		  }
 		: {};
@@ -177,7 +179,7 @@ export async function listTickets(caller: Caller, params: ListTicketsParams) {
 		],
 	}));
 
-	return { data, page, totalPages: Math.ceil(total / take) || 1 };
+	return { data, page, total, totalPages: Math.ceil(total / take) || 1 };
 }
 
 // ─── Create ───────────────────────────────────────────────────────────────────

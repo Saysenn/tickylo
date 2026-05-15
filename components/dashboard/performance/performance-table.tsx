@@ -204,6 +204,7 @@ export function PerformanceTable() {
 	const currentUserId = useAppSelector((s) => s.auth.user?.id);
 	const [from,          setFrom]          = useState(startOfMonthDateStr());
 	const [to,            setTo]            = useState(todayDateStr());
+	const [searchInput,   setSearchInput]   = useState("");
 	const [search,        setSearch]        = useState("");
 	const [reportOpen,    setReportOpen]    = useState(false);
 	const [rowGenerating, setRowGenerating] = useState<string | null>(null);
@@ -212,6 +213,8 @@ export function PerformanceTable() {
 		queryKey: ["performance", from, to],
 		queryFn: () => APIService.performance.list(from, to),
 	});
+
+	const submitSearch = () => setSearch(searchInput);
 
 	const filtered = (data ?? []).filter((e) => {
 		if (!search.trim()) return true;
@@ -228,25 +231,27 @@ export function PerformanceTable() {
 	return (
 		<div className="space-y-4">
 			<div className="flex flex-wrap items-end justify-between gap-3">
-				<div className="flex flex-wrap items-end gap-3">
-					<TimeDateRange from={from} to={to} onChange={(f, t) => { setFrom(f); setTo(t); }} />
+				<TimeDateRange from={from} to={to} onChange={(f, t) => { setFrom(f); setTo(t); }} />
+				<div className="flex items-center gap-2 flex-wrap">
 					<input
 						type="text"
-						placeholder="Search employees..."
-						value={search}
-						onChange={(e) => setSearch(e.target.value)}
+						placeholder="Search employee…"
+						value={searchInput}
+						onChange={(e) => setSearchInput(e.target.value)}
+						onKeyDown={(e) => e.key === "Enter" && submitSearch()}
 						className="h-8 rounded-md border border-border bg-background px-3 text-sm focus:outline-none focus:ring-1 focus:ring-mint w-44"
 					/>
+					<Button size="sm" variant="outline" className="h-8 px-3" onClick={submitSearch}>Search</Button>
+					<Button
+						size="sm"
+						className="gap-1.5 h-8 bg-mint hover:bg-mint/90 text-ink"
+						onClick={() => setReportOpen(true)}
+						disabled={!data || data.length === 0}
+					>
+						<FileText className="w-3.5 h-3.5" />
+						Generate Report
+					</Button>
 				</div>
-				<Button
-					size="sm"
-					className="gap-1.5 h-8 bg-mint hover:bg-mint/90 text-ink"
-					onClick={() => setReportOpen(true)}
-					disabled={!data || data.length === 0}
-				>
-					<FileText className="w-3.5 h-3.5" />
-					Generate Report
-				</Button>
 			</div>
 
 			{isLoading && (

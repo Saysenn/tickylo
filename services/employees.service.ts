@@ -24,20 +24,31 @@ const META_FIELDS = [
 
 // ─── List ─────────────────────────────────────────────────────────────────────
 
-export async function listEmployees(admin: Caller, page = 1, limit = 10) {
+export async function listEmployees(admin: Caller, page = 1, limit = 10, search?: string) {
 	const orgId = admin.app_metadata?.org_id as string | undefined;
 	const perPage = Math.min(100, Math.max(1, limit));
 	const skip = (Math.max(1, page) - 1) * perPage;
 
+	const searchFilter = search?.trim()
+		? {
+				OR: [
+					{ name: { contains: search.trim(), mode: "insensitive" as const } },
+					{ email: { contains: search.trim(), mode: "insensitive" as const } },
+				],
+		  }
+		: {};
+
+	const where = { ...withOrg(orgId), ...searchFilter };
+
 	const [orgUsers, total] = await Promise.all([
 		prisma.user.findMany({
-			where: withOrg(orgId),
+			where,
 			select: { id: true, email: true, name: true, avatar_url: true, role: true, created_at: true },
 			orderBy: { created_at: "desc" },
 			take: perPage,
 			skip,
 		}),
-		prisma.user.count({ where: withOrg(orgId) }),
+		prisma.user.count({ where }),
 	]);
 
 	const supabase = createAdminClient();

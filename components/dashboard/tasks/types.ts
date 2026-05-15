@@ -40,5 +40,6 @@ export type Task = Ticket; // backward-compat alias — remove after all imports
 export interface TaskPage {
 	data: Ticket[];
 	page: number;
+	total: number;
 	totalPages: number;
 }

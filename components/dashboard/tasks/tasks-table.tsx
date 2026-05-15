@@ -77,6 +77,7 @@ export function TasksTable() {
 	const [bulkMode, setBulkMode] = useState(false);
 	const [bulkAssignTo, setBulkAssignTo] = useState("");
 	const [bulkAssignOpen, setBulkAssignOpen] = useState(false);
+	const [filtersOpen, setFiltersOpen] = useState(false);
 
 	// Filter state — synced to URL params
 	const typeFilter     = searchParams.get("type")     ?? "";
@@ -84,7 +85,7 @@ export function TasksTable() {
 	const assigneeFilter = searchParams.get("assignee") ?? "";
 	const dueFilter      = searchParams.get("due")      ?? "";
 
-	const activeFilterCount = [typeFilter, priorityFilter, assigneeFilter, dueFilter, statusFilter, search]
+	const activeFilterCount = [priorityFilter, dueFilter, statusFilter, search]
 		.filter(Boolean).length;
 
 	const clearAllFilters = () => {
@@ -134,14 +135,6 @@ export function TasksTable() {
 				due:      dueFilter      || undefined,
 			},
 		),
-	});
-
-	// Employees list for assignee filter (admin only)
-	const { data: assigneeOptions } = useQuery<{ data: { id: string; name: string | null; email: string }[] }>({
-		queryKey: ["employees-list-filter"],
-		queryFn: () => APIService.employees.list(1, 100),
-		enabled: isAdmin,
-		staleTime: 60_000,
 	});
 
 	// Track active timer so we can stop it when completing a task
@@ -286,31 +279,40 @@ export function TasksTable() {
 		<div className="space-y-3">
 			{/* Toolbar */}
 			<div className="space-y-2">
-				{/* Row 1: search + new ticket */}
-				<div className="flex items-center gap-2 justify-between flex-wrap">
-					<div className="flex items-center gap-2">
-						<input
-							type="text"
-							placeholder="Search by title, description, client…"
-							value={searchInput}
-							onChange={(e) => setSearchInput(e.target.value)}
-							onKeyDown={(e) => e.key === "Enter" && submitSearch()}
-							className="h-8 rounded-md border border-border bg-background px-3 text-sm focus:outline-none focus:ring-1 focus:ring-mint w-64"
-						/>
-						<Button size="sm" variant="outline" className="h-8" onClick={submitSearch}>Search</Button>
-						{activeFilterCount > 0 && (
-							<button
-								type="button"
-								onClick={clearAllFilters}
-								className="flex items-center gap-1 h-8 px-2 text-xs text-ink-3 hover:text-destructive transition-colors"
-							>
-								<X className="w-3.5 h-3.5" />
-								Clear {activeFilterCount > 1 ? `${activeFilterCount} filters` : "filter"}
-							</button>
+				{/* Row 1: search + filter toggle + actions */}
+				<div className="flex items-center gap-2 flex-wrap">
+					<input
+						type="text"
+						placeholder="Search employee…"
+						value={searchInput}
+						onChange={(e) => setSearchInput(e.target.value)}
+						onKeyDown={(e) => e.key === "Enter" && submitSearch()}
+						className="h-8 rounded-md border border-border bg-background px-3 text-sm focus:outline-none focus:ring-1 focus:ring-mint w-48"
+					/>
+					<Button size="sm" variant="outline" className="h-8 px-3" onClick={submitSearch}>Search</Button>
+
+					{/* Filter toggle button */}
+					<button
+						type="button"
+						onClick={() => setFiltersOpen((v) => !v)}
+						className={cn(
+							"relative h-8 w-8 flex items-center justify-center rounded-md border transition-colors",
+							filtersOpen || activeFilterCount > 0
+								? "border-mint/50 bg-mint/10 text-mint"
+								: "border-border bg-background text-ink-3 hover:text-ink hover:border-border/80",
 						)}
-					</div>
-					<div className="flex items-center gap-2">
-						<p className="text-sm text-ink-3">{result?.data.length ?? 0} {(result?.data.length ?? 0) === 1 ? "ticket" : "tickets"}</p>
+						title="Filters"
+					>
+						<SlidersHorizontal className="w-3.5 h-3.5" />
+						{activeFilterCount > 0 && (
+							<span className="absolute -top-1.5 -right-1.5 h-3.5 w-3.5 rounded-full bg-mint text-[9px] font-bold text-black flex items-center justify-center leading-none">
+								{activeFilterCount}
+							</span>
+						)}
+					</button>
+
+					<div className="flex items-center gap-2 ml-auto">
+						<p className="text-sm text-ink-3">{result?.total ?? 0} {(result?.total ?? 0) === 1 ? "ticket" : "tickets"}</p>
 						{isAdmin && (
 							<Button
 								size="sm"
@@ -333,68 +335,66 @@ export function TasksTable() {
 					</div>
 				</div>
 
-				{/* Row 2: category filters */}
-				<div className="flex items-center gap-2 flex-wrap">
-					<SlidersHorizontal className="w-3.5 h-3.5 text-ink-3/60 shrink-0" />
+				{/* Filter row — shown when toggled */}
+				{filtersOpen && (
+					<div className="flex items-center gap-2 flex-wrap">
+						{/* View toggle (employee only) */}
+						{!isAdmin && (
+							<select
+								value={viewFilter}
+								onChange={(e) => { setViewFilter(e.target.value as typeof viewFilter); resetPage(); }}
+								className={filterSelect}
+							>
+								<option value="assigned">My Tickets</option>
+								<option value="unassigned">Unassigned</option>
+								<option value="all">All Tickets</option>
+							</select>
+						)}
 
-					{/* View toggle (employee only) */}
-					{!isAdmin && (
-						<select
-							value={viewFilter}
-							onChange={(e) => { setViewFilter(e.target.value as typeof viewFilter); resetPage(); }}
-							className={filterSelect}
-						>
-							<option value="assigned">My Tickets</option>
-							<option value="unassigned">Unassigned</option>
-							<option value="all">All Tickets</option>
-						</select>
-					)}
-
-					{/* Status */}
-					<select value={statusFilter} onChange={(e) => updateParam("status", e.target.value)} className={filterSelect}>
-						<option value="">All statuses</option>
-						{ALL_STATUSES.map((s) => (
-							<option key={s} value={s}>{s === "overdue" ? "Overdue" : (STATUS_LABEL[s] ?? s)}</option>
-						))}
-					</select>
-
-					{/* Type */}
-					<select value={typeFilter} onChange={(e) => updateParam("type", e.target.value)} className={filterSelect}>
-						<option value="">All types</option>
-						<option value="internal_task">Internal Task</option>
-						<option value="request">Request</option>
-						<option value="incident">Incident</option>
-						<option value="change">Request for Change</option>
-					</select>
-
-					{/* Priority */}
-					<select value={priorityFilter} onChange={(e) => updateParam("priority", e.target.value)} className={filterSelect}>
-						<option value="">All priorities</option>
-						<option value="low">Low</option>
-						<option value="medium">Medium</option>
-						<option value="high">High</option>
-						<option value="critical">Critical</option>
-					</select>
-
-					{/* Due */}
-					<select value={dueFilter} onChange={(e) => updateParam("due", e.target.value)} className={filterSelect}>
-						<option value="">Any due date</option>
-						<option value="overdue">Overdue</option>
-						<option value="today">Due today</option>
-						<option value="week">Due this week</option>
-					</select>
-
-					{/* Assignee (admin only) */}
-					{isAdmin && (
-						<select value={assigneeFilter} onChange={(e) => updateParam("assignee", e.target.value)} className={filterSelect}>
-							<option value="">All assignees</option>
-							<option value="unassigned">Unassigned</option>
-							{(assigneeOptions?.data ?? []).map((e) => (
-								<option key={e.id} value={e.id}>{e.name ?? e.email}</option>
+						{/* Status */}
+						<select value={statusFilter} onChange={(e) => updateParam("status", e.target.value)} className={filterSelect}>
+							<option value="">All statuses</option>
+							{ALL_STATUSES.map((s) => (
+								<option key={s} value={s}>{s === "overdue" ? "Overdue" : (STATUS_LABEL[s] ?? s)}</option>
 							))}
 						</select>
-					)}
-				</div>
+
+						{/* Priority */}
+						<select value={priorityFilter} onChange={(e) => updateParam("priority", e.target.value)} className={filterSelect}>
+							<option value="">All priorities</option>
+							<option value="low">Low</option>
+							<option value="medium">Medium</option>
+							<option value="high">High</option>
+							<option value="critical">Critical</option>
+						</select>
+
+						{/* Overdue quick-filter pill */}
+						<button
+							type="button"
+							onClick={() => updateParam("due", dueFilter === "overdue" ? "" : "overdue")}
+							className={cn(
+								"h-8 px-3 rounded-md border text-xs font-medium transition-colors",
+								dueFilter === "overdue"
+									? "bg-red-500/10 border-red-500/30 text-red-600"
+									: "border-border bg-background text-ink-3 hover:text-ink hover:border-border/80",
+							)}
+						>
+							Overdue
+						</button>
+
+						{/* Clear filters */}
+						{activeFilterCount > 0 && (
+							<button
+								type="button"
+								onClick={clearAllFilters}
+								className="flex items-center gap-1 h-8 px-2 text-xs text-ink-3 hover:text-destructive transition-colors"
+							>
+								<X className="w-3.5 h-3.5" />
+								Clear {activeFilterCount > 1 ? `${activeFilterCount} filters` : "filter"}
+							</button>
+						)}
+					</div>
+				)}
 			</div>
 
 			{/* Inline bulk action bar */}

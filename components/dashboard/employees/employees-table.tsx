@@ -29,18 +29,34 @@ export function EmployeesTable() {
 	const searchParams = useSearchParams();
 	const page = Math.max(1, parseInt(searchParams.get("page") ?? "1", 10));
 	const queryClient = useQueryClient();
-	const [search, setSearch] = useState("");
+	const searchParam = searchParams.get("search") ?? "";
+	const [searchInput, setSearchInput] = useState(searchParam);
 
-	const goToPage = (p: number) => router.push(`?page=${p}`);
-	const resetPage = () => router.replace("?page=1");
+	const goToPage = (p: number) => {
+		const params = new URLSearchParams(searchParams.toString());
+		params.set("page", String(p));
+		router.push(`?${params.toString()}`);
+	};
+	const resetPage = () => {
+		const params = new URLSearchParams(searchParams.toString());
+		params.set("page", "1");
+		router.replace(`?${params.toString()}`);
+	};
+	const submitSearch = () => {
+		const params = new URLSearchParams(searchParams.toString());
+		if (searchInput.trim()) params.set("search", searchInput.trim());
+		else params.delete("search");
+		params.set("page", "1");
+		router.push(`?${params.toString()}`);
+	};
 
 	const {
 		data: result,
 		isLoading,
 		isError,
 	} = useQuery<EmployeePage>({
-		queryKey: ["employees", page],
-		queryFn: () => APIService.employees.list(page, ROWS_PER_PAGE),
+		queryKey: ["employees", page, searchParam],
+		queryFn: () => APIService.employees.list(page, ROWS_PER_PAGE, searchParam || undefined),
 	});
 
 	const invalidateAll = () =>
@@ -101,29 +117,22 @@ export function EmployeesTable() {
 	const list = result?.data ?? [];
 	const totalPages = result?.totalPages ?? 1;
 
-	const filtered = list.filter((e) => {
-		if (!search.trim()) return true;
-		const q = search.toLowerCase();
-		return (
-			(e.name ?? "").toLowerCase().includes(q) ||
-			e.email.toLowerCase().includes(q)
-		);
-	});
-
 	return (
 		<div className="space-y-4">
 			{/* Header row */}
 			<div className="flex flex-wrap items-center justify-between gap-3">
-				<div className="flex items-center gap-3">
+				<div className="flex items-center gap-2">
 					<input
 						type="text"
-						placeholder="Search employees..."
-						value={search}
-						onChange={(e) => setSearch(e.target.value)}
+						placeholder="Search employee…"
+						value={searchInput}
+						onChange={(e) => setSearchInput(e.target.value)}
+						onKeyDown={(e) => e.key === "Enter" && submitSearch()}
 						className="h-8 rounded-md border border-border bg-background px-3 text-sm focus:outline-none focus:ring-1 focus:ring-mint w-44"
 					/>
+					<Button size="sm" variant="outline" className="h-8 px-3" onClick={submitSearch}>Search</Button>
 					<p className="text-sm text-ink-3 whitespace-nowrap">
-						{filtered.length} {filtered.length === 1 ? "member" : "members"}
+						{list.length} {list.length === 1 ? "member" : "members"}
 					</p>
 				</div>
 				<EmployeeFormDialog
@@ -184,13 +193,13 @@ export function EmployeesTable() {
 								</tr>
 							</thead>
 							<tbody className="divide-y">
-								{filtered.length === 0 ? (
+								{list.length === 0 ? (
 									<tr>
 										<td colSpan={5} className="px-4 py-8 text-center text-xs text-ink-3">
 											No employees match your search.
 										</td>
 									</tr>
-								) : filtered.map((employee: Employee) => (
+								) : list.map((employee: Employee) => (
 									<tr
 										key={employee.id}
 										className="hover:bg-accent/20 transition-colors cursor-pointer"
