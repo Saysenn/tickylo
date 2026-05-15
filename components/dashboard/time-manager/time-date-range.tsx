@@ -5,32 +5,35 @@ import {
 	todayDateStr,
 	daysAgoDateStr,
 	startOfMonthDateStr,
-	startOfLastMonthDateStr,
-	endOfLastMonthDateStr,
 } from "@/lib/utils/format";
+
+export interface DatePreset {
+	label: string;
+	from: () => string;
+	to: () => string;
+}
 
 interface TimeDateRangeProps {
 	from: string;
 	to: string;
 	onChange: (from: string, to: string) => void;
+	presets?: DatePreset[];
 }
 
 const PRESETS = [
 	{ label: "Today", from: () => todayDateStr(), to: () => todayDateStr() },
 	{ label: "Last 7 days", from: () => daysAgoDateStr(6), to: () => todayDateStr() },
-	{ label: "Last 14 days", from: () => daysAgoDateStr(13), to: () => todayDateStr() },
 	{ label: "This month", from: () => startOfMonthDateStr(), to: () => todayDateStr() },
-	{ label: "Last month", from: () => startOfLastMonthDateStr(), to: () => endOfLastMonthDateStr() },
 	{ label: "Last 30 days", from: () => daysAgoDateStr(29), to: () => todayDateStr() },
 	{ label: "Last 90 days", from: () => daysAgoDateStr(89), to: () => todayDateStr() },
 ];
 
-export function TimeDateRange({ from, to, onChange }: TimeDateRangeProps) {
+export function TimeDateRange({ from, to, onChange, presets = PRESETS }: TimeDateRangeProps) {
 	return (
 		<div className="flex flex-wrap items-end gap-3">
 			{/* Preset buttons */}
 			<div className="flex flex-wrap gap-1.5">
-				{PRESETS.map((p) => {
+				{presets.map((p) => {
 					const pFrom = p.from();
 					const pTo = p.to();
 					const active = from === pFrom && to === pTo;

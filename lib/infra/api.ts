@@ -104,11 +104,12 @@ class APIService {
 				user_id: userId,
 				tz_offset: tzOffset,
 			}),
-		teamSummary: (from: string, to: string, tzOffset?: number) =>
+		teamSummary: (from: string, to: string, tzOffset?: number, search?: string) =>
 			axiosService.get(`${apiVersion}/time/team-summary`, {
 				from,
 				to,
 				tz_offset: tzOffset,
+				search: search || undefined,
 			}),
 		update: (id: string, data: { title?: string; description?: string; start_time?: string; end_time?: string }) =>
 			axiosService.put(`${apiVersion}/time/${id}`, data),

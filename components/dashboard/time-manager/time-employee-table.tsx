@@ -17,36 +17,31 @@ interface Props {
 	employees: EmployeeStat[];
 	onSelect: (id: string, name: string) => void;
 	currentUserId?: string;
-	search?: string;
-	onSearchChange?: (value: string) => void;
+	isLoading?: boolean;
 }
 
 const PAGE_SIZE = 10;
 
-export function TimeEmployeeTable({ employees, onSelect, currentUserId, search = "", onSearchChange }: Props) {
+export function TimeEmployeeTable({ employees, onSelect, currentUserId, isLoading }: Props) {
 	const [page, setPage] = useState(1);
-	useEffect(() => { setPage(1); }, [search]);
+	useEffect(() => { setPage(1); }, [employees]);
 
-	const filtered = employees.filter((e) => {
-		if (!search.trim()) return true;
-		const q = search.toLowerCase();
-		return (
-			(e.name ?? "").toLowerCase().includes(q) ||
-			e.email.toLowerCase().includes(q)
-		);
-	});
-
-	const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+	const totalPages = Math.max(1, Math.ceil(employees.length / PAGE_SIZE));
 	const currentPage = Math.min(page, totalPages);
-	const paginated = filtered.slice(
+	const paginated = employees.slice(
 		(currentPage - 1) * PAGE_SIZE,
 		currentPage * PAGE_SIZE,
 	);
 
 	return (
 		<div className="space-y-3">
+			<div className="relative rounded-lg border overflow-x-auto">
+				{isLoading && (
+					<div className="absolute inset-0 bg-background/60 backdrop-blur-[1px] flex items-center justify-center z-10 rounded-lg">
+						<div className="w-5 h-5 border-2 border-mint/40 border-t-mint rounded-full animate-spin" />
+					</div>
+				)}
 
-			<div className="rounded-lg border overflow-x-auto">
 				<table className="w-full text-sm min-w-[480px]">
 					<thead>
 						<tr className="border-b bg-accent/30">

@@ -17,6 +17,7 @@ export async function GET(request: NextRequest) {
 		const toParam = searchParams.get("to");
 		const tzOffsetParam = searchParams.get("tz_offset"); // in minutes
 		const tzOffset = tzOffsetParam ? parseInt(tzOffsetParam, 10) : 0;
+		const search = searchParams.get("search")?.trim().toLowerCase() ?? "";
 
 		// "local date midnight" → UTC timestamp (see summary route for formula derivation)
 		const localMidnightUTC = (dateStr: string): number =>
@@ -92,7 +93,7 @@ export async function GET(request: NextRequest) {
 			stats[entry.user_id].dates.add(dateKey);
 		}
 
-		const employees = users
+		const allEmployees = users
 			.map((u) => ({
 				id: u.id,
 				name: u.name,
@@ -102,8 +103,15 @@ export async function GET(request: NextRequest) {
 			}))
 			.sort((a, b) => b.totalMs - a.totalMs);
 
-		const totalTeamMs = employees.reduce((sum, e) => sum + e.totalMs, 0);
-		const activeCount = employees.filter((e) => e.totalMs > 0).length;
+		const totalTeamMs = allEmployees.reduce((sum, e) => sum + e.totalMs, 0);
+		const activeCount = allEmployees.filter((e) => e.totalMs > 0).length;
+
+		const employees = search
+			? allEmployees.filter((e) =>
+					(e.name ?? "").toLowerCase().includes(search) ||
+					e.email.toLowerCase().includes(search),
+			  )
+			: allEmployees;
 
 		return ok({
 			from: fromParam ?? start.toISOString().slice(0, 10),

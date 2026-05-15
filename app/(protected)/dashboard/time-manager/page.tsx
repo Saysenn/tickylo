@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { Button } from "@/components/ui/button";
 import { ChevronLeft } from "lucide-react";
 import APIService from "@/lib/infra/api";
-import { Button } from "@/components/ui/button";
 import { TimeDateRange } from "@/components/dashboard/time-manager/time-date-range";
 import { TimeSummaryCards } from "@/components/dashboard/time-manager/time-summary-cards";
 import { TimeDayBars } from "@/components/dashboard/time-manager/time-day-bars";
@@ -12,20 +12,18 @@ import { TimeEmployeeTable } from "@/components/dashboard/time-manager/time-empl
 import type { TimeSummary } from "@/components/dashboard/time-manager/types";
 import {
 	todayDateStr, daysAgoDateStr, formatDurationMs,
-	startOfMonthDateStr, startOfLastMonthDateStr, endOfLastMonthDateStr,
+	startOfMonthDateStr,
 } from "@/lib/utils/format";
 import { useAppSelector } from "@/store/hooks";
 import { RecentTasksCard } from "@/components/dashboard/reports/team-activity-cards";
 import { EmployeeSessionLog } from "@/components/dashboard/time-manager/employee-session-log";
 
 const DATE_PRESETS = [
-	{ label: "Today",        from: () => todayDateStr(),            to: () => todayDateStr() },
-	{ label: "Last 7 days",  from: () => daysAgoDateStr(6),         to: () => todayDateStr() },
-	{ label: "Last 14 days", from: () => daysAgoDateStr(13),        to: () => todayDateStr() },
-	{ label: "This month",   from: () => startOfMonthDateStr(),     to: () => todayDateStr() },
-	{ label: "Last month",   from: () => startOfLastMonthDateStr(), to: () => endOfLastMonthDateStr() },
-	{ label: "Last 30 days", from: () => daysAgoDateStr(29),        to: () => todayDateStr() },
-	{ label: "Last 90 days", from: () => daysAgoDateStr(89),        to: () => todayDateStr() },
+	{ label: "Today",        from: () => todayDateStr(),        to: () => todayDateStr() },
+	{ label: "Last 7 days",  from: () => daysAgoDateStr(6),     to: () => todayDateStr() },
+	{ label: "This month",   from: () => startOfMonthDateStr(), to: () => todayDateStr() },
+	{ label: "Last 30 days", from: () => daysAgoDateStr(29),    to: () => todayDateStr() },
+	{ label: "Last 90 days", from: () => daysAgoDateStr(89),    to: () => todayDateStr() },
 ];
 
 function getPresetLabel(from: string, to: string): string {
@@ -37,16 +35,20 @@ export default function TimeManagerPage() {
 	const user     = useAppSelector((s) => s.auth.user);
 	const tzOffset = new Date().getTimezoneOffset();
 
-	const [from, setFrom]   = useState(daysAgoDateStr(6));
-	const [to,   setTo]     = useState(todayDateStr());
-	const [search, setSearch] = useState("");
+	const [from, setFrom]           = useState(daysAgoDateStr(6));
+	const [to,   setTo]             = useState(todayDateStr());
+	const [searchInput,   setSearchInput]   = useState("");
+	const [committedSearch, setCommittedSearch] = useState("");
 	const [selectedEmployee, setSelectedEmployee] = useState("");
 	const [selectedName,     setSelectedName]     = useState("");
 
-	const { data: teamData, isLoading: teamLoading } = useQuery<any>({
-		queryKey: ["time-team-summary", from, to],
-		queryFn: () => APIService.time.teamSummary(from, to, tzOffset),
+	const submitSearch = () => setCommittedSearch(searchInput);
+
+	const { data: teamData, isFetching: teamFetching } = useQuery<any>({
+		queryKey: ["time-team-summary", from, to, committedSearch],
+		queryFn: () => APIService.time.teamSummary(from, to, tzOffset, committedSearch || undefined),
 		enabled: !selectedEmployee,
+		placeholderData: (prev) => prev,
 	});
 
 
@@ -57,7 +59,7 @@ export default function TimeManagerPage() {
 	});
 
 	const showEmployee = !!selectedEmployee;
-	const isLoading    = showEmployee ? summaryLoading : teamLoading;
+	const isLoading    = showEmployee ? summaryLoading : (!teamData && teamFetching);
 
 	return (
 		<div className="relative w-full space-y-6">
@@ -79,21 +81,12 @@ export default function TimeManagerPage() {
 			<div className="flex flex-wrap items-end gap-3">
 				{showEmployee && (
 					<Button size="sm" variant="ghost" className="h-8 gap-1.5 text-ink-3"
-						onClick={() => { setSelectedEmployee(""); setSelectedName(""); setSearch(""); }}>
+						onClick={() => { setSelectedEmployee(""); setSelectedName(""); setSearchInput(""); setCommittedSearch(""); }}>
 						<ChevronLeft className="w-4 h-4" />
 						All Employees
 					</Button>
 				)}
 				<TimeDateRange from={from} to={to} onChange={(f, t) => { setFrom(f); setTo(t); }} />
-				{!showEmployee && (
-					<input
-						type="text"
-						placeholder="Search employees..."
-						value={search}
-						onChange={(e) => setSearch(e.target.value)}
-						className="h-8 rounded-md border border-border bg-background px-3 text-sm focus:outline-none focus:ring-1 focus:ring-mint w-44"
-					/>
-				)}
 			</div>
 
 			{showEmployee && (
@@ -140,12 +133,27 @@ export default function TimeManagerPage() {
 					</div>
 
 					<div className="space-y-2">
-						<h2 className="text-sm font-semibold text-ink">Employee Breakdown</h2>
+						<div className="flex items-center gap-3 flex-wrap">
+							<h2 className="text-sm font-semibold text-ink">Employee Breakdown</h2>
+							<div className="flex items-center gap-1.5 ml-auto">
+								<input
+									type="text"
+									placeholder="Search employee…"
+									value={searchInput}
+									onChange={(e) => setSearchInput(e.target.value)}
+									onKeyDown={(e) => e.key === "Enter" && submitSearch()}
+									className="h-7 rounded-md border border-border bg-background px-3 text-xs focus:outline-none focus:ring-1 focus:ring-mint w-44"
+								/>
+								<Button size="sm" variant="outline" className="h-7 px-3 text-xs" onClick={submitSearch}>
+									Search
+								</Button>
+							</div>
+						</div>
 						<TimeEmployeeTable
 							employees={teamData.employees ?? []}
 							onSelect={(id, name) => { setSelectedEmployee(id); setSelectedName(name); }}
 							currentUserId={user?.id}
-							search={search}
+							isLoading={teamFetching}
 						/>
 					</div>
 					<RecentTasksCard />
