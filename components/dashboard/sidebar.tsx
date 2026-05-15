@@ -45,6 +45,12 @@ const navGroups: NavGroup[] = [
 				icon: Clock,
 				roles: ["admin"],
 			},
+			{
+				label: "Reports",
+				href: "/dashboard/performance",
+				icon: BarChart2,
+				roles: ["admin"],
+			},
 		],
 	},
 	{
@@ -57,9 +63,9 @@ const navGroups: NavGroup[] = [
 				roles: ["admin"],
 			},
 			{
-				label: "Reports",
-				href: "/dashboard/performance",
-				icon: BarChart2,
+				label: "Requests",
+				href: "/dashboard/ticket-requests",
+				icon: Inbox,
 				roles: ["admin"],
 			},
 		],
@@ -73,12 +79,6 @@ const navGroups: NavGroup[] = [
 				icon: AlarmClock,
 			},
 			{ label: "Tickets", href: "/dashboard/tickets", icon: ClipboardList },
-			{
-				label: "Requests",
-				href: "/dashboard/ticket-requests",
-				icon: Inbox,
-				roles: ["admin"],
-			},
 		],
 	},
 	{
