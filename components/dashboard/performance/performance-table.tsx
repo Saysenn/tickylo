@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import APIService from "@/lib/infra/api";
 import { TimeDateRange } from "@/components/dashboard/time-manager/time-date-range";
 import { formatDurationMs, startOfMonthDateStr, todayDateStr } from "@/lib/utils/format";
-import { TrendingUp, Download, FileText } from "lucide-react";
+import { TrendingUp, Download, FileText, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { SelectRoot, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
@@ -241,7 +241,7 @@ export function PerformanceTable() {
 						onKeyDown={(e) => e.key === "Enter" && submitSearch()}
 						className="h-8 rounded-md border border-border bg-background px-3 text-sm focus:outline-none focus:ring-1 focus:ring-mint w-44"
 					/>
-					<Button size="sm" variant="outline" className="h-8 px-3" onClick={submitSearch}>Search</Button>
+					<Button size="sm" className="h-8 w-8 p-0 bg-mint hover:bg-mint/90 text-ink" onClick={submitSearch} title="Search"><Search className="w-3.5 h-3.5" /></Button>
 					<Button
 						size="sm"
 						className="gap-1.5 h-8 bg-mint hover:bg-mint/90 text-ink"

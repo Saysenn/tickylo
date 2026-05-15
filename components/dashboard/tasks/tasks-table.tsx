@@ -13,7 +13,7 @@ import { TimeOutDialog } from "@/components/dashboard/time-tracker/time-out-dial
 import { useAppSelector } from "@/store/hooks";
 import { formatDate, formatDueDate, formatDurationMs } from "@/lib/utils/format";
 import { cn } from "@/lib/utils/cn";
-import { ClipboardList, Plus, Trash2, CheckCheck, UserCog, X, SlidersHorizontal, Clock, CheckSquare } from "lucide-react";
+import { ClipboardList, Plus, Trash2, CheckCheck, UserCog, X, SlidersHorizontal, Clock, CheckSquare, Search } from "lucide-react";
 import { ROWS_PER_PAGE } from "@/configs/pagination.config";
 import {
 	SelectRoot,
@@ -289,7 +289,7 @@ export function TasksTable() {
 						onKeyDown={(e) => e.key === "Enter" && submitSearch()}
 						className="h-8 rounded-md border border-border bg-background px-3 text-sm focus:outline-none focus:ring-1 focus:ring-mint w-48"
 					/>
-					<Button size="sm" variant="outline" className="h-8 px-3" onClick={submitSearch}>Search</Button>
+					<Button size="sm" className="h-8 w-8 p-0 bg-mint hover:bg-mint/90 text-ink" onClick={submitSearch} title="Search"><Search className="w-3.5 h-3.5" /></Button>
 
 					{/* Filter toggle button */}
 					<button

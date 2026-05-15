@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, Search } from "lucide-react";
 import APIService from "@/lib/infra/api";
 import { TimeDateRange } from "@/components/dashboard/time-manager/time-date-range";
 import { TimeSummaryCards } from "@/components/dashboard/time-manager/time-summary-cards";
@@ -144,9 +144,7 @@ export default function TimeManagerPage() {
 									onKeyDown={(e) => e.key === "Enter" && submitSearch()}
 									className="h-7 rounded-md border border-border bg-background px-3 text-xs focus:outline-none focus:ring-1 focus:ring-mint w-44"
 								/>
-								<Button size="sm" variant="outline" className="h-7 px-3 text-xs" onClick={submitSearch}>
-									Search
-								</Button>
+								<Button size="sm" className="h-7 w-7 p-0 bg-mint hover:bg-mint/90 text-ink" onClick={submitSearch} title="Search"><Search className="w-3 h-3" /></Button>
 							</div>
 						</div>
 						<TimeEmployeeTable

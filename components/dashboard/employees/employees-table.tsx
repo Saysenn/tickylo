@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { EmployeeFormDialog } from "./employee-form-dialog";
 import { EmployeeDeleteDialog } from "./employee-delete-dialog";
 import { Pagination } from "@/components/ui/pagination";
-import { UserPlus, Pencil, Trash2, Users } from "lucide-react";
+import { UserPlus, Pencil, Trash2, Users, Search } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import { formatInitials, formatDate } from "@/lib/utils/format";
 import type { Employee } from "./types";
@@ -130,7 +130,7 @@ export function EmployeesTable() {
 						onKeyDown={(e) => e.key === "Enter" && submitSearch()}
 						className="h-8 rounded-md border border-border bg-background px-3 text-sm focus:outline-none focus:ring-1 focus:ring-mint w-44"
 					/>
-					<Button size="sm" variant="outline" className="h-8 px-3" onClick={submitSearch}>Search</Button>
+					<Button size="sm" className="h-8 w-8 p-0 bg-mint hover:bg-mint/90 text-ink" onClick={submitSearch} title="Search"><Search className="w-3.5 h-3.5" /></Button>
 					<p className="text-sm text-ink-3 whitespace-nowrap">
 						{list.length} {list.length === 1 ? "member" : "members"}
 					</p>

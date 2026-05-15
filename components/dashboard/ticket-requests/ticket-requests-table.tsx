@@ -329,7 +329,7 @@ export function TicketRequestsTable() {
 							className="h-8 text-xs pl-8 w-52"
 						/>
 					</div>
-					<Button type="submit" size="sm" variant="outline" className="h-8 text-xs">Search</Button>
+					<Button type="submit" size="sm" className="h-8 w-8 p-0 bg-mint hover:bg-mint/90 text-ink" title="Search"><Search className="w-3.5 h-3.5" /></Button>
 					{search && (
 						<Button type="button" size="sm" variant="ghost" className="h-8 text-xs text-ink-3"
 							onClick={() => { setSearch(""); setSearchInput(""); setPage(1); }}>
