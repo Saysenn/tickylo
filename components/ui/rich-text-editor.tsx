@@ -11,7 +11,7 @@ import { TextStyle } from "@tiptap/extension-text-style";
 import Color from "@tiptap/extension-color";
 import CodeBlockLowlight from "@tiptap/extension-code-block-lowlight";
 import { common, createLowlight } from "lowlight";
-import { useCallback, useRef, useEffect } from "react";
+import { useCallback, useRef, useEffect, useState } from "react";
 import { cn } from "@/lib/utils/cn";
 import {
 	Bold, Italic, Underline as UnderlineIcon, Strikethrough,
@@ -144,18 +144,60 @@ export function RichTextEditor({
 		e.target.value = "";
 	}, [onAttach]);
 
+	const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
+
+	useEffect(() => {
+		if (!lightboxSrc) return;
+		const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setLightboxSrc(null); };
+		window.addEventListener("keydown", onKey);
+		return () => window.removeEventListener("keydown", onKey);
+	}, [lightboxSrc]);
+
 	if (readOnly) {
 		return (
-			<div className={cn("prose prose-sm max-w-none text-ink text-xs leading-relaxed [&_a]:text-mint [&_a]:underline [&_code]:bg-accent/60 [&_code]:px-1 [&_code]:rounded [&_pre]:bg-accent/60 [&_pre]:rounded-lg [&_pre]:p-3", className)}>
-				{editor ? (
-					<EditorContent editor={editor} />
-				) : (
-					<p className="whitespace-pre-wrap">{value}</p>
+			<>
+				<div
+					className={cn(
+						"prose prose-sm max-w-none text-ink text-xs leading-relaxed [&_a]:text-mint [&_a]:underline [&_code]:bg-accent/60 [&_code]:px-1 [&_code]:rounded [&_pre]:bg-accent/60 [&_pre]:rounded-lg [&_pre]:p-3 [&_img]:w-40 [&_img]:h-28 [&_img]:object-cover [&_img]:rounded-lg [&_img]:my-1 [&_img]:cursor-zoom-in [&_img]:inline-block",
+						className,
+					)}
+					onClick={(e) => {
+						const target = e.target as HTMLElement;
+						if (target.tagName === "IMG") setLightboxSrc((target as HTMLImageElement).src);
+					}}
+				>
+					{editor ? (
+						<EditorContent editor={editor} />
+					) : (
+						<p className="whitespace-pre-wrap">{value}</p>
+					)}
+					{attachments.length > 0 && (
+						<AttachmentStrip attachments={attachments} readOnly onImageClick={setLightboxSrc} />
+					)}
+				</div>
+
+				{/* Lightbox */}
+				{lightboxSrc && (
+					<div
+						className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm"
+						onClick={() => setLightboxSrc(null)}
+					>
+						<button
+							type="button"
+							onClick={() => setLightboxSrc(null)}
+							className="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
+						>
+							<X className="w-4 h-4 text-white" />
+						</button>
+						<img
+							src={lightboxSrc}
+							alt=""
+							className="max-w-[90vw] max-h-[90vh] object-contain rounded-xl shadow-2xl"
+							onClick={(e) => e.stopPropagation()}
+						/>
+					</div>
 				)}
-				{attachments.length > 0 && (
-					<AttachmentStrip attachments={attachments} readOnly />
-				)}
-			</div>
+			</>
 		);
 	}
 
@@ -232,7 +274,7 @@ export function RichTextEditor({
 
 			{/* Editor area */}
 			<div
-				className="px-3 py-2 cursor-text prose prose-sm max-w-none text-ink text-xs leading-relaxed [&_.ProseMirror]:outline-none [&_.ProseMirror_p.is-editor-empty:first-child::before]:content-[attr(data-placeholder)] [&_.ProseMirror_p.is-editor-empty:first-child::before]:text-ink-3/50 [&_.ProseMirror_p.is-editor-empty:first-child::before]:pointer-events-none [&_.ProseMirror_p.is-editor-empty:first-child::before]:float-left [&_.ProseMirror_p.is-editor-empty:first-child::before]:h-0 [&_a]:text-mint [&_a]:underline [&_code]:bg-accent/60 [&_code]:px-1 [&_code]:rounded [&_pre]:bg-accent/60 [&_pre]:rounded-lg [&_pre]:p-3"
+				className="px-3 py-2 cursor-text prose prose-sm max-w-none text-ink text-xs leading-relaxed [&_.ProseMirror]:outline-none [&_.ProseMirror_p.is-editor-empty:first-child::before]:content-[attr(data-placeholder)] [&_.ProseMirror_p.is-editor-empty:first-child::before]:text-ink-3/50 [&_.ProseMirror_p.is-editor-empty:first-child::before]:pointer-events-none [&_.ProseMirror_p.is-editor-empty:first-child::before]:float-left [&_.ProseMirror_p.is-editor-empty:first-child::before]:h-0 [&_a]:text-mint [&_a]:underline [&_code]:bg-accent/60 [&_code]:px-1 [&_code]:rounded [&_pre]:bg-accent/60 [&_pre]:rounded-lg [&_pre]:p-3 [&_img]:w-40 [&_img]:h-28 [&_img]:object-cover [&_img]:rounded-lg [&_img]:my-1 [&_img]:inline-block"
 				style={{ minHeight }}
 				onClick={() => editor?.commands.focus()}
 			>
@@ -253,8 +295,8 @@ export function RichTextEditor({
 }
 
 function AttachmentStrip({
-	attachments, onDelete, readOnly = false,
-}: { attachments: AttachmentPreview[]; onDelete?: (id: string) => void; readOnly?: boolean }) {
+	attachments, onDelete, readOnly = false, onImageClick,
+}: { attachments: AttachmentPreview[]; onDelete?: (id: string) => void; readOnly?: boolean; onImageClick?: (url: string) => void }) {
 	return (
 		<div className="flex flex-wrap gap-2">
 			{attachments.map((a) => {
@@ -262,6 +304,15 @@ function AttachmentStrip({
 				return (
 					<div key={a.id} className="relative group/att">
 						{isImage ? (
+							onImageClick ? (
+								<button type="button" onClick={() => onImageClick(a.url)}>
+									<img
+										src={a.url}
+										alt={a.file_name}
+										className="w-16 h-16 object-cover rounded-lg border border-border/40 hover:opacity-90 transition-opacity cursor-zoom-in"
+									/>
+								</button>
+							) : (
 							<a href={a.url} target="_blank" rel="noopener noreferrer">
 								<img
 									src={a.url}
@@ -269,6 +320,7 @@ function AttachmentStrip({
 									className="w-16 h-16 object-cover rounded-lg border border-border/40 hover:opacity-90 transition-opacity"
 								/>
 							</a>
+							)
 						) : (
 							<a
 								href={a.url}

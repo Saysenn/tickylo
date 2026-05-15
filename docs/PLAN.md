@@ -101,4 +101,4 @@ If you want next, I can help you turn this into a real MVP scope (what to build 
 
 1. connect to aws s3 storage and save assets of tickets their.
 2. create an option to add or delete images in threads.
-3.
+3. we goona add qr org joinging feature
