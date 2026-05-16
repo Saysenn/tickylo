@@ -247,7 +247,7 @@ export const TIMEZONES: { value: string; label: string }[] = [
 	{ value: "Asia/Karachi",        label: "(UTC+5) Karachi" },
 	{ value: "Asia/Almaty",         label: "(UTC+6) Almaty" },
 	// Middle East
-	{ value: "Asia/Dubai",          label: "(UTC+4) Dubai" },
+	{ value: "Asia/Dubai",          label: "(UTC+4) UAE / Dubai (Gulf Standard Time)" },
 	{ value: "Asia/Riyadh",         label: "(UTC+3) Riyadh" },
 	{ value: "Asia/Kuwait",         label: "(UTC+3) Kuwait City" },
 	{ value: "Asia/Beirut",         label: "(UTC+2) Beirut" },

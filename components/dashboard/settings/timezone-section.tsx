@@ -6,7 +6,7 @@ import { Globe } from "lucide-react";
 import APIService from "@/lib/infra/api";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { SelectRoot, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import { Combobox } from "@/components/ui/combobox";
 import { TIMEZONES } from "@/lib/utils/format";
 
 interface UserMe {
@@ -15,6 +15,8 @@ interface UserMe {
 	email: string;
 	timezone: string | null;
 }
+
+const TZ_OPTIONS = TIMEZONES.map((tz) => ({ value: tz.value, label: tz.label }));
 
 export function TimezoneSection() {
 	const queryClient = useQueryClient();
@@ -62,16 +64,14 @@ export function TimezoneSection() {
 
 			<div className="space-y-1.5 max-w-sm">
 				<Label className="text-xs">Display Timezone</Label>
-				<SelectRoot value={timezone} onValueChange={setTimezone}>
-					<SelectTrigger className="h-9 text-sm">
-						<SelectValue />
-					</SelectTrigger>
-					<SelectContent>
-						{TIMEZONES.map((tz) => (
-							<SelectItem key={tz.value} value={tz.value}>{tz.label}</SelectItem>
-						))}
-					</SelectContent>
-				</SelectRoot>
+				<Combobox
+					options={TZ_OPTIONS}
+					value={timezone}
+					onChange={setTimezone}
+					placeholder="Select timezone…"
+					searchPlaceholder="Search timezone…"
+					emptyText="No timezone found."
+				/>
 			</div>
 
 			{error && <p className="text-xs text-destructive">{error}</p>}

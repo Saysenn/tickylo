@@ -6,7 +6,7 @@ import APIService from "@/lib/infra/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { SelectRoot, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import { Combobox } from "@/components/ui/combobox";
 import { cn } from "@/lib/utils/cn";
 import { TIMEZONES } from "@/lib/utils/format";
 
@@ -85,16 +85,14 @@ export function WorkScheduleAdminSection() {
 				{/* Timezone */}
 				<div className="sm:col-span-3 space-y-1.5">
 					<Label className="text-xs">Org Timezone</Label>
-					<SelectRoot value={timezone} onValueChange={setTimezone}>
-						<SelectTrigger className="h-9 text-sm">
-							<SelectValue />
-						</SelectTrigger>
-						<SelectContent>
-							{TIMEZONES.map((tz) => (
-								<SelectItem key={tz.value} value={tz.value}>{tz.label}</SelectItem>
-							))}
-						</SelectContent>
-					</SelectRoot>
+					<Combobox
+						options={TIMEZONES.map((tz) => ({ value: tz.value, label: tz.label }))}
+						value={timezone}
+						onChange={setTimezone}
+						placeholder="Select timezone…"
+						searchPlaceholder="Search timezone…"
+						emptyText="No timezone found."
+					/>
 					<p className="text-[10px] text-ink-3">This is the timezone the shift runs in — where your team works.</p>
 				</div>
 

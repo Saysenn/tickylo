@@ -15,13 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import {
-	SelectRoot,
-	SelectTrigger,
-	SelectValue,
-	SelectContent,
-	SelectItem,
-} from "@/components/ui/select";
+import { Combobox } from "@/components/ui/combobox";
 import { formatDate, toDateInput } from "@/lib/utils/format";
 
 interface UserMeta {
@@ -57,7 +51,7 @@ const COUNTRY_CODES = [
 	{ code: "+86", flag: "🇨🇳", name: "CN" },
 	{ code: "+852", flag: "🇭🇰", name: "HK" },
 	{ code: "+91", flag: "🇮🇳", name: "IN" },
-	{ code: "+971", flag: "🇦🇪", name: "AE" },
+	{ code: "+971", flag: "🇦🇪", name: "UAE" },
 	{ code: "+966", flag: "🇸🇦", name: "SA" },
 	{ code: "+49", flag: "🇩🇪", name: "DE" },
 	{ code: "+33", flag: "🇫🇷", name: "FR" },
@@ -157,16 +151,31 @@ export function ProfileMetaSection() {
 						{/* ── Editable fields ── */}
 						<div className="space-y-4">
 							<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-								{/* Phone */}
+								{/* Phone with country code */}
 								<div className="space-y-1.5">
 									<Label htmlFor="meta-phone">Phone</Label>
-									<Input
-										id="meta-phone"
-										type="tel"
-										placeholder="+1 555 000 0000"
-										value={phone}
-										onChange={(e) => setPhone(e.target.value)}
-									/>
+									<div className="flex gap-1.5">
+										<Combobox
+											options={COUNTRY_CODES.map((c) => ({
+												value: c.code,
+												label: `${c.flag} ${c.name} ${c.code.replace("-CA", "")}`,
+											}))}
+											value={dialCode}
+											onChange={setDialCode}
+											placeholder="+63"
+											searchPlaceholder="Search country…"
+											emptyText="No country found."
+											className="w-36 shrink-0"
+										/>
+										<Input
+											id="meta-phone"
+											type="tel"
+											placeholder="912 345 6789"
+											value={localPhone}
+											onChange={(e) => setLocalPhone(e.target.value)}
+											className="h-9 text-sm"
+										/>
+									</div>
 								</div>
 
 								{/* Date of birth */}
@@ -177,49 +186,7 @@ export function ProfileMetaSection() {
 										type="date"
 										value={dob}
 										onChange={(e) => setDob(e.target.value)}
-									/>
-								</div>
-
-								{/* Visa Status */}
-								<div className="space-y-1.5">
-									<Label>Visa Status</Label>
-									<SelectRoot
-										value={visaStatus || undefined}
-										onValueChange={setVisaStatus}
-									>
-										<SelectTrigger>
-											<SelectValue placeholder="— Select status —" />
-										</SelectTrigger>
-										<SelectContent>
-											{VISA_STATUS_OPTIONS.map((o) => (
-												<SelectItem key={o.value} value={o.value}>
-													{o.label}
-												</SelectItem>
-											))}
-										</SelectContent>
-									</SelectRoot>
-								</div>
-
-								{/* Visa Expiry */}
-								<div className="space-y-1.5">
-									<Label htmlFor="meta-visa-expiry">Visa Expiry</Label>
-									<Input
-										id="meta-visa-expiry"
-										type="date"
-										value={visaExpiry}
-										onChange={(e) => setVisaExpiry(e.target.value)}
-									/>
-								</div>
-
-								{/* Passport number */}
-								<div className="space-y-1.5">
-									<Label htmlFor="meta-passport">Passport Number</Label>
-									<Input
-										id="meta-passport"
-										type="text"
-										placeholder="A12345678"
-										value={passportNumber}
-										onChange={(e) => setPassportNumber(e.target.value)}
+										className="h-9 text-sm"
 									/>
 								</div>
 							</div>
