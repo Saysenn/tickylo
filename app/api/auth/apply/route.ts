@@ -4,6 +4,7 @@ import { prisma } from "@/lib/infra/prisma";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ok, errorResponse } from "@/lib/utils/response";
 import { GDPR } from "@/configs/gdpr.config";
+import { rateLimit, getIP } from "@/lib/utils/rate-limit";
 
 const BLOCKED_EMAILS = ["laudzioncascalla01@gmail.com"];
 
@@ -20,6 +21,10 @@ const schema = z.object({
 
 export async function POST(request: NextRequest) {
 	try {
+		// 5 applications per IP per 15 minutes — prevents account factory abuse
+		const rl = await rateLimit(`apply:${getIP(request)}`, 5, 900);
+		if (rl) return rl;
+
 		const body = await request.json();
 		const parsed = schema.safeParse(body);
 		if (!parsed.success) {

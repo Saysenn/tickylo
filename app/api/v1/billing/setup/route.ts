@@ -4,6 +4,7 @@ import { requireAdmin } from "@/lib/auth/require-admin";
 import { prisma } from "@/lib/infra/prisma";
 import { errorResponse, ok } from "@/lib/utils/response";
 import { getStripe, STRIPE_PRICES, type BillingPlan } from "@/configs/stripe.config";
+import { rateLimit, getIP } from "@/lib/utils/rate-limit";
 
 const bodySchema = z.object({
 	plan:             z.enum(["business", "enterprise"]),
@@ -14,6 +15,10 @@ const bodySchema = z.object({
 
 export async function POST(req: NextRequest) {
 	try {
+		// 5 setup attempts per IP per hour — prevents Stripe API abuse
+		const rl = await rateLimit(`billing-setup:${getIP(req)}`, 5, 3600);
+		if (rl) return rl;
+
 		const admin = await requireAdmin();
 		if (!admin) return errorResponse("Forbidden", 403);
 

@@ -3,11 +3,16 @@ import { ok, errorResponse } from "@/lib/utils/response";
 import { requireUser } from "@/lib/auth/require-user";
 import * as StorageService from "@/services/storage.service";
 import { prisma } from "@/lib/infra/prisma";
+import { rateLimit } from "@/lib/utils/rate-limit";
 
 export async function POST(request: NextRequest) {
 	try {
 		const user = await requireUser();
 		if (!user) return errorResponse("Unauthorized", 401);
+
+		// 50 uploads per user per hour — prevents storage bill spikes
+		const rl = await rateLimit(`upload:${user.id}`, 50, 3600);
+		if (rl) return rl;
 
 		const orgId = user.app_metadata?.org_id as string | undefined;
 		if (!orgId) return errorResponse("No organization", 400);

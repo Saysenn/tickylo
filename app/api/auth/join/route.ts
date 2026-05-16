@@ -6,6 +6,7 @@ import { ok, errorResponse } from "@/lib/utils/response";
 import { sendEmail } from "@/lib/email/send";
 import { employeeJoinRequestEmail } from "@/lib/email/templates";
 import { GDPR } from "@/configs/gdpr.config";
+import { rateLimit, getIP } from "@/lib/utils/rate-limit";
 
 const schema = z.object({
 	org_join_code:    z.string().min(1),
@@ -18,6 +19,9 @@ const schema = z.object({
 
 export async function POST(request: NextRequest) {
 	try {
+		// 10 join attempts per IP per 15 minutes
+		const rl = await rateLimit(`join:${getIP(request)}`, 10, 900);
+		if (rl) return rl;
 		const body = await request.json();
 		const parsed = schema.safeParse(body);
 		if (!parsed.success) {

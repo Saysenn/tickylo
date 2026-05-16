@@ -39,6 +39,14 @@ const redisClient = {
 			throw error;
 		}
 	},
+
+	incr: async (key: string): Promise<number> => {
+		return redis.incr(key);
+	},
+
+	expire: async (key: string, seconds: number): Promise<void> => {
+		await redis.expire(key, seconds);
+	},
 };
 
 export default redisClient;
