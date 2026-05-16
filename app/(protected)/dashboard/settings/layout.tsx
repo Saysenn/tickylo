@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { User, SlidersHorizontal, Building2 } from "lucide-react";
+import { User, SlidersHorizontal, Building2, CreditCard } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import { useAppSelector } from "@/store/hooks";
 import { ROLES } from "@/configs/rbac.config";
@@ -19,7 +19,8 @@ const accountItems: NavItem[] = [
 ];
 
 const orgItems: NavItem[] = [
-	{ label: "Organization", href: "/dashboard/settings/organization", icon: Building2 },
+	{ label: "Organization",  href: "/dashboard/settings/organization",  icon: Building2 },
+	{ label: "Subscription",  href: "/dashboard/settings/subscription",  icon: CreditCard },
 ];
 
 export default function SettingsLayout({ children }: { children: React.ReactNode }) {

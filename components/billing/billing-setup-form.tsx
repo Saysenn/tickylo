@@ -1,0 +1,237 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { loadStripe } from "@stripe/stripe-js";
+import {
+	Elements,
+	CardElement,
+	useStripe,
+	useElements,
+} from "@stripe/react-stripe-js";
+import { useMutation } from "@tanstack/react-query";
+import { Building2, Users, CheckCircle2, ChevronDown } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils/cn";
+import APIService from "@/lib/infra/api";
+
+const stripePromise = loadStripe(
+	process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ?? "",
+);
+
+const CARD_ELEMENT_OPTIONS = {
+	style: {
+		base: {
+			fontSize: "14px",
+			color: "#1a1a1a",
+			"::placeholder": { color: "#9ca3af" },
+			fontFamily: "inherit",
+		},
+	},
+};
+
+type Plan = "business" | "enterprise";
+
+interface Props {
+	orgName: string;
+	hadTrial: boolean;
+}
+
+function SetupForm({ orgName, hadTrial }: Props) {
+	const stripe  = useStripe();
+	const elements = useElements();
+	const router  = useRouter();
+
+	const [plan, setPlan]           = useState<Plan>("business");
+	const [seatCount, setSeatCount] = useState(5);
+	const [error, setError]         = useState<string | null>(null);
+
+	const businessTotal = (20 + seatCount * 4.99).toFixed(2);
+	const enterpriseTotal = "100.00";
+
+	const { mutate: setup, isPending } = useMutation({
+		mutationFn: async () => {
+			if (!stripe || !elements) throw new Error("Stripe not loaded");
+			const card = elements.getElement(CardElement);
+			if (!card) throw new Error("Card element not found");
+
+			const { paymentMethod, error: pmErr } = await stripe.createPaymentMethod({
+				type: "card",
+				card,
+			});
+			if (pmErr) throw new Error(pmErr.message);
+			if (!paymentMethod) throw new Error("Payment method creation failed");
+
+			return APIService.billing.setup({
+				plan,
+				seat_count:        plan === "business" ? seatCount : 25,
+				interval:          "monthly",
+				payment_method_id: paymentMethod.id,
+			});
+		},
+		onSuccess: () => router.push("/billing/success"),
+		onError: (err: any) => {
+			const msg = err?.response?.data?.error ?? err?.message ?? "Setup failed";
+			setError(msg);
+		},
+	});
+
+	return (
+		<div className="space-y-6">
+			{/* Plan selector */}
+			<div className="grid grid-cols-2 gap-3">
+				{/* Business */}
+				<button
+					type="button"
+					onClick={() => setPlan("business")}
+					className={cn(
+						"text-left p-4 rounded-xl border-2 transition-all",
+						plan === "business"
+							? "border-mint bg-mint/5"
+							: "border-border hover:border-border/80 bg-card",
+					)}
+				>
+					<div className="flex items-center justify-between mb-2">
+						<div className="flex items-center gap-2">
+							<Building2 className="w-4 h-4 text-ink-3" />
+							<span className="font-semibold text-ink text-sm">Business</span>
+						</div>
+						{plan === "business" && <CheckCircle2 className="w-4 h-4 text-mint" />}
+					</div>
+					<p className="text-xs text-ink-3 leading-relaxed">
+						$20/mo base + $4.99/seat/mo
+					</p>
+					<p className="text-[11px] text-ink-3/70 mt-1">
+						Full ticketing, time tracking, reports
+					</p>
+				</button>
+
+				{/* Enterprise */}
+				<button
+					type="button"
+					onClick={() => setPlan("enterprise")}
+					className={cn(
+						"text-left p-4 rounded-xl border-2 transition-all",
+						plan === "enterprise"
+							? "border-mint bg-mint/5"
+							: "border-border hover:border-border/80 bg-card",
+					)}
+				>
+					<div className="flex items-center justify-between mb-2">
+						<div className="flex items-center gap-2">
+							<Users className="w-4 h-4 text-ink-3" />
+							<span className="font-semibold text-ink text-sm">Enterprise</span>
+						</div>
+						{plan === "enterprise" && <CheckCircle2 className="w-4 h-4 text-mint" />}
+					</div>
+					<p className="text-xs text-ink-3 leading-relaxed">
+						$100/mo flat — 25 seats included
+					</p>
+					<p className="text-[11px] text-ink-3/70 mt-1">
+						+ Attachments, SMS, Email inbound, 2FA
+					</p>
+				</button>
+			</div>
+
+			{/* Seat count (Business only) */}
+			{plan === "business" && (
+				<div className="space-y-2">
+					<label className="text-xs font-semibold text-ink-3 uppercase tracking-wider">
+						Number of seats (employees)
+					</label>
+					<div className="flex items-center gap-3">
+						<div className="relative flex-1">
+							<select
+								value={seatCount}
+								onChange={(e) => setSeatCount(Number(e.target.value))}
+								className="w-full appearance-none rounded-lg border border-border bg-background px-3 py-2 text-sm text-ink focus:outline-none focus:ring-1 focus:ring-mint pr-8"
+							>
+								{[1,2,3,4,5,6,7,8,9,10,15,20,25,30,40,50,75,100].map((n) => (
+									<option key={n} value={n}>{n} seat{n !== 1 ? "s" : ""}</option>
+								))}
+							</select>
+							<ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-ink-3 pointer-events-none" />
+						</div>
+						<div className="text-right shrink-0">
+							<p className="text-lg font-bold text-ink">${businessTotal}<span className="text-xs font-normal text-ink-3">/mo</span></p>
+							<p className="text-[11px] text-ink-3">$20 + {seatCount} × $4.99</p>
+						</div>
+					</div>
+				</div>
+			)}
+
+			{plan === "enterprise" && (
+				<div className="rounded-lg border border-border/60 bg-accent/30 px-4 py-3 flex items-center justify-between">
+					<div>
+						<p className="text-sm font-medium text-ink">25 seats + admin included</p>
+						<p className="text-xs text-ink-3">Attachments, SMS, email inbound, 2FA enforcement, dedicated support</p>
+					</div>
+					<p className="text-lg font-bold text-ink shrink-0">${enterpriseTotal}<span className="text-xs font-normal text-ink-3">/mo</span></p>
+				</div>
+			)}
+
+			{/* Trial notice */}
+			{!hadTrial && (
+				<div className="rounded-lg bg-mint/10 border border-mint/20 px-4 py-3">
+					<p className="text-sm font-medium text-ink">14-day free trial</p>
+					<p className="text-xs text-ink-3 mt-0.5">
+						Your card will be saved but not charged until the trial ends.
+					</p>
+				</div>
+			)}
+
+			{hadTrial && (
+				<div className="rounded-lg bg-amber-500/10 border border-amber-500/20 px-4 py-3">
+					<p className="text-sm font-medium text-ink">No second trial</p>
+					<p className="text-xs text-ink-3 mt-0.5">
+						You've previously used a trial on this account. Your card will be charged immediately upon setup.
+					</p>
+				</div>
+			)}
+
+			{/* Card input */}
+			<div className="space-y-2">
+				<label className="text-xs font-semibold text-ink-3 uppercase tracking-wider">
+					Payment method
+				</label>
+				<div className="rounded-lg border border-border bg-background px-3 py-3">
+					<CardElement options={CARD_ELEMENT_OPTIONS} />
+				</div>
+				<p className="text-[11px] text-ink-3">
+					Secured by Stripe. Your card details never touch our servers.
+				</p>
+			</div>
+
+			{error && (
+				<div className="rounded-lg bg-red-500/10 border border-red-500/20 px-4 py-3">
+					<p className="text-sm text-red-600">{error}</p>
+				</div>
+			)}
+
+			<Button
+				className="w-full"
+				isLoading={isPending}
+				disabled={!stripe || isPending}
+				onClick={() => { setError(null); setup(); }}
+			>
+				{hadTrial
+					? `Subscribe to ${plan === "business" ? "Business" : "Enterprise"} Plan`
+					: `Start Free Trial — ${plan === "business" ? "Business" : "Enterprise"}`}
+			</Button>
+
+			<p className="text-center text-[11px] text-ink-3">
+				By continuing you agree to our{" "}
+				<a href="/terms" className="underline hover:text-ink">Terms of Service</a>.
+				Cancel anytime from Settings.
+			</p>
+		</div>
+	);
+}
+
+export default function BillingSetupForm({ orgName, hadTrial }: Props) {
+	return (
+		<Elements stripe={stripePromise}>
+			<SetupForm orgName={orgName} hadTrial={hadTrial} />
+		</Elements>
+	);
+}

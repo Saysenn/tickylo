@@ -5,7 +5,9 @@ import AppProvider from "@/providers/app-provider";
 import UserProvider from "@/providers/user-provider";
 import { OrgSettingsProvider } from "@/providers/org-settings-provider";
 import { prisma } from "@/lib/infra/prisma";
+import { isBillingLocked } from "@/lib/utils/plan-gate";
 import type { UserProfile } from "@/types";
+import type { OrgPlan } from "@/configs/stripe.config";
 
 export default async function ProtectedLayout({
   children,
@@ -27,8 +29,17 @@ export default async function ProtectedLayout({
   if (role === "super_admin") redirect("/super-admin/dashboard");
 
   const org = orgId
-    ? await prisma.organization.findUnique({ where: { id: orgId }, select: { name: true } })
+    ? await prisma.organization.findUnique({
+        where: { id: orgId },
+        select: { name: true, plan: true, is_internal: true },
+      })
     : null;
+
+  // Billing gate — locked orgs go to /billing unless they're already there
+  // Internal orgs bypass this check entirely
+  if (org && isBillingLocked(org.plan as OrgPlan, org.is_internal)) {
+    redirect("/billing");
+  }
 
   const userProfile: UserProfile = {
     id: user.id,

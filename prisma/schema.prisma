@@ -23,6 +23,18 @@ model Organization {
   created_at          DateTime @default(now())
   updated_at          DateTime @updatedAt
 
+  // Billing
+  plan                   String    @default("pending")   // pending | unpaid | trial | business | enterprise | cancelled
+  seat_count             Int       @default(1)
+  trial_ends_at          DateTime?
+  stripe_customer_id     String?   @unique
+  stripe_subscription_id String?   @unique
+  stripe_base_item_id    String?
+  stripe_seat_item_id    String?
+  next_billing_date      DateTime?
+  had_trial              Boolean   @default(false)
+  is_internal            Boolean   @default(false)       // bypasses all billing gates (test/internal accounts)
+
   users         User[]
   join_requests UserJoinRequest[]
   work_schedule WorkSchedule?

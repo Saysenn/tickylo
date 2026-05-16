@@ -268,12 +268,19 @@ class APIService {
 	};
 
 	// ---------------------------------------------------------------------------
-	// Payments
+	// Billing
 	// ---------------------------------------------------------------------------
-	public payments = {
-		checkout: (plan: "Pro") =>
-			axiosService.post(`${apiVersion}/payments/checkout`, { plan }),
-		portal: () => axiosService.post(`${apiVersion}/payments/portal`),
+	public billing = {
+		status: () => axiosService.get(`${apiVersion}/billing/status`),
+		setup: (data: {
+			plan: "business" | "enterprise";
+			seat_count: number;
+			interval: "monthly" | "annual";
+			payment_method_id: string;
+		}) => axiosService.post(`${apiVersion}/billing/setup`, data),
+		portal: () => axiosService.post(`${apiVersion}/billing/portal`),
+		updateSeats: (seat_count: number) =>
+			axiosService.patch(`${apiVersion}/billing/seats`, { seat_count }),
 	};
 
 	// ---------------------------------------------------------------------------
@@ -400,6 +407,10 @@ class APIService {
 			axiosService.post(`${apiVersion}/super-admin/applications/${id}/approve`, {}),
 		rejectApplication: (id: string, reason: string) =>
 			axiosService.post(`${apiVersion}/super-admin/applications/${id}/reject`, { reason }),
+		getOrgs: () =>
+			axiosService.get(`${apiVersion}/super-admin/orgs`),
+		toggleInternal: (orgId: string, is_internal: boolean) =>
+			axiosService.patch(`${apiVersion}/super-admin/orgs/${orgId}`, { is_internal }),
 	};
 
 	// ---------------------------------------------------------------------------
