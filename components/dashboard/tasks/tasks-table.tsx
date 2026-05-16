@@ -203,6 +203,7 @@ export function TasksTable() {
 		queryKey: ["employees-list"],
 		queryFn: () => APIService.employees.list(1, 50),
 		enabled: isAdmin && bulkAssignOpen,
+		staleTime: 300_000,
 	});
 	const employees = employeesResult?.data ?? [];
 

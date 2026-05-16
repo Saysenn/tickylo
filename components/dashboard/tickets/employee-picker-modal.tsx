@@ -55,6 +55,7 @@ export function EmployeePickerModal({
 		queryKey: ["employees-picker"],
 		queryFn: () => APIService.employees.list(1, 100),
 		enabled: open,
+		staleTime: 300_000,
 	});
 
 	const allEmployees = (employeesData?.data ?? []).filter((e) => !excludeIds.includes(e.id));

@@ -22,11 +22,13 @@ export function WorkloadChart() {
 	const { data: employeesResult } = useQuery<{ data: Employee[] }>({
 		queryKey: ["employees-list-workload"],
 		queryFn: () => APIService.employees.list(1, 50),
+		staleTime: 300_000,
 	});
 
 	const { data: workload = {}, isLoading } = useQuery<Record<string, number>>({
 		queryKey: ["employees-workload"],
 		queryFn: () => APIService.employees.workload(),
+		staleTime: 300_000,
 	});
 
 	const employees = employeesResult?.data ?? [];

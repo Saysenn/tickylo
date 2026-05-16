@@ -210,6 +210,7 @@ export function PerformanceTable() {
 	const { data, isLoading, isError } = useQuery<PerformanceEntry[]>({
 		queryKey: ["performance", from, to],
 		queryFn: () => APIService.performance.list(from, to),
+		staleTime: 120_000,
 	});
 
 	const submitSearch = () => setSearch(searchInput);

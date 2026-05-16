@@ -18,6 +18,7 @@ export function WorkScheduleReadonlySection() {
 	const { data, isLoading } = useQuery<WorkSchedule | null>({
 		queryKey: ["work-schedule"],
 		queryFn: () => APIService.workSchedule.get(),
+		staleTime: 600_000,
 	});
 
 	if (isLoading) return (

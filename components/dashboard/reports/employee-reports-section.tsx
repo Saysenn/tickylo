@@ -72,6 +72,7 @@ export function EmployeeReportsSection() {
 	const { data, isLoading } = useQuery({
 		queryKey: ["employees-list-reports", page],
 		queryFn: () => APIService.employees.list(page, 10),
+		staleTime: 300_000,
 	});
 
 	const employees: Employee[] = (data?.data ?? []).filter((e: Employee) => e.role !== "admin");

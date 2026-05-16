@@ -9,6 +9,9 @@ export default defineConfig({
 		path: "prisma/migrations",
 	},
 	datasource: {
+		// Pooled URL (PgBouncer, port 6543) for all runtime queries
 		url: process.env["DATABASE_URL"]!,
+		// Direct URL (port 5432) for migrations — PgBouncer doesn't support DDL
+		directUrl: process.env["DIRECT_URL"],
 	},
 });

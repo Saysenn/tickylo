@@ -25,6 +25,7 @@ export function WorkScheduleAdminSection() {
 	const { data, isLoading } = useQuery<WorkSchedule | null>({
 		queryKey: ["work-schedule"],
 		queryFn: () => APIService.workSchedule.get(),
+		staleTime: 600_000, // 10 min — only changes when admin saves
 	});
 
 	const [timezone, setTimezone] = useState("UTC");

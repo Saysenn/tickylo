@@ -201,6 +201,8 @@ model TimeEntry {
   @@index([user_id])
   @@index([ticket_id])
   @@index([start_time])
+  @@index([org_id, start_time, end_time])
+  @@index([user_id, start_time])
   @@map("time_entries")
 }
 
@@ -277,6 +279,11 @@ model Ticket {
   @@index([status])
   @@index([due_date])
   @@index([ticket_type])
+  // Composite indexes for common multi-column query patterns
+  @@index([org_id, status, created_at])
+  @@index([org_id, user_id, status])
+  @@index([org_id, due_date])
+  @@index([org_id, priority])
   @@map("tasks")
 }
 
@@ -296,6 +303,7 @@ model TicketComment {
 
   @@index([task_id])
   @@index([user_id])
+  @@index([task_id, created_at])
   @@map("task_comments")
 }
 

@@ -154,7 +154,6 @@ export async function listTickets(caller: Caller, params: ListTicketsParams) {
 			where,
 			include: {
 				assignee: { select: { id: true, name: true, email: true } },
-				timeEntries: { select: { start_time: true, end_time: true } },
 				dueDateRequests: { where: { status: "pending" }, select: { id: true } },
 				reopenRequests: { where: { status: "pending" }, select: { id: true } },
 				transferRequests: { where: { status: "pending" }, select: { id: true } },
@@ -166,12 +165,21 @@ export async function listTickets(caller: Caller, params: ListTicketsParams) {
 		prisma.ticket.count({ where }),
 	]);
 
-	const data = entries.map(({ timeEntries, dueDateRequests, reopenRequests, transferRequests, ...ticket }) => ({
+	const ticketIds = entries.map((e) => e.id);
+	const timeSums = ticketIds.length > 0
+		? await prisma.$queryRaw<{ ticket_id: string; total_ms: bigint }[]>`
+				SELECT ticket_id,
+				       SUM(EXTRACT(EPOCH FROM (end_time - start_time)) * 1000)::bigint AS total_ms
+				FROM time_entries
+				WHERE ticket_id = ANY(${ticketIds}::text[]) AND end_time IS NOT NULL
+				GROUP BY ticket_id
+			`
+		: [];
+	const timeMap = new Map(timeSums.map((r) => [r.ticket_id, Number(r.total_ms)]));
+
+	const data = entries.map(({ dueDateRequests, reopenRequests, transferRequests, ...ticket }) => ({
 		...ticket,
-		total_time_ms: timeEntries.reduce((sum, e) => {
-			if (e.end_time) return sum + (new Date(e.end_time).getTime() - new Date(e.start_time).getTime());
-			return sum;
-		}, 0),
+		total_time_ms: timeMap.get(ticket.id) ?? 0,
 		pending_actions: [
 			...(dueDateRequests.length > 0 ? ["due_date_request"] : []),
 			...(reopenRequests.length > 0 ? ["reopen_request"] : []),

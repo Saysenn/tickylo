@@ -28,6 +28,7 @@ export function RecentTasksCard() {
 	const { data: report, isLoading } = useQuery<any>({
 		queryKey: ["reports"],
 		queryFn: () => APIService.reports.summary(),
+		staleTime: 120_000,
 	});
 
 	if (isLoading) {

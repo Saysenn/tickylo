@@ -65,6 +65,7 @@ export function StorageAdminSection() {
 	const { data: existing } = useQuery<StorageSafe | null>({
 		queryKey: ["org-storage"],
 		queryFn: () => APIService.orgStorage.get(),
+		staleTime: 600_000,
 	});
 
 	useEffect(() => {

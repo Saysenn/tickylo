@@ -49,6 +49,7 @@ export default function TimeManagerPage() {
 		queryFn: () => APIService.time.teamSummary(from, to, tzOffset, committedSearch || undefined),
 		enabled: !selectedEmployee,
 		placeholderData: (prev) => prev,
+		staleTime: 120_000,
 	});
 
 
@@ -56,6 +57,7 @@ export default function TimeManagerPage() {
 		queryKey: ["time-summary", from, to, selectedEmployee],
 		queryFn: () => APIService.time.summary(from, to, selectedEmployee, tzOffset),
 		enabled: !!selectedEmployee,
+		staleTime: 120_000,
 	});
 
 	const showEmployee = !!selectedEmployee;

@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { requireAdmin } from "@/lib/auth/require-admin";
 import { prisma } from "@/lib/infra/prisma";
 import { errorResponse, ok } from "@/lib/utils/response";
+import { cached } from "@/lib/infra/cache";
 
 /**
  * GET /api/v1/time/team-summary?from=YYYY-MM-DD&to=YYYY-MM-DD&tz_offset=minutes
@@ -45,81 +46,84 @@ export async function GET(request: NextRequest) {
 			return errorResponse("Invalid date range", 400);
 		}
 
-		const orgId = admin.app_metadata?.org_id as string | undefined;
-		const orgFilter = orgId ? { org_id: orgId } : {};
+		const orgId = (admin.app_metadata?.org_id as string | undefined) ?? "global";
+		const orgFilter = orgId !== "global" ? { org_id: orgId } : {};
+		const cacheKey = `team-summary:${orgId}:${fromParam ?? "auto"}:${toParam ?? "auto"}:${tzOffset}:${search}`;
 
-		// Fetch all users in the org
-		const users = await prisma.user.findMany({
-			where: orgFilter,
-			select: { id: true, name: true, email: true },
+		const payload = await cached(cacheKey, 30, async () => {
+			// Fetch all users in the org
+			const users = await prisma.user.findMany({
+				where: orgFilter,
+				select: { id: true, name: true, email: true },
+			});
+
+			// Fetch all completed time entries in the range within the org
+			const entries = await prisma.timeEntry.findMany({
+				where: {
+					...orgFilter,
+					start_time: { gte: start },
+					end_time: { lte: end, not: null },
+				},
+				select: { user_id: true, start_time: true, end_time: true },
+			});
+
+			// Also fetch currently running entries that started in the range
+			const openEntries = await prisma.timeEntry.findMany({
+				where: { ...orgFilter, start_time: { gte: start }, end_time: null },
+				select: { user_id: true, start_time: true },
+			});
+
+			// Aggregate per user by local day
+			const stats: Record<string, { totalMs: number; datesArr: string[] }> = {};
+
+			for (const entry of entries) {
+				if (!entry.end_time) continue;
+				const ms = entry.end_time.getTime() - entry.start_time.getTime();
+				const dateKey = toLocalDateKey(entry.start_time);
+				if (!stats[entry.user_id]) stats[entry.user_id] = { totalMs: 0, datesArr: [] };
+				stats[entry.user_id].totalMs += ms;
+				if (!stats[entry.user_id].datesArr.includes(dateKey)) stats[entry.user_id].datesArr.push(dateKey);
+			}
+
+			const now = Date.now();
+			for (const entry of openEntries) {
+				const ms = now - entry.start_time.getTime();
+				const dateKey = toLocalDateKey(entry.start_time);
+				if (!stats[entry.user_id]) stats[entry.user_id] = { totalMs: 0, datesArr: [] };
+				stats[entry.user_id].totalMs += ms;
+				if (!stats[entry.user_id].datesArr.includes(dateKey)) stats[entry.user_id].datesArr.push(dateKey);
+			}
+
+			const allEmployees = users
+				.map((u) => ({
+					id: u.id,
+					name: u.name,
+					email: u.email,
+					totalMs: stats[u.id]?.totalMs ?? 0,
+					daysWorked: stats[u.id]?.datesArr.length ?? 0,
+				}))
+				.sort((a, b) => b.totalMs - a.totalMs);
+
+			const totalTeamMs = allEmployees.reduce((sum, e) => sum + e.totalMs, 0);
+			const activeCount = allEmployees.filter((e) => e.totalMs > 0).length;
+
+			const employees = search
+				? allEmployees.filter((e) =>
+						(e.name ?? "").toLowerCase().includes(search) ||
+						e.email.toLowerCase().includes(search),
+				  )
+				: allEmployees;
+
+			return {
+				from: fromParam ?? start.toISOString().slice(0, 10),
+				to: toParam ?? end.toISOString().slice(0, 10),
+				totalTeamMs,
+				activeCount,
+				employees,
+			};
 		});
 
-		// Fetch all completed time entries in the range within the org
-		const entries = await prisma.timeEntry.findMany({
-			where: {
-				...orgFilter,
-				start_time: { gte: start },
-				end_time: { lte: end, not: null },
-			},
-			select: { user_id: true, start_time: true, end_time: true },
-		});
-
-		// Also fetch currently running entries that started in the range
-		// (end_time: null means timer is still going — user is actively clocked in)
-		const openEntries = await prisma.timeEntry.findMany({
-			where: { ...orgFilter, start_time: { gte: start }, end_time: null },
-			select: { user_id: true, start_time: true },
-		});
-
-		// Aggregate per user by local day
-		const stats: Record<string, { totalMs: number; dates: Set<string> }> = {};
-
-		for (const entry of entries) {
-			if (!entry.end_time) continue;
-			const ms = entry.end_time.getTime() - entry.start_time.getTime();
-			const dateKey = toLocalDateKey(entry.start_time);
-			if (!stats[entry.user_id]) stats[entry.user_id] = { totalMs: 0, dates: new Set() };
-			stats[entry.user_id].totalMs += ms;
-			stats[entry.user_id].dates.add(dateKey);
-		}
-
-		// Add elapsed time from still-running entries
-		const now = Date.now();
-		for (const entry of openEntries) {
-			const ms = now - entry.start_time.getTime();
-			const dateKey = toLocalDateKey(entry.start_time);
-			if (!stats[entry.user_id]) stats[entry.user_id] = { totalMs: 0, dates: new Set() };
-			stats[entry.user_id].totalMs += ms;
-			stats[entry.user_id].dates.add(dateKey);
-		}
-
-		const allEmployees = users
-			.map((u) => ({
-				id: u.id,
-				name: u.name,
-				email: u.email,
-				totalMs: stats[u.id]?.totalMs ?? 0,
-				daysWorked: stats[u.id]?.dates.size ?? 0,
-			}))
-			.sort((a, b) => b.totalMs - a.totalMs);
-
-		const totalTeamMs = allEmployees.reduce((sum, e) => sum + e.totalMs, 0);
-		const activeCount = allEmployees.filter((e) => e.totalMs > 0).length;
-
-		const employees = search
-			? allEmployees.filter((e) =>
-					(e.name ?? "").toLowerCase().includes(search) ||
-					e.email.toLowerCase().includes(search),
-			  )
-			: allEmployees;
-
-		return ok({
-			from: fromParam ?? start.toISOString().slice(0, 10),
-			to: toParam ?? end.toISOString().slice(0, 10),
-			totalTeamMs,
-			activeCount,
-			employees,
-		});
+		return ok(payload);
 	} catch (err) {
 		console.error("[time:team-summary:GET]", err);
 		return errorResponse("Internal server error", 500);

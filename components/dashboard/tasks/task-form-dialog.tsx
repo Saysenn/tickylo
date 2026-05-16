@@ -111,6 +111,7 @@ export function TaskFormDialog({
 		queryKey: ["employees", 1],
 		queryFn: () => APIService.employees.list(1, 50),
 		enabled: open,
+		staleTime: 300_000,
 	});
 	const employees: any[] = (employeesResult as any)?.data ?? [];
 
