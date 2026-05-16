@@ -16,6 +16,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Combobox } from "@/components/ui/combobox";
+import {
+	DialogRoot,
+	DialogContent,
+	DialogHeader,
+	DialogTitle,
+} from "@/components/ui/dialog";
 import { formatDate, toDateInput } from "@/lib/utils/format";
 
 interface UserMeta {
@@ -84,6 +90,48 @@ export function ProfileMetaSection() {
 
 	const [successMsg, setSuccessMsg] = useState<string | null>(null);
 	const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+	const [isDownloading, setIsDownloading] = useState(false);
+	const [downloadMsg, setDownloadMsg] = useState<string | null>(null);
+	const [isDeletionDialogOpen, setIsDeletionDialogOpen] = useState(false);
+	const [isRequestingDeletion, setIsRequestingDeletion] = useState(false);
+	const [deletionMsg, setDeletionMsg] = useState<{ text: string; type: "success" | "error" } | null>(null);
+
+	async function handleDownload() {
+		setIsDownloading(true);
+		setDownloadMsg(null);
+		try {
+			const response = await APIService.users.export();
+			const blob = new Blob([response.data], { type: "application/json" });
+			const url = URL.createObjectURL(blob);
+			const a = document.createElement("a");
+			a.href = url;
+			a.download = "my-data.json";
+			a.click();
+			URL.revokeObjectURL(url);
+			setDownloadMsg("Download started.");
+		} catch {
+			setDownloadMsg("Failed to download. Please try again.");
+		} finally {
+			setIsDownloading(false);
+			setTimeout(() => setDownloadMsg(null), 4000);
+		}
+	}
+
+	async function handleRequestDeletion() {
+		setIsRequestingDeletion(true);
+		setDeletionMsg(null);
+		try {
+			await APIService.users.requestDeletion();
+			setIsDeletionDialogOpen(false);
+			setDeletionMsg({ text: "Account deletion scheduled. You have 30 days to cancel.", type: "success" });
+		} catch {
+			setDeletionMsg({ text: "Failed to request deletion. A request may already be pending.", type: "error" });
+		} finally {
+			setIsRequestingDeletion(false);
+			setTimeout(() => setDeletionMsg(null), 6000);
+		}
+	}
 
 	useEffect(() => {
 		if (meta) {
@@ -309,6 +357,94 @@ export function ProfileMetaSection() {
 								</div>
 							</>
 						)}
+
+						{/* ── Data & Privacy ── */}
+						<Separator />
+						<div className="space-y-3">
+							<div>
+								<p className="text-sm font-medium text-ink">Data &amp; Privacy</p>
+								<p className="text-xs text-ink-3 mt-0.5">
+									Download a copy of your data or request account deletion.
+								</p>
+							</div>
+
+							<div className="flex flex-wrap items-center gap-3">
+								<Button
+									variant="outline"
+									size="sm"
+									onClick={handleDownload}
+									disabled={isDownloading}
+								>
+									{isDownloading ? (
+										<>
+											<div className="w-3.5 h-3.5 border-2 border-ink-3/40 border-t-ink-3 rounded-full animate-spin mr-2" />
+											Downloading…
+										</>
+									) : (
+										"Download my data"
+									)}
+								</Button>
+
+								<Button
+									variant="destructive"
+									size="sm"
+									onClick={() => setIsDeletionDialogOpen(true)}
+								>
+									Request account deletion
+								</Button>
+
+								{downloadMsg && (
+									<p className="text-sm text-ink-3">{downloadMsg}</p>
+								)}
+							</div>
+
+							{deletionMsg && (
+								<p className={`text-sm ${deletionMsg.type === "success" ? "text-green-600" : "text-destructive"}`}>
+									{deletionMsg.text}
+								</p>
+							)}
+						</div>
+
+						<DialogRoot open={isDeletionDialogOpen} onOpenChange={setIsDeletionDialogOpen}>
+							<DialogContent>
+								<DialogHeader>
+									<DialogTitle>Request Account Deletion</DialogTitle>
+								</DialogHeader>
+								<div className="space-y-4 pt-1">
+									<p className="text-sm text-ink-3">
+										Your account will be scheduled for permanent deletion in{" "}
+										<span className="font-medium text-ink">30 days</span>. During this
+										period you can cancel the request from this settings page. After
+										30 days all your data will be irreversibly removed.
+									</p>
+									<div className="flex justify-end gap-2">
+										<Button
+											variant="outline"
+											size="sm"
+											onClick={() => setIsDeletionDialogOpen(false)}
+											disabled={isRequestingDeletion}
+										>
+											Cancel
+										</Button>
+										<Button
+											variant="destructive"
+											size="sm"
+											onClick={handleRequestDeletion}
+											disabled={isRequestingDeletion}
+										>
+											{isRequestingDeletion ? (
+												<>
+													<div className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin mr-2" />
+													Requesting…
+												</>
+											) : (
+												"Confirm deletion request"
+											)}
+										</Button>
+									</div>
+								</div>
+							</DialogContent>
+						</DialogRoot>
 					</>
 				)}
 			</CardContent>

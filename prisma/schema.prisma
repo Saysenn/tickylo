@@ -136,7 +136,14 @@ model User {
   name          String?
   avatar_url    String?
   role          String?
-  timezone      String?  // personal display timezone, e.g. "Asia/Manila"
+  timezone      String?   // personal display timezone, e.g. "Asia/Manila"
+  deleted_at    DateTime? // soft-delete: set on deletion request, hard-deleted by cron after grace period
+
+  // GDPR consent — recorded at registration
+  accepted_privacy_at DateTime?
+  accepted_terms_at   DateTime?
+  privacy_version     String?
+  terms_version       String?
 
   TimeEntries              TimeEntry[]
   createdTickets           Ticket[]          @relation("TaskCreatedBy")
@@ -156,6 +163,7 @@ model User {
   transferRequestsMade     TransferRequest[] @relation("TransferRequester")
   transferRequestsReviewed TransferRequest[] @relation("TransferReviewer")
   transferRequestsTargeted TransferRequest[] @relation("TransferTarget")
+  deletionRequest          DeletionRequest?
 
   created_at DateTime      @default(now())
   updated_at DateTime      @updatedAt
@@ -165,6 +173,20 @@ model User {
   @@index([org_id])
   @@index([department_id])
   @@map("users")
+}
+
+model DeletionRequest {
+  id            String    @id @default(cuid())
+  user_id       String    @unique
+  requested_at  DateTime  @default(now())
+  scheduled_for DateTime
+  status        String    @default("pending") // pending | completed | cancelled
+  completed_at  DateTime?
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([status, scheduled_for])
+  @@map("deletion_requests")
 }
 
 model Department {

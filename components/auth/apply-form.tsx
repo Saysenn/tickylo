@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Building2, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PasswordInput } from "@/components/ui/password-input";
@@ -20,6 +21,8 @@ export function ApplyForm() {
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState("");
 	const [submitted, setSubmitted] = useState(false);
+	const [acceptedPrivacy, setAcceptedPrivacy] = useState(false);
+	const [acceptedTerms, setAcceptedTerms] = useState(false);
 
 	function set(field: string, value: string) {
 		setForm((prev) => ({ ...prev, [field]: value }));
@@ -36,7 +39,7 @@ export function ApplyForm() {
 
 		setLoading(true);
 		try {
-			await APIService.org.apply(form);
+			await APIService.org.apply({ ...form, accepted_privacy: true, accepted_terms: true });
 			setSubmitted(true);
 		} catch (err: any) {
 			setError(err?.response?.data?.error ?? "Something went wrong. Please try again.");
@@ -153,11 +156,40 @@ export function ApplyForm() {
 					/>
 				</div>
 
+				<div className="space-y-2.5 pt-1">
+					<label className="flex items-start gap-2.5 cursor-pointer">
+						<Checkbox
+							checked={acceptedPrivacy}
+							onCheckedChange={setAcceptedPrivacy}
+							className="mt-0.5"
+						/>
+						<span className="text-xs text-ink-3 leading-relaxed">
+							I agree to the{" "}
+							<a href="/privacy" target="_blank" rel="noopener noreferrer" className="text-mint hover:underline">
+								Privacy Policy
+							</a>
+						</span>
+					</label>
+					<label className="flex items-start gap-2.5 cursor-pointer">
+						<Checkbox
+							checked={acceptedTerms}
+							onCheckedChange={setAcceptedTerms}
+							className="mt-0.5"
+						/>
+						<span className="text-xs text-ink-3 leading-relaxed">
+							I agree to the{" "}
+							<a href="/terms" target="_blank" rel="noopener noreferrer" className="text-mint hover:underline">
+								Terms of Service
+							</a>
+						</span>
+					</label>
+				</div>
+
 				{error && (
 					<p className="text-xs text-red-500 bg-red-500/10 px-3 py-2 rounded-lg">{error}</p>
 				)}
 
-				<Button type="submit" className="w-full" isLoading={loading}>
+				<Button type="submit" className="w-full" isLoading={loading} disabled={!acceptedPrivacy || !acceptedTerms}>
 					Submit Application
 				</Button>
 			</form>

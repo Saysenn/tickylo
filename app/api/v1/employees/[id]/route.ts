@@ -4,6 +4,7 @@ import { ROLES } from "@/configs/rbac.config";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/auth/require-admin";
 import * as EmployeeService from "@/services/employees.service";
+import { auditLog } from "@/lib/utils/audit";
 
 const updateEmployeeSchema = z.object({
 	name: z.string().min(2).max(100).optional(),
@@ -32,6 +33,16 @@ export async function GET(
 
 		const { id } = await params;
 		const employee = await EmployeeService.getEmployee(id, caller);
+
+		auditLog({
+			org_id: caller.app_metadata?.org_id,
+			actor_id: caller.id,
+			actor_role: caller.app_metadata?.role ?? "admin",
+			action: "READ",
+			entity_type: "employee",
+			entity_id: id,
+		});
+
 		return ok(employee);
 	} catch (err: any) {
 		if (err.status) return errorResponse(err.message, err.status);
@@ -54,7 +65,20 @@ export async function PATCH(
 		if (!validated.success)
 			return errorResponse(validated.error.issues[0]?.message ?? "Invalid input", 400);
 
+		const before = await EmployeeService.getEmployee(id, caller);
 		const result = await EmployeeService.updateEmployee(id, caller, validated.data);
+
+		auditLog({
+			org_id: caller.app_metadata?.org_id,
+			actor_id: caller.id,
+			actor_role: caller.app_metadata?.role ?? "admin",
+			action: "UPDATE",
+			entity_type: "employee",
+			entity_id: id,
+			before: before as object,
+			after: validated.data as object,
+		});
+
 		return ok(result);
 	} catch (err: any) {
 		if (err.status) return errorResponse(err.message, err.status);
@@ -72,7 +96,19 @@ export async function DELETE(
 		if (!caller) return errorResponse("Forbidden", 403);
 
 		const { id } = await params;
+		const snapshot = await EmployeeService.getEmployee(id, caller);
 		await EmployeeService.deleteEmployee(id, caller);
+
+		auditLog({
+			org_id: caller.app_metadata?.org_id,
+			actor_id: caller.id,
+			actor_role: caller.app_metadata?.role ?? "admin",
+			action: "DELETE",
+			entity_type: "employee",
+			entity_id: id,
+			before: snapshot as object,
+		});
+
 		return ok({ success: true });
 	} catch (err: any) {
 		if (err.status) return errorResponse(err.message, err.status);

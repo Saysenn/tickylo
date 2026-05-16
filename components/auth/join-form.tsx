@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Users, CheckCircle2, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import APIService from "@/lib/infra/api";
@@ -16,6 +17,8 @@ export function JoinForm() {
 	const [form, setForm] = useState({ name: "", email: "", password: "" });
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState("");
+	const [acceptedPrivacy, setAcceptedPrivacy] = useState(false);
+	const [acceptedTerms, setAcceptedTerms] = useState(false);
 
 	function setField(field: string, value: string) {
 		setForm((prev) => ({ ...prev, [field]: value }));
@@ -41,7 +44,7 @@ export function JoinForm() {
 		setError("");
 		setLoading(true);
 		try {
-			await APIService.org.join({ org_join_code: code, ...form });
+			await APIService.org.join({ org_join_code: code, ...form, accepted_privacy: true, accepted_terms: true });
 			setStep("success");
 		} catch (err: any) {
 			setError(err?.response?.data?.error ?? "Something went wrong. Please try again.");
@@ -140,6 +143,35 @@ export function JoinForm() {
 						/>
 					</div>
 
+					<div className="space-y-2.5 pt-1">
+						<label className="flex items-start gap-2.5 cursor-pointer">
+							<Checkbox
+								checked={acceptedPrivacy}
+								onCheckedChange={setAcceptedPrivacy}
+								className="mt-0.5"
+							/>
+							<span className="text-xs text-ink-3 leading-relaxed">
+								I agree to the{" "}
+								<a href="/privacy" target="_blank" rel="noopener noreferrer" className="text-mint hover:underline">
+									Privacy Policy
+								</a>
+							</span>
+						</label>
+						<label className="flex items-start gap-2.5 cursor-pointer">
+							<Checkbox
+								checked={acceptedTerms}
+								onCheckedChange={setAcceptedTerms}
+								className="mt-0.5"
+							/>
+							<span className="text-xs text-ink-3 leading-relaxed">
+								I agree to the{" "}
+								<a href="/terms" target="_blank" rel="noopener noreferrer" className="text-mint hover:underline">
+									Terms of Service
+								</a>
+							</span>
+						</label>
+					</div>
+
 					{error && (
 						<p className="text-xs text-red-500 bg-red-500/10 px-3 py-2 rounded-lg">{error}</p>
 					)}
@@ -148,7 +180,7 @@ export function JoinForm() {
 						<Button type="button" variant="ghost" className="flex-1" onClick={() => { setStep("code"); setError(""); }}>
 							Back
 						</Button>
-						<Button type="submit" className="flex-1" isLoading={loading}>
+						<Button type="submit" className="flex-1" isLoading={loading} disabled={!acceptedPrivacy || !acceptedTerms}>
 							Request Access
 						</Button>
 					</div>

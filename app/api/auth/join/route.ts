@@ -5,12 +5,15 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { ok, errorResponse } from "@/lib/utils/response";
 import { sendEmail } from "@/lib/email/send";
 import { employeeJoinRequestEmail } from "@/lib/email/templates";
+import { GDPR } from "@/configs/gdpr.config";
 
 const schema = z.object({
-	org_join_code: z.string().min(1),
-	name:          z.string().min(2).max(100),
-	email:         z.string().email(),
-	password:      z.string().min(8),
+	org_join_code:    z.string().min(1),
+	name:             z.string().min(2).max(100),
+	email:            z.string().email(),
+	password:         z.string().min(8),
+	accepted_privacy: z.literal(true),
+	accepted_terms:   z.literal(true),
 });
 
 export async function POST(request: NextRequest) {
@@ -53,7 +56,17 @@ export async function POST(request: NextRequest) {
 		await prisma.user.upsert({
 			where: { id: userId },
 			update: { org_id: org.id, role: "employee", name },
-			create: { id: userId, email, name, org_id: org.id, role: "employee" },
+			create: {
+				id: userId,
+				email,
+				name,
+				org_id: org.id,
+				role: "employee",
+				accepted_privacy_at: new Date(),
+				accepted_terms_at: new Date(),
+				privacy_version: GDPR.privacyPolicyVersion,
+				terms_version: GDPR.termsVersion,
+			},
 		});
 
 		// Create join request for admin to approve

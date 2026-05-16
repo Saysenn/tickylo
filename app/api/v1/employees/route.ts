@@ -4,6 +4,7 @@ import { ROLES } from "@/configs/rbac.config";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/auth/require-admin";
 import * as EmployeeService from "@/services/employees.service";
+import { auditLog } from "@/lib/utils/audit";
 
 const createEmployeeSchema = z.object({
 	name: z.string().min(2).max(100),
@@ -43,6 +44,17 @@ export async function POST(request: NextRequest) {
 			return errorResponse(validated.error.issues[0]?.message ?? "Invalid input", 400);
 
 		const employee = await EmployeeService.createEmployee(caller, validated.data);
+
+		auditLog({
+			org_id: caller.app_metadata?.org_id,
+			actor_id: caller.id,
+			actor_role: caller.app_metadata?.role ?? "admin",
+			action: "CREATE",
+			entity_type: "employee",
+			entity_id: employee.id,
+			after: { email: validated.data.email, role: validated.data.role },
+		});
+
 		return ok(employee, 201);
 	} catch (err: any) {
 		if (err.status) return errorResponse(err.message, err.status);

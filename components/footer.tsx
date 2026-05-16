@@ -64,13 +64,15 @@ export default function Footer() {
         <Separator className="bg-white/10 mb-6" />
 
         {/* Bottom bar */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-2">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
           <p className="text-[10px] text-white/25 tracking-[0.14em] uppercase">
             © 2026 Tickworks. All Rights Reserved.
           </p>
-          <p className="text-[10px] text-white/25 tracking-[0.14em] uppercase">
-            Built for Agencies — Powered by AI
-          </p>
+          <div className="flex items-center gap-5">
+            <a href="/privacy" className="text-[10px] text-white/35 hover:text-white/60 transition-colors tracking-[0.12em] uppercase">Privacy Policy</a>
+            <a href="/terms" className="text-[10px] text-white/35 hover:text-white/60 transition-colors tracking-[0.12em] uppercase">Terms</a>
+            <a href="/cookies" className="text-[10px] text-white/35 hover:text-white/60 transition-colors tracking-[0.12em] uppercase">Cookie Policy</a>
+          </div>
         </div>
 
       </div>

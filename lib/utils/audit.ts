@@ -20,14 +20,17 @@ export interface AuditParams {
 		| "STALE"
 		| "CANCEL"
 		| "SUBMIT"
-		| "MERGE";
+		| "MERGE"
+		| "EXPORT";
 	entity_type:
 		| "ticket"
 		| "employee"
 		| "leave_request"
 		| "time_entry"
 		| "department"
-		| "org_application";
+		| "org_application"
+		| "data_export"
+		| "deletion_request";
 	entity_id: string;
 	before?: object;
 	after?: object;

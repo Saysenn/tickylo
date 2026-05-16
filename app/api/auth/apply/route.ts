@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/infra/prisma";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ok, errorResponse } from "@/lib/utils/response";
+import { GDPR } from "@/configs/gdpr.config";
 
 const BLOCKED_EMAILS = ["laudzioncascalla01@gmail.com"];
 
@@ -13,6 +14,8 @@ const schema = z.object({
 	password:         z.string().min(8),
 	confirm_password: z.string().min(8),
 	reason:           z.string().max(1000).optional(),
+	accepted_privacy: z.literal(true),
+	accepted_terms:   z.literal(true),
 });
 
 export async function POST(request: NextRequest) {
@@ -73,6 +76,10 @@ export async function POST(request: NextRequest) {
 				email: admin_email,
 				name: admin_name,
 				role: "admin",
+				accepted_privacy_at: new Date(),
+				accepted_terms_at: new Date(),
+				privacy_version: GDPR.privacyPolicyVersion,
+				terms_version: GDPR.termsVersion,
 			},
 			update: {},
 		});
