@@ -386,6 +386,7 @@ class APIService {
 			shift_end: string;
 			working_days: number[];
 			daily_cap_h: number;
+			max_timer_hours: number | null;
 		}) => axiosService.put(`${apiVersion}/work-schedule`, data),
 	};
 

@@ -79,7 +79,7 @@ export async function GET(request: NextRequest) {
 		}
 	}
 
-	// ── 3. Auto-close runaway timers ──────────────────────────────────────────
+	// ── 3. Auto-close timers at shift end ────────────────────────────────────
 	let autoClosed = 0;
 
 	const schedules = await prisma.workSchedule.findMany();
@@ -107,19 +107,48 @@ export async function GET(request: NextRequest) {
 
 			await prisma.timeEntry.update({
 				where: { id: entry.id },
-				data: {
-					end_time: shiftEndUtc,
-					auto_closed: true,
-					flagged,
-				},
+				data: { end_time: shiftEndUtc, auto_closed: true, flagged },
 			});
 
-			// Notify the employee their timer was auto-closed
 			await createNotification({
 				user_id: entry.user_id,
 				type: "timer_auto_closed",
 				title: "Timer auto-closed",
 				body: "Your timer was automatically stopped at the end of your shift.",
+				link: `/dashboard/time-tracker`,
+			}).catch(() => {});
+
+			autoClosed++;
+		}
+	}
+
+	// ── 4. Auto-close timers exceeding max_timer_hours ────────────────────────
+	const schedulesWithCap = schedules.filter((s) => s.max_timer_hours != null);
+
+	for (const schedule of schedulesWithCap) {
+		const maxMs = schedule.max_timer_hours! * 3600 * 1000;
+		const cutoff = new Date(now.getTime() - maxMs);
+
+		// Only entries that started before the cutoff and haven't been closed yet
+		const overdueEntries = await prisma.timeEntry.findMany({
+			where: {
+				org_id: schedule.org_id,
+				end_time: null,
+				start_time: { lte: cutoff },
+			},
+		});
+
+		for (const entry of overdueEntries) {
+			await prisma.timeEntry.update({
+				where: { id: entry.id },
+				data: { end_time: now, auto_closed: true, flagged: true },
+			});
+
+			await createNotification({
+				user_id: entry.user_id,
+				type: "timer_auto_closed",
+				title: "Timer auto-closed",
+				body: `Your timer ran for more than ${schedule.max_timer_hours}h and was automatically stopped.`,
 				link: `/dashboard/time-tracker`,
 			}).catch(() => {});
 

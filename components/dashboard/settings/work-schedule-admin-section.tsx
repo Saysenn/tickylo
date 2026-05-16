@@ -18,6 +18,7 @@ interface WorkSchedule {
 	shift_end: string;
 	working_days: number[];
 	daily_cap_h: number;
+	max_timer_hours: number | null;
 }
 
 export function WorkScheduleAdminSection() {
@@ -25,7 +26,7 @@ export function WorkScheduleAdminSection() {
 	const { data, isLoading } = useQuery<WorkSchedule | null>({
 		queryKey: ["work-schedule"],
 		queryFn: () => APIService.workSchedule.get(),
-		staleTime: 600_000, // 10 min — only changes when admin saves
+		staleTime: 600_000,
 	});
 
 	const [timezone, setTimezone] = useState("UTC");
@@ -33,6 +34,8 @@ export function WorkScheduleAdminSection() {
 	const [shiftEnd, setShiftEnd] = useState("17:00");
 	const [workingDays, setWorkingDays] = useState<number[]>([1, 2, 3, 4, 5]);
 	const [dailyCap, setDailyCap] = useState(8);
+	const [maxTimerEnabled, setMaxTimerEnabled] = useState(false);
+	const [maxTimerHours, setMaxTimerHours] = useState(12);
 	const [success, setSuccess] = useState(false);
 	const [error, setError] = useState("");
 
@@ -43,6 +46,8 @@ export function WorkScheduleAdminSection() {
 			setShiftEnd(data.shift_end);
 			setWorkingDays(data.working_days);
 			setDailyCap(data.daily_cap_h);
+			setMaxTimerEnabled(data.max_timer_hours != null);
+			setMaxTimerHours(data.max_timer_hours ?? 12);
 		}
 	}, [data]);
 
@@ -53,6 +58,7 @@ export function WorkScheduleAdminSection() {
 			shift_end: shiftEnd,
 			working_days: workingDays,
 			daily_cap_h: dailyCap,
+			max_timer_hours: maxTimerEnabled ? maxTimerHours : null,
 		}),
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ["work-schedule"] });
@@ -133,6 +139,47 @@ export function WorkScheduleAdminSection() {
 					/>
 					<p className="text-[10px] text-ink-3">Timers longer than 1.5× this are flagged for review.</p>
 				</div>
+			</div>
+
+			{/* Auto-close after max hours */}
+			<div className="rounded-lg border border-border/60 bg-accent/20 px-4 py-3 space-y-3">
+				<div className="flex items-center justify-between gap-4">
+					<div>
+						<p className="text-xs font-semibold text-ink">Auto-close after max hours</p>
+						<p className="text-[11px] text-ink-3 mt-0.5">
+							Automatically stop any timer running longer than the limit, regardless of shift schedule.
+						</p>
+					</div>
+					<button
+						type="button"
+						onClick={() => setMaxTimerEnabled((v) => !v)}
+						className={cn(
+							"relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors",
+							maxTimerEnabled ? "bg-mint" : "bg-border",
+						)}
+					>
+						<span
+							className={cn(
+								"pointer-events-none inline-block h-4 w-4 rounded-full bg-white shadow-sm transition-transform",
+								maxTimerEnabled ? "translate-x-4" : "translate-x-0",
+							)}
+						/>
+					</button>
+				</div>
+				{maxTimerEnabled && (
+					<div className="flex items-center gap-3">
+						<Input
+							type="number"
+							min={1}
+							max={72}
+							step={1}
+							value={maxTimerHours}
+							onChange={(e) => setMaxTimerHours(parseInt(e.target.value, 10))}
+							className="h-9 text-sm w-28"
+						/>
+						<span className="text-xs text-ink-3">hours maximum per timer</span>
+					</div>
+				)}
 			</div>
 
 			{/* Working days */}

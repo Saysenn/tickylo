@@ -9,6 +9,7 @@ export interface WorkScheduleInput {
 	shift_end: string;
 	working_days: number[];
 	daily_cap_h: number;
+	max_timer_hours: number | null;
 }
 
 export async function getWorkSchedule(orgId: string): Promise<WorkSchedule | null> {

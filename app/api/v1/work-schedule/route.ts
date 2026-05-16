@@ -10,6 +10,7 @@ const workScheduleSchema = z.object({
 	shift_end: z.string().regex(/^\d{2}:\d{2}$/),
 	working_days: z.array(z.number().int().min(0).max(6)).min(1),
 	daily_cap_h: z.number().min(0.5).max(24),
+	max_timer_hours: z.number().min(1).max(72).nullable().default(null),
 });
 
 // GET — any authenticated user (employees need read-only view)

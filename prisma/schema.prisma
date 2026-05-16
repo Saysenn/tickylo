@@ -49,9 +49,10 @@ model WorkSchedule {
   timezone     String   @default("UTC")
   shift_start  String   @default("09:00")
   shift_end    String   @default("17:00")
-  working_days Int[]    @default([1,2,3,4,5])
-  daily_cap_h  Float    @default(8)
-  created_at   DateTime @default(now())
+  working_days    Int[]    @default([1,2,3,4,5])
+  daily_cap_h     Float    @default(8)
+  max_timer_hours Float?   // null = disabled; auto-closes any timer running longer than this many hours
+  created_at      DateTime @default(now())
   updated_at   DateTime @updatedAt
 
   org Organization @relation(fields: [org_id], references: [id], onDelete: Cascade)
