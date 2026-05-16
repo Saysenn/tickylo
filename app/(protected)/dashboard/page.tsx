@@ -3,6 +3,7 @@
 import { useAppSelector } from "@/store/hooks";
 import { AdminDashboard } from "@/components/dashboard/dashboard/admin-dashboard";
 import { EmployeeDashboard } from "@/components/dashboard/dashboard/employee-dashboard";
+import { LoginNotices } from "@/components/dashboard/login-notices";
 
 export default function DashboardPage() {
 	const user = useAppSelector((s) => s.auth.user);
@@ -30,6 +31,8 @@ export default function DashboardPage() {
 						: "Your tasks, time, and activity at a glance."}
 				</p>
 			</div>
+
+			<LoginNotices />
 
 			{isAdmin ? <AdminDashboard /> : <EmployeeDashboard />}
 		</div>
