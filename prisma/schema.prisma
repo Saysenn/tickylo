@@ -14,13 +14,14 @@ datasource db {
 // ─── Multi-tenancy ───────────────────────────────────────────────────────────
 
 model Organization {
-  id            String   @id @default(cuid())
-  name          String
-  slug          String   @unique
-  logo_url      String?
-  org_join_code String   @unique @default(cuid())
-  created_at    DateTime @default(now())
-  updated_at    DateTime @updatedAt
+  id                  String   @id @default(cuid())
+  name                String
+  slug                String   @unique
+  logo_url            String?
+  org_join_code       String   @unique @default(cuid())
+  attachments_enabled Boolean  @default(true)
+  created_at          DateTime @default(now())
+  updated_at          DateTime @updatedAt
 
   users         User[]
   join_requests UserJoinRequest[]

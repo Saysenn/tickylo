@@ -55,12 +55,12 @@ export function TimezoneSection() {
 					<Globe className="w-4 h-4 text-mint" />
 				</div>
 				<div>
-					<h2 className="text-sm font-semibold text-ink">Your Timezone</h2>
-					<p className="text-xs text-ink-3 mt-0.5">Used to display times in your local timezone.</p>
+					<h2 className="text-xs font-semibold text-ink">Your Timezone</h2>
+					<p className="text-[11px] text-ink-3 mt-0.5">Used to display times in your local timezone.</p>
 				</div>
 			</div>
 
-			<div className="space-y-1.5 max-w-xs">
+			<div className="space-y-1.5 max-w-sm">
 				<Label className="text-xs">Display Timezone</Label>
 				<SelectRoot value={timezone} onValueChange={setTimezone}>
 					<SelectTrigger className="h-9 text-sm">

@@ -77,13 +77,13 @@ export function WorkScheduleAdminSection() {
 	return (
 		<div className="rounded-xl border bg-background p-6 space-y-5">
 			<div>
-				<h2 className="text-sm font-semibold text-ink">Work Schedule</h2>
-				<p className="text-xs text-ink-3 mt-0.5">Set the org-wide shift hours and working days. Used to auto-close forgotten timers.</p>
+				<h2 className="text-xs font-semibold text-ink">Work Schedule</h2>
+				<p className="text-[11px] text-ink-3 mt-0.5">Set the org-wide shift hours and working days. Used to auto-close forgotten timers.</p>
 			</div>
 
-			<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+			<div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
 				{/* Timezone */}
-				<div className="sm:col-span-2 space-y-1.5">
+				<div className="sm:col-span-3 space-y-1.5">
 					<Label className="text-xs">Org Timezone</Label>
 					<SelectRoot value={timezone} onValueChange={setTimezone}>
 						<SelectTrigger className="h-9 text-sm">

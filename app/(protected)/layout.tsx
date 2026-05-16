@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { DashboardShell } from "@/components/dashboard/shell";
 import AppProvider from "@/providers/app-provider";
 import UserProvider from "@/providers/user-provider";
+import { OrgSettingsProvider } from "@/providers/org-settings-provider";
 import { prisma } from "@/lib/infra/prisma";
 import type { UserProfile } from "@/types";
 
@@ -42,9 +43,11 @@ export default async function ProtectedLayout({
   return (
     <AppProvider>
       <UserProvider user={userProfile}>
-        <DashboardShell user={userProfile} orgName={org?.name ?? null}>
-          {children}
-        </DashboardShell>
+        <OrgSettingsProvider>
+          <DashboardShell user={userProfile} orgName={org?.name ?? null}>
+            {children}
+          </DashboardShell>
+        </OrgSettingsProvider>
       </UserProvider>
     </AppProvider>
   );

@@ -41,12 +41,39 @@ interface UserMeta {
 	personal_leave: number | null;
 }
 
-const VISA_STATUS_OPTIONS = [
-	{ value: "valid", label: "Valid" },
-	{ value: "expired", label: "Expired" },
-	{ value: "pending", label: "Pending" },
-	{ value: "not_applicable", label: "Not applicable" },
+const COUNTRY_CODES = [
+	{ code: "+63", flag: "🇵🇭", name: "PH" },
+	{ code: "+1",  flag: "🇺🇸", name: "US" },
+	{ code: "+44", flag: "🇬🇧", name: "GB" },
+	{ code: "+61", flag: "🇦🇺", name: "AU" },
+	{ code: "+64", flag: "🇳🇿", name: "NZ" },
+	{ code: "+65", flag: "🇸🇬", name: "SG" },
+	{ code: "+60", flag: "🇲🇾", name: "MY" },
+	{ code: "+62", flag: "🇮🇩", name: "ID" },
+	{ code: "+66", flag: "🇹🇭", name: "TH" },
+	{ code: "+84", flag: "🇻🇳", name: "VN" },
+	{ code: "+82", flag: "🇰🇷", name: "KR" },
+	{ code: "+81", flag: "🇯🇵", name: "JP" },
+	{ code: "+86", flag: "🇨🇳", name: "CN" },
+	{ code: "+852", flag: "🇭🇰", name: "HK" },
+	{ code: "+91", flag: "🇮🇳", name: "IN" },
+	{ code: "+971", flag: "🇦🇪", name: "AE" },
+	{ code: "+966", flag: "🇸🇦", name: "SA" },
+	{ code: "+49", flag: "🇩🇪", name: "DE" },
+	{ code: "+33", flag: "🇫🇷", name: "FR" },
+	{ code: "+39", flag: "🇮🇹", name: "IT" },
+	{ code: "+34", flag: "🇪🇸", name: "ES" },
+	{ code: "+31", flag: "🇳🇱", name: "NL" },
+	{ code: "+1-CA", flag: "🇨🇦", name: "CA" },
 ];
+
+function parsePhone(raw: string): { dialCode: string; local: string } {
+	for (const c of COUNTRY_CODES) {
+		const code = c.code.replace("-CA", "");
+		if (raw.startsWith(code)) return { dialCode: c.code, local: raw.slice(code.length).trim() };
+	}
+	return { dialCode: "+63", local: raw };
+}
 
 export function ProfileMetaSection() {
 	const queryClient = useQueryClient();
@@ -56,36 +83,32 @@ export function ProfileMetaSection() {
 		queryFn: () => APIService.users.getMeta(),
 	});
 
-	const [phone, setPhone] = useState("");
+	const [dialCode, setDialCode] = useState("+63");
+	const [localPhone, setLocalPhone] = useState("");
 	const [dob, setDob] = useState("");
 	const [address, setAddress] = useState("");
-	const [passportNumber, setPassportNumber] = useState("");
-	const [visaStatus, setVisaStatus] = useState("");
-	const [visaExpiry, setVisaExpiry] = useState("");
 
 	const [successMsg, setSuccessMsg] = useState<string | null>(null);
 	const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
 	useEffect(() => {
 		if (meta) {
-			setPhone(meta.phone ?? "");
+			const parsed = parsePhone(meta.phone ?? "");
+			setDialCode(parsed.dialCode);
+			setLocalPhone(parsed.local);
 			setDob(toDateInput(meta.dob));
 			setAddress(meta.address ?? "");
-			setPassportNumber(meta.passport_number ?? "");
-			setVisaStatus(meta.visa_status ?? "");
-			setVisaExpiry(toDateInput(meta.visa_expiry));
 		}
 	}, [meta]);
+
+	const fullPhone = localPhone ? `${dialCode.replace("-CA", "")}${localPhone}` : undefined;
 
 	const { mutate, isPending } = useMutation({
 		mutationFn: () =>
 			APIService.users.updateMeta({
-				phone: phone || undefined,
+				phone: fullPhone,
 				dob: dob || undefined,
 				address: address || undefined,
-				passport_number: passportNumber || undefined,
-				visa_status: visaStatus || undefined,
-				visa_expiry: visaExpiry || undefined,
 			}),
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ["user-meta"] });
@@ -112,12 +135,12 @@ export function ProfileMetaSection() {
 		<Card>
 			<CardHeader>
 				<div className="flex items-center gap-3">
-					<div className="w-9 h-9 rounded-xl bg-mint/15 flex items-center justify-center shrink-0">
-						<ClipboardList className="w-4 h-4 text-ink-2" />
+					<div className="w-8 h-8 rounded-lg bg-mint/15 flex items-center justify-center shrink-0">
+						<ClipboardList className="w-3.5 h-3.5 text-ink-2" />
 					</div>
 					<div>
-						<CardTitle className="text-base">Personal Information</CardTitle>
-						<CardDescription>
+						<CardTitle className="text-sm">Personal Information</CardTitle>
+						<CardDescription className="text-xs">
 							Keep your contact and travel details up to date.
 						</CardDescription>
 					</div>

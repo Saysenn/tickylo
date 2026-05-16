@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils/cn";
 import { ROLES } from "@/configs/rbac.config";
 import { RichTextEditor, type AttachmentPreview } from "@/components/ui/rich-text-editor";
+import { useOrgSettings } from "@/providers/org-settings-provider";
 
 const FIXED_EMOJIS = ["👍", "❤️", "😂", "😮", "😢", "🔥"];
 const COMMENT_DELETE_WINDOW_MS = 5 * 60 * 1000;
@@ -126,6 +127,7 @@ export function TaskThread({ taskId, taskCreatedBy, view, readOnly = false }: Ta
 	const queryClient = useQueryClient();
 	const user = useAppSelector((s) => s.auth.user);
 	const isAdmin = user?.role === ROLES.ADMIN;
+	const { attachments_enabled } = useOrgSettings();
 	const isCreator = user?.id === taskCreatedBy;
 	const canClearAll = isAdmin || isCreator;
 
@@ -339,6 +341,12 @@ export function TaskThread({ taskId, taskCreatedBy, view, readOnly = false }: Ta
 			{/* Compose */}
 			{view !== "activity" && !readOnly && (
 				<form onSubmit={handleSubmit} className="pt-2 border-t border-border/30">
+					{!attachments_enabled && (
+						<div className="flex items-center gap-2 rounded-lg bg-accent/50 border border-border/40 px-3 py-2 mb-2">
+							<Paperclip className="w-3.5 h-3.5 text-ink-3 shrink-0" />
+							<p className="text-xs text-ink-3">File attachments are disabled by your admin.</p>
+						</div>
+					)}
 					{error && <p className="text-xs text-destructive mb-2">{error}</p>}
 					{storageWarning && <p className="text-xs text-amber-600 mb-2">{storageWarning}</p>}
 					<div className="flex items-start gap-2.5">
@@ -350,7 +358,7 @@ export function TaskThread({ taskId, taskCreatedBy, view, readOnly = false }: Ta
 							<RichTextEditor
 								value={draft}
 								onChange={setDraft}
-								onAttach={handleAttach}
+								onAttach={attachments_enabled ? handleAttach : undefined}
 								placeholder="Add a comment… (use the toolbar to format)"
 								attachments={pendingAttachments}
 								onDeleteAttachment={(id) => deleteAttachment(id)}

@@ -320,6 +320,14 @@ class APIService {
 	};
 
 	// ---------------------------------------------------------------------------
+	// Org Settings
+	// ---------------------------------------------------------------------------
+	public orgSettings = {
+		get: () => axiosService.get<{ attachments_enabled: boolean }>(`${apiVersion}/org/settings`),
+		update: (data: { attachments_enabled: boolean }) => axiosService.patch(`${apiVersion}/org/settings`, data),
+	};
+
+	// ---------------------------------------------------------------------------
 	// Storage Config (admin only)
 	// ---------------------------------------------------------------------------
 	public orgStorage = {

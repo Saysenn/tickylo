@@ -13,6 +13,7 @@ import CodeBlockLowlight from "@tiptap/extension-code-block-lowlight";
 import { common, createLowlight } from "lowlight";
 import { useCallback, useRef, useEffect, useState } from "react";
 import { cn } from "@/lib/utils/cn";
+import { useOrgSettings } from "@/providers/org-settings-provider";
 import {
 	Bold, Italic, Underline as UnderlineIcon, Strikethrough,
 	Heading1, Heading2, Heading3,
@@ -92,6 +93,7 @@ export function RichTextEditor({
 	className,
 	minHeight = 80,
 }: RichTextEditorProps) {
+	const { attachments_enabled } = useOrgSettings();
 	const fileInputRef = useRef<HTMLInputElement>(null);
 
 	const editor = useEditor({
@@ -143,6 +145,12 @@ export function RichTextEditor({
 		if (files.length && onAttach) onAttach(files);
 		e.target.value = "";
 	}, [onAttach]);
+
+	const handlePaste = useCallback((e: React.ClipboardEvent) => {
+		if (!attachments_enabled && e.clipboardData.files.length > 0) {
+			e.preventDefault();
+		}
+	}, [attachments_enabled]);
 
 	const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
 
@@ -254,7 +262,7 @@ export function RichTextEditor({
 					<LinkIcon className="w-3 h-3" />
 				</ToolbarButton>
 
-				{onAttach && (
+				{onAttach && attachments_enabled && (
 					<>
 						<Divider />
 						<ToolbarButton onClick={() => fileInputRef.current?.click()} title="Attach file">
@@ -277,6 +285,7 @@ export function RichTextEditor({
 				className="px-3 py-2 cursor-text prose prose-sm max-w-none text-ink text-xs leading-relaxed [&_.ProseMirror]:outline-none [&_.ProseMirror_p.is-editor-empty:first-child::before]:content-[attr(data-placeholder)] [&_.ProseMirror_p.is-editor-empty:first-child::before]:text-ink-3/50 [&_.ProseMirror_p.is-editor-empty:first-child::before]:pointer-events-none [&_.ProseMirror_p.is-editor-empty:first-child::before]:float-left [&_.ProseMirror_p.is-editor-empty:first-child::before]:h-0 [&_a]:text-mint [&_a]:underline [&_code]:bg-accent/60 [&_code]:px-1 [&_code]:rounded [&_pre]:bg-accent/60 [&_pre]:rounded-lg [&_pre]:p-3 [&_img]:w-40 [&_img]:h-28 [&_img]:object-cover [&_img]:rounded-lg [&_img]:my-1 [&_img]:inline-block"
 				style={{ minHeight }}
 				onClick={() => editor?.commands.focus()}
+				onPaste={handlePaste}
 			>
 				<EditorContent editor={editor} />
 			</div>
