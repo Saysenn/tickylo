@@ -102,9 +102,84 @@ Tickworks is a hybrid of:
 1. **Stripe** — subscription plans, billing portal, org plan gating
 2. **SMS → ticket** — Twilio inbound webhook, parse message → create ticket, notify admin
 3. **Email → ticket** — inbound email webhook (Resend or SendGrid), parse → ticket
-4. **QR org joining** — generate QR from org join code, scannable on mobile
-5. **Browser extension** — see `docs/BROWSER-EXTENSION-PLAN.md`
-6. **Department hierarchy** — see below
+4. **AI ticket assistance** — see below
+5. **QR org joining** — generate QR from org join code, scannable on mobile
+6. **Browser extension** — see `docs/BROWSER-EXTENSION-PLAN.md`
+7. **Department hierarchy** — see below
+
+---
+
+## AI Integration (Next Update)
+
+### Why
+Ticket creation is the most repeated action in the system. AI can remove the friction of filling in fields — user describes the work in plain language, AI structures it into a proper ticket.
+
+### Provider options (TBD)
+- **Anthropic Claude API** — best for understanding context and generating structured output
+- **OpenAI GPT-4o** — widely used, good for structured JSON output
+- **Vercel AI SDK** — provider-agnostic wrapper, works with both, easy to plug into Next.js API routes
+
+Decision can be made at build time. The integration pattern is the same regardless of provider.
+
+### What AI does in the ticket flow
+
+**1. Smart ticket creation (dashboard)**
+User types a short plain-text description in a new field on the ticket form:
+```
+"Fix the login bug on Safari where the session expires after 5 minutes"
+```
+AI returns structured output:
+```json
+{
+  "title": "Fix Safari session expiry bug on login",
+  "description": "Users on Safari are being logged out after 5 minutes due to premature session expiry. Investigate cookie handling and session persistence on Safari browsers.",
+  "priority": "high",
+  "ticket_type": "bug",
+  "estimated_hours": 3
+}
+```
+Fields auto-fill in the form. User reviews, adjusts if needed, submits.
+
+**2. SMS → ticket AI parsing (Enterprise)**
+Inbound SMS message arrives raw:
+```
+"hey the website checkout is broken again, customers cant pay"
+```
+AI structures it before saving:
+```json
+{
+  "title": "Checkout broken — customers unable to pay",
+  "description": "Reported via SMS. Website checkout is not functioning, preventing customer payments.",
+  "priority": "critical",
+  "ticket_type": "bug",
+  "source": "sms"
+}
+```
+
+**3. Email → ticket AI parsing (Enterprise)**
+Same pattern — raw email body → structured ticket fields. Extracts title, description, priority, and client name from the email sender and body.
+
+### What AI does NOT do
+- Does not assign tickets (admin/employee decides)
+- Does not close or change ticket status
+- Does not access other tickets or org data
+- Does not send messages on behalf of anyone
+
+### Implementation sketch
+```ts
+// app/api/v1/ai/parse-ticket/route.ts
+// POST { prompt: string, context?: { ticket_types, org_name } }
+// Returns { title, description, priority, ticket_type, estimated_hours }
+
+// Uses: Anthropic Claude or OpenAI via Vercel AI SDK
+// Streamed response optional for dashboard form (real-time field fill)
+// Non-streamed for SMS/email inbound (background processing)
+```
+
+### Where it surfaces in the UI
+- Ticket form → "Describe the work" textarea + "Generate with AI" button
+- Auto-fill animates into the title/description/priority fields
+- User can edit any field before submitting — AI output is a suggestion, not final
 
 ---
 
