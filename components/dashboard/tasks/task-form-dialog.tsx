@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { Combobox } from "@/components/ui/combobox";
 import { cn } from "@/lib/utils/cn";
 import { LinksEditor, type TicketLink } from "./links-editor";
 
@@ -258,19 +259,17 @@ export function TaskFormDialog({
 						{isAdmin && (
 							<div className="space-y-1.5">
 								<Label htmlFor="assigned-to"><FieldOpt>Assign to</FieldOpt></Label>
-								<select
-									id="assigned-to"
+								<Combobox
+									options={[
+										{ value: "", label: "Unassigned" },
+										...employees.map((emp: any) => ({ value: emp.id, label: emp.name ?? emp.email })),
+									]}
 									value={assignedTo}
-									onChange={(e) => setAssignedTo(e.target.value)}
-									className={selectCls}
-								>
-									<option value="">Unassigned</option>
-									{employees.map((emp: any) => (
-										<option key={emp.id} value={emp.id}>
-											{emp.name ?? emp.email}
-										</option>
-									))}
-								</select>
+									onChange={setAssignedTo}
+									placeholder="Unassigned"
+									searchPlaceholder="Search employee…"
+									emptyText="No employees found."
+								/>
 							</div>
 						)}
 					</div>
