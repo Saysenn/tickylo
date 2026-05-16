@@ -34,7 +34,10 @@ function NoticeBanner({ notice }: { notice: Notice }) {
 			<AlertTriangle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
 			<p className="text-xs text-ink flex-1">
 				{notice.message}{" "}
-				<Link href={notice.href} className="font-semibold text-amber-600 underline underline-offset-2 hover:text-amber-500">
+				<Link
+					href={notice.href}
+					className="font-semibold text-amber-600 underline underline-offset-2 hover:text-amber-500"
+				>
 					{notice.linkLabel}
 				</Link>
 			</p>
@@ -54,7 +57,10 @@ export function LoginNotices() {
 	const user = useAppSelector((s) => s.auth.user);
 	const isAdmin = user?.role === "admin";
 
-	const { data: me } = useQuery<{ shift_start: string | null; shift_end: string | null }>({
+	const { data: me } = useQuery<{
+		shift_start: string | null;
+		shift_end: string | null;
+	}>({
 		queryKey: ["user-me-shift"],
 		queryFn: () => APIService.users.getMe(),
 		staleTime: 300_000,
@@ -79,7 +85,8 @@ export function LoginNotices() {
 	if (me !== undefined && (!me?.shift_start || !me?.shift_end)) {
 		notices.push({
 			id: "shift_not_set",
-			message: "You haven't set your personal shift hours. Your timer won't auto-close at shift end.",
+			message:
+				"You haven't set your personal shift hours. Your timer will auto-close at organization shift end.",
 			href: "/dashboard/settings/profile",
 			linkLabel: "Set shift hours →",
 		});
@@ -89,17 +96,24 @@ export function LoginNotices() {
 	if (isAdmin && schedule === null) {
 		notices.push({
 			id: "no_org_schedule",
-			message: "Your organization has no work schedule configured. Employee timers won't auto-close at shift end.",
+			message:
+				"Your organization has no work schedule configured. Employee timers won't auto-close at shift end.",
 			href: "/dashboard/settings/organization",
 			linkLabel: "Set up work schedule →",
 		});
 	}
 
 	// Admin — schedule exists but max_timer_hours not set
-	if (isAdmin && schedule !== null && schedule !== undefined && schedule.max_timer_hours == null) {
+	if (
+		isAdmin &&
+		schedule !== null &&
+		schedule !== undefined &&
+		schedule.max_timer_hours == null
+	) {
 		notices.push({
 			id: "no_max_timer",
-			message: "No maximum timer limit is set. Timers on weekends or outside shift hours will run indefinitely.",
+			message:
+				"No maximum timer limit is set. Timers on weekends or outside shift hours will run indefinitely.",
 			href: "/dashboard/settings/organization",
 			linkLabel: "Enable max timer limit →",
 		});
