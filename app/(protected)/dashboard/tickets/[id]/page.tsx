@@ -14,13 +14,7 @@ import {
 	DialogDescription,
 } from "@/components/ui/dialog";
 import { EmployeePickerModal } from "@/components/dashboard/tickets/employee-picker-modal";
-import {
-	SelectRoot,
-	SelectTrigger,
-	SelectValue,
-	SelectContent,
-	SelectItem,
-} from "@/components/ui/select";
+import { Combobox } from "@/components/ui/combobox";
 import { Label } from "@/components/ui/label";
 import { useAppSelector } from "@/store/hooks";
 import { formatDate, formatDuration, formatDueDate, toDatetimeInput, formatTime, formatDurationBetween } from "@/lib/utils/format";
@@ -1147,14 +1141,16 @@ export default function TicketDetailPage() {
 						<DialogDescription>Pick a team member or leave blank — admin will decide.</DialogDescription>
 					</DialogHeader>
 					<div className="space-y-4 pt-1">
-						<SelectRoot value={transferTo} onValueChange={setTransferTo}>
-							<SelectTrigger className="w-full"><SelectValue placeholder="No preference (let admin decide)" /></SelectTrigger>
-							<SelectContent>
-								{employees.filter((e) => e.id !== user?.id).map((e) => (
-									<SelectItem key={e.id} value={e.id}>{e.name ?? e.email}</SelectItem>
-								))}
-							</SelectContent>
-						</SelectRoot>
+						<Combobox
+							options={employees
+								.filter((e) => e.id !== user?.id)
+								.map((e) => ({ value: e.id, label: e.name ?? e.email }))}
+							value={transferTo}
+							onChange={setTransferTo}
+							placeholder="No preference (let admin decide)"
+							searchPlaceholder="Search employee…"
+							emptyText="No employees found."
+						/>
 						<div className="flex justify-end gap-2">
 							<Button variant="outline" size="sm" onClick={() => setTransferOpen(false)}>Cancel</Button>
 							<Button size="sm" isLoading={isRequesting} onClick={() => requestTransfer(transferTo || undefined)}>Send request</Button>

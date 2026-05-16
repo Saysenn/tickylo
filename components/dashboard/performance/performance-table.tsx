@@ -8,7 +8,7 @@ import { formatDurationMs, startOfMonthDateStr, todayDateStr } from "@/lib/utils
 import { TrendingUp, Download, FileText, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { SelectRoot, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import { Combobox } from "@/components/ui/combobox";
 import { DialogRoot, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useAppSelector } from "@/store/hooks";
 
@@ -143,19 +143,17 @@ function GenerateReportModal({ open, onClose, employees, defaultFrom, defaultTo,
 				<div className="space-y-4 pt-1">
 					<div className="space-y-1.5">
 						<Label className="text-xs">Employee</Label>
-						<SelectRoot value={selectedUser} onValueChange={setSelectedUser}>
-							<SelectTrigger className="h-9 text-sm">
-								<SelectValue />
-							</SelectTrigger>
-							<SelectContent>
-								<SelectItem value="all">All employees</SelectItem>
-								{employees.map((e) => (
-									<SelectItem key={e.user.id} value={e.user.id}>
-										{e.user.name ?? e.user.email}
-									</SelectItem>
-								))}
-							</SelectContent>
-						</SelectRoot>
+						<Combobox
+							options={[
+								{ value: "all", label: "All employees" },
+								...employees.map((e) => ({ value: e.user.id, label: e.user.name ?? e.user.email })),
+							]}
+							value={selectedUser}
+							onChange={setSelectedUser}
+							placeholder="Select employee…"
+							searchPlaceholder="Search employee…"
+							emptyText="No employees found."
+						/>
 					</div>
 
 					<div className="grid grid-cols-2 gap-3">
