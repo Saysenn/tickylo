@@ -2,6 +2,9 @@ import { NextRequest } from "next/server";
 import { z } from "zod";
 import { ok, errorResponse } from "@/lib/utils/response";
 import { requireUser } from "@/lib/auth/require-user";
+import { requireAdmin } from "@/lib/auth/require-admin";
+import { prisma } from "@/lib/infra/prisma";
+import { auditLog } from "@/lib/utils/audit";
 import * as TimeService from "@/services/time.service";
 
 const stopSchema = z.object({
@@ -80,3 +83,4 @@ export async function DELETE(
 		return errorResponse("Internal server error", 500);
 	}
 }
+

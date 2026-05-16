@@ -150,6 +150,8 @@ model User {
   avatar_url    String?
   role          String?
   timezone      String?   // personal display timezone, e.g. "Asia/Manila"
+  shift_start   String?   // personal shift start e.g. "20:00" — overrides org schedule; null = follow org
+  shift_end     String?   // personal shift end e.g. "05:00" — overrides org schedule; null = follow org
   deleted_at    DateTime? // soft-delete: set on deletion request, hard-deleted by cron after grace period
 
   // GDPR consent — recorded at registration

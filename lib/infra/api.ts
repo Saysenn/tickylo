@@ -23,8 +23,11 @@ class APIService {
 	// ---------------------------------------------------------------------------
 	public users = {
 		me: () => axiosService.get(`${apiVersion}/users/me`),
+		getMe: () => axiosService.get(`${apiVersion}/users/me`),
 		updateTimezone: (timezone: string) =>
 			axiosService.patch(`${apiVersion}/users/me`, { timezone }),
+		updateShift: (shift_start: string | null, shift_end: string | null) =>
+			axiosService.patch(`${apiVersion}/users/me`, { shift_start, shift_end }),
 		getMeta: () => axiosService.get(`${apiVersion}/users/meta`),
 		updateMeta: (data: {
 			phone?: string;
@@ -96,6 +99,7 @@ class APIService {
 		active: () => axiosService.get(`${apiVersion}/time/active`),
 		activeAll: () => axiosService.get(`${apiVersion}/time/active-all`),
 		forceStop: (id: string) => axiosService.post(`${apiVersion}/time/${id}/force-stop`, {}),
+		unflag: (id: string) => axiosService.post(`${apiVersion}/time/${id}/unflag`, {}),
 		stop: (id: string, data: { title?: string; description?: string }) =>
 			axiosService.patch(`${apiVersion}/time/${id}`, data),
 		list: (page = 1, limit = 10, from?: string, to?: string, tzOffset?: number, userId?: string, flaggedOnly?: boolean) =>

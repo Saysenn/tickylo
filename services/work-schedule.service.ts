@@ -24,11 +24,19 @@ export async function upsertWorkSchedule(orgId: string, data: WorkScheduleInput)
 	});
 }
 
+/** Returns true when shift_end crosses midnight (e.g. start=20:00 end=05:00). */
+export function isOvernightShift(schedule: WorkSchedule): boolean {
+	return schedule.shift_end <= schedule.shift_start;
+}
+
 /**
- * Given a schedule and a UTC "now", compute the shift_end moment in UTC for today
- * in the org's timezone — without any external library.
+ * Given a schedule and a UTC "now", compute the shift_end moment in UTC.
+ * For overnight shifts (shift_end < shift_start) the end falls on the next
+ * calendar day in the org's timezone, so we add one day to the base date.
  */
 export function getShiftEndUtc(schedule: WorkSchedule, now: Date = new Date()): Date {
+	const overnight = isOvernightShift(schedule);
+
 	// Get today's date string in org timezone (YYYY-MM-DD)
 	const localDate = new Intl.DateTimeFormat("en-CA", {
 		timeZone: schedule.timezone,
@@ -41,10 +49,17 @@ export function getShiftEndUtc(schedule: WorkSchedule, now: Date = new Date()): 
 	const localWall = new Date(now.toLocaleString("en-US", { timeZone: schedule.timezone }));
 	const offsetMs = now.getTime() - localWall.getTime();
 
-	// Build shift_end as a local datetime string, then shift to UTC
 	const [h, m] = schedule.shift_end.split(":").map(Number);
+	const baseDate = new Date(`${localDate}T00:00:00`);
+
+	// For overnight shifts the end time is on the *next* calendar day
+	if (overnight) baseDate.setDate(baseDate.getDate() + 1);
+
 	const localShiftEnd = new Date(
-		`${localDate}T${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:00`,
+		baseDate.getFullYear() + "-" +
+		String(baseDate.getMonth() + 1).padStart(2, "0") + "-" +
+		String(baseDate.getDate()).padStart(2, "0") + "T" +
+		String(h).padStart(2, "0") + ":" + String(m).padStart(2, "0") + ":00",
 	);
 	return new Date(localShiftEnd.getTime() + offsetMs);
 }
@@ -58,4 +73,17 @@ export function getDayOfWeekInTz(date: Date, timezone: string): number {
 		weekday: "short",
 	}).format(date);
 	return ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].indexOf(dayStr);
+}
+
+/**
+ * Returns the day-of-week that the shift *started* on.
+ * For overnight shifts the shift started the day before shift_end.
+ */
+export function getShiftStartDayInTz(schedule: WorkSchedule, shiftEndUtc: Date): number {
+	if (!isOvernightShift(schedule)) {
+		return getDayOfWeekInTz(shiftEndUtc, schedule.timezone);
+	}
+	// Shift started one calendar day before shift_end
+	const dayBefore = new Date(shiftEndUtc.getTime() - 24 * 60 * 60 * 1000);
+	return getDayOfWeekInTz(dayBefore, schedule.timezone);
 }

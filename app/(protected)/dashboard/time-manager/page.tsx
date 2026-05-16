@@ -9,6 +9,7 @@ import { TimeDateRange } from "@/components/dashboard/time-manager/time-date-ran
 import { TimeSummaryCards } from "@/components/dashboard/time-manager/time-summary-cards";
 import { TimeDayBars } from "@/components/dashboard/time-manager/time-day-bars";
 import { TimeEmployeeTable } from "@/components/dashboard/time-manager/time-employee-table";
+import { FlaggedEntriesPanel } from "@/components/dashboard/time-manager/flagged-entries-panel";
 import type { TimeSummary } from "@/components/dashboard/time-manager/types";
 import {
 	todayDateStr, daysAgoDateStr, formatDurationMs,
@@ -17,6 +18,9 @@ import {
 import { useAppSelector } from "@/store/hooks";
 import { RecentTasksCard } from "@/components/dashboard/reports/team-activity-cards";
 import { EmployeeSessionLog } from "@/components/dashboard/time-manager/employee-session-log";
+import { cn } from "@/lib/utils/cn";
+
+type Tab = "overview" | "flagged";
 
 const DATE_PRESETS = [
 	{ label: "Today",        from: () => todayDateStr(),        to: () => todayDateStr() },
@@ -34,6 +38,8 @@ function getPresetLabel(from: string, to: string): string {
 export default function TimeManagerPage() {
 	const user     = useAppSelector((s) => s.auth.user);
 	const tzOffset = new Date().getTimezoneOffset();
+
+	const [tab, setTab] = useState<Tab>("overview");
 
 	const [from, setFrom]           = useState(daysAgoDateStr(6));
 	const [to,   setTo]             = useState(todayDateStr());
@@ -75,11 +81,35 @@ export default function TimeManagerPage() {
 				}}
 			/>
 
-			<div>
-				<h1 className="text-2xl font-bold text-ink">Team Overview</h1>
-				<p className="text-ink-3 mt-1 text-sm">Team time analytics and per-employee session breakdowns.</p>
+			<div className="flex items-start justify-between gap-4 flex-wrap">
+				<div>
+					<h1 className="text-2xl font-bold text-ink">Team Overview</h1>
+					<p className="text-ink-3 mt-1 text-sm">Team time analytics and per-employee session breakdowns.</p>
+				</div>
+
+				{/* Tabs */}
+				<div className="flex items-center gap-1 rounded-lg border border-border bg-accent/30 p-1">
+					{(["overview", "flagged"] as Tab[]).map((t) => (
+						<button
+							key={t}
+							type="button"
+							onClick={() => setTab(t)}
+							className={cn(
+								"px-3 py-1.5 rounded-md text-xs font-medium transition-colors capitalize",
+								tab === t
+									? "bg-background text-ink shadow-sm border border-border"
+									: "text-ink-3 hover:text-ink",
+							)}
+						>
+							{t === "flagged" ? "⚑ Flagged" : "Overview"}
+						</button>
+					))}
+				</div>
 			</div>
 
+			{tab === "flagged" && <FlaggedEntriesPanel />}
+
+			{tab === "overview" && <div className="space-y-6">
 			<div className="flex flex-wrap items-end gap-3">
 				{showEmployee && (
 					<Button size="sm" variant="ghost" className="h-8 gap-1.5 text-ink-3"
@@ -165,6 +195,7 @@ export default function TimeManagerPage() {
 					<EmployeeSessionLog userId={selectedEmployee} from={from} to={to} />
 				</div>
 			) : null}
+			</div>}
 		</div>
 	);
 }
