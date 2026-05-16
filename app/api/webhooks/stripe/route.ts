@@ -64,7 +64,8 @@ export async function POST(req: NextRequest) {
 		}
 	} catch (err) {
 		console.error("[stripe-webhook] Handler error:", err);
-		// Return 200 so Stripe doesn't retry — log error for investigation
+		// Return 500 so Stripe retries the event — DB failures are transient
+		return NextResponse.json({ error: "Handler failed" }, { status: 500 });
 	}
 
 	return NextResponse.json({ received: true });
@@ -78,12 +79,19 @@ async function getOrgBySubscription(subscriptionId: string) {
 	});
 }
 
+const VALID_PLANS = ["business", "enterprise"] as const;
+type ValidPlan = typeof VALID_PLANS[number];
+
+function validatePlanMeta(meta: string | undefined, fallback: string): ValidPlan {
+	return VALID_PLANS.includes(meta as ValidPlan) ? (meta as ValidPlan) : (fallback as ValidPlan);
+}
+
 async function handleSubscriptionUpdated(sub: Stripe.Subscription) {
 	const org = await getOrgBySubscription(sub.id);
 	if (!org) return;
 
 	const s     = sub as any;
-	const plan  = sub.metadata?.plan as "business" | "enterprise" | undefined;
+	const plan  = validatePlanMeta(sub.metadata?.plan, org.plan);
 	const seats = sub.items.data.find((i) => i.quantity && i.quantity > 1)?.quantity ?? org.seat_count;
 	const nextBillingDate = s.current_period_end
 		? new Date(s.current_period_end * 1000)
@@ -91,7 +99,7 @@ async function handleSubscriptionUpdated(sub: Stripe.Subscription) {
 
 	// Only update plan if not in trial (trial end is handled by invoice.payment_succeeded)
 	const newPlan = sub.status === "trialing" ? "trial"
-		: sub.status === "active" ? (plan ?? org.plan)
+		: sub.status === "active" ? plan
 		: org.plan;
 
 	await prisma.organization.update({
@@ -124,7 +132,7 @@ async function handleInvoicePaid(invoice: Stripe.Invoice) {
 	// Fetch subscription to determine current plan
 	const stripe  = getStripe();
 	const sub     = await stripe.subscriptions.retrieve(subscriptionId) as any;
-	const plan    = (sub.metadata?.plan as "business" | "enterprise") ?? "business";
+	const plan    = validatePlanMeta(sub.metadata?.plan, org.plan);
 	const seats   = sub.items.data.find((i: any) => (i.quantity ?? 0) > 1)?.quantity ?? org.seat_count;
 	const nextDate = sub.current_period_end
 		? new Date(sub.current_period_end * 1000)

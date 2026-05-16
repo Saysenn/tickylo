@@ -10,7 +10,7 @@ import {
 	useElements,
 } from "@stripe/react-stripe-js";
 import { useMutation } from "@tanstack/react-query";
-import { Building2, Users, CheckCircle2, ChevronDown } from "lucide-react";
+import { Building2, Users, CheckCircle2, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils/cn";
 import APIService from "@/lib/infra/api";
@@ -139,20 +139,26 @@ function SetupForm({ orgName, hadTrial }: Props) {
 					<label className="text-xs font-semibold text-ink-3 uppercase tracking-wider">
 						Number of seats (employees)
 					</label>
-					<div className="flex items-center gap-3">
-						<div className="relative flex-1">
-							<select
-								value={seatCount}
-								onChange={(e) => setSeatCount(Number(e.target.value))}
-								className="w-full appearance-none rounded-lg border border-border bg-background px-3 py-2 text-sm text-ink focus:outline-none focus:ring-1 focus:ring-mint pr-8"
+					<div className="flex items-center justify-between gap-4">
+						<div className="flex items-center gap-2">
+							<button
+								type="button"
+								onClick={() => setSeatCount((c) => Math.max(1, c - 1))}
+								className="w-8 h-8 rounded border border-border text-ink-3 hover:text-ink hover:bg-accent transition-colors text-lg font-medium"
 							>
-								{[1,2,3,4,5,6,7,8,9,10,15,20,25,30,40,50,75,100].map((n) => (
-									<option key={n} value={n}>{n} seat{n !== 1 ? "s" : ""}</option>
-								))}
-							</select>
-							<ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-ink-3 pointer-events-none" />
+								−
+							</button>
+							<span className="w-12 text-center font-semibold text-ink text-base">{seatCount}</span>
+							<button
+								type="button"
+								onClick={() => setSeatCount((c) => Math.min(500, c + 1))}
+								className="w-8 h-8 rounded border border-border text-ink-3 hover:text-ink hover:bg-accent transition-colors text-lg font-medium"
+							>
+								+
+							</button>
+							<span className="text-sm text-ink-3 ml-1">seat{seatCount !== 1 ? "s" : ""}</span>
 						</div>
-						<div className="text-right shrink-0">
+						<div className="text-right">
 							<p className="text-lg font-bold text-ink">${businessTotal}<span className="text-xs font-normal text-ink-3">/mo</span></p>
 							<p className="text-[11px] text-ink-3">$20 + {seatCount} × $4.99</p>
 						</div>
@@ -160,15 +166,73 @@ function SetupForm({ orgName, hadTrial }: Props) {
 				</div>
 			)}
 
-			{plan === "enterprise" && (
-				<div className="rounded-lg border border-border/60 bg-accent/30 px-4 py-3 flex items-center justify-between">
-					<div>
-						<p className="text-sm font-medium text-ink">25 seats + admin included</p>
-						<p className="text-xs text-ink-3">Attachments, SMS, email inbound, 2FA enforcement, dedicated support</p>
-					</div>
-					<p className="text-lg font-bold text-ink shrink-0">${enterpriseTotal}<span className="text-xs font-normal text-ink-3">/mo</span></p>
-				</div>
-			)}
+			{/* Features summary for selected plan */}
+			<div className="rounded-lg border border-border/60 bg-accent/30 px-4 py-4 space-y-3">
+				{plan === "business" ? (
+					<>
+						<div className="flex items-center justify-between">
+							<p className="text-sm font-semibold text-ink">Business — what's included</p>
+							<p className="text-base font-bold text-ink">${businessTotal}<span className="text-xs font-normal text-ink-3">/mo</span></p>
+						</div>
+						<ul className="space-y-1.5">
+							{[
+								"Full ticketing + task management",
+								"Per-ticket time tracking",
+								"Leave management",
+								"Workload + performance reports",
+								"Custom ticket types",
+								"Email notifications",
+								"Audit log + GDPR tools",
+								"Work schedule config",
+								"Browser extension",
+							].map((f) => (
+								<li key={f} className="flex items-center gap-2 text-xs text-ink-3">
+									<Check className="w-3 h-3 text-mint shrink-0" />
+									{f}
+								</li>
+							))}
+							{[
+								"File & image attachments",
+								"SMS → ticket",
+								"Email → ticket",
+								"2FA enforcement",
+							].map((f) => (
+								<li key={f} className="flex items-center gap-2 text-xs text-ink-3/40 line-through">
+									<Check className="w-3 h-3 text-ink-3/20 shrink-0" />
+									{f}
+								</li>
+							))}
+						</ul>
+					</>
+				) : (
+					<>
+						<div className="flex items-center justify-between">
+							<p className="text-sm font-semibold text-ink">Enterprise — what's included</p>
+							<p className="text-base font-bold text-ink">$100<span className="text-xs font-normal text-ink-3">/mo</span></p>
+						</div>
+						<p className="text-xs text-ink-3">25 seats + admin included. Everything in Business, plus:</p>
+						<ul className="space-y-1.5">
+							{[
+								"File & image attachments in threads",
+								"Storage setup — S3 or Supabase (1-on-1 guidance)",
+								"SMS → ticket via Twilio",
+								"Email → ticket inbound webhook",
+								"2FA / OTP enforcement org-wide",
+								"White-label / custom domain",
+								"Dedicated onboarding + account manager",
+								"SLA guarantee",
+								"On-premise deployment",
+								"Custom integrations + full API access",
+							].map((f) => (
+								<li key={f} className="flex items-center gap-2 text-xs text-ink-3">
+									<Check className="w-3 h-3 text-mint shrink-0" />
+									{f}
+								</li>
+							))}
+						</ul>
+					</>
+				)}
+			</div>
 
 			{/* Trial notice */}
 			{!hadTrial && (

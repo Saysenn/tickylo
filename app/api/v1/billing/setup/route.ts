@@ -1,10 +1,9 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/auth/require-admin";
 import { prisma } from "@/lib/infra/prisma";
 import { errorResponse, ok } from "@/lib/utils/response";
-import { getStripe, STRIPE_PRICES, type BillingPlan } from "@/configs/stripe.config";
-import { rateLimit, getIP } from "@/lib/utils/rate-limit";
+import { getStripe, STRIPE_PRICES } from "@/configs/stripe.config";
 
 const bodySchema = z.object({
 	plan:             z.enum(["business", "enterprise"]),
@@ -15,10 +14,6 @@ const bodySchema = z.object({
 
 export async function POST(req: NextRequest) {
 	try {
-		// 5 setup attempts per IP per hour — prevents Stripe API abuse
-		const rl = await rateLimit(`billing-setup:${getIP(req)}`, 5, 3600);
-		if (rl) return rl;
-
 		const admin = await requireAdmin();
 		if (!admin) return errorResponse("Forbidden", 403);
 
@@ -29,6 +24,9 @@ export async function POST(req: NextRequest) {
 		if (!org) return errorResponse("Organization not found", 404);
 		if (org.plan !== "unpaid" && org.plan !== "cancelled") {
 			return errorResponse("Organization is not in a state that requires setup", 400);
+		}
+		if (org.stripe_subscription_id) {
+			return errorResponse("A subscription already exists for this organization", 400);
 		}
 
 		const body = bodySchema.safeParse(await req.json());

@@ -19,7 +19,6 @@ export async function GET() {
 				trial_ends_at: true,
 				next_billing_date: true,
 				had_trial: true,
-				is_internal: true,
 			},
 		});
 

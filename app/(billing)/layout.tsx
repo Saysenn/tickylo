@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import AppProvider from "@/providers/app-provider";
 
 // This layout is for billing-related pages (/billing, /billing/success).
 // It requires auth but does NOT gate on plan status — locked orgs must reach /billing.
@@ -13,5 +14,5 @@ export default async function BillingLayout({ children }: { children: React.Reac
   const role = user.app_metadata?.role as string | undefined;
   if (role === "super_admin") redirect("/super-admin/dashboard");
 
-  return <>{children}</>;
+  return <AppProvider>{children}</AppProvider>;
 }
