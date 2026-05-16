@@ -1,138 +1,129 @@
-# Tickworks — Pricing Plan
-
-> **Marketing note:** All plans show the original price crossed out alongside the discounted launch price to create urgency and perceived value. The 30–35% discount framing is the anchor — it makes the actual price feel like a deal even before the customer compares plans.
+# Tickworks — Pricing
 
 ---
 
-## Pricing Tiers
+## Business — $20/mo + $4.99/seat/mo
 
-### Starter — ~~₱1,500/mo~~ **₱999/mo**
-*33% off — limited launch offer*
-
-Best for small teams of 1–5 people getting started with structured work management.
+Admin included in base. Each employee = $4.99/seat. Buy and remove seats anytime from Settings → Subscription.
 
 **Includes:**
-- Up to 5 team members
-- Ticket & task management (create, assign, track)
-- Basic time tracking (start/stop timer per ticket)
-- Leave request management
-- Role-based access (Admin + Employee)
+- Full ticketing + task management
+- Time tracking per ticket
+- Leave management *(coming soon)*
+- Browser extension
+- Rich text threads (no file attachments)
+- Workload + performance reports
+- Bulk actions + advanced filters
+- Custom ticket types
 - Email notifications
-- Activity log & audit trail
+- Audit log + GDPR tools
+- Work schedule config
 
-> 💡 *"Start for less than ₱200/week — cancel anytime."*
+**Seat billing:**
+- Mid-month add → Stripe charges prorated days remaining only
+- Remove seats → access revoked immediately, unused days credited to next invoice
+- *"Next billing date: Feb 1 — remove seats before then to avoid charges."*
 
----
-
-### Growth — ~~₱3,500/mo~~ **₱2,299/mo**
-*34% off — most popular*
-
-Ideal for growing teams of 6–20 people who need more visibility and collaboration tools.
-
-**Everything in Starter, plus:**
-- Up to 20 team members
-- Ticket watchers & @mention in comments
-- Subtasks & checklist progress tracking
-- Comment reactions
-- Workload dashboard (per-employee task distribution)
-- Priority escalation & due-date reminders (automated)
-- Bulk ticket actions (assign, complete, delete)
-- Advanced filters (by type, priority, assignee, due date)
-
-> 💡 *"Most teams see full ROI within the first month — visibility alone saves hours of status meetings."*
+**Annual:** $200/yr base + $49.90/yr per seat (2 months free)
 
 ---
 
-### Pro — ~~₱6,500/mo~~ **₱4,299/mo**
-*34% off — full power*
+## Enterprise — $100/mo flat
 
-For established teams of 21–50 people who need full control and compliance-grade features.
+25 seats + admin included. No per-seat math. Everything the platform has.
 
-**Everything in Growth, plus:**
-- Up to 50 team members
-- Multi-tenancy support (manage multiple orgs/clients)
-- GDPR & PECR compliance tools
-- Two-factor authentication (2FA / OTP)
-- Rich markdown descriptions + implementation & rollback plans
-- Ticket approval flow (employee → admin review)
-- On-hold, stale & escalation status workflows
-- Priority support (24h response)
+**Everything in Business, plus:**
+- File + image attachments in threads
+- Storage setup — 1-on-1 guidance to connect S3 or Supabase, or we do it for you
+- SMS → ticket (clients text your Twilio number, auto-creates ticket)
+- Email → ticket (inbound webhook, emails become tickets)
+- 2FA / OTP enforcement org-wide
+- White-label / custom domain
+- Dedicated onboarding + account manager
+- SLA guarantee
+- On-premise deployment
+- Custom integrations + full API access
 
-> 💡 *"Trusted by agencies managing multiple client teams under one roof."*
+Need more than 25 seats? Contact us for a custom quote.
 
----
+> 📩 [hello@tickworks.app](mailto:hello@tickworks.app)
 
-### Enterprise — Custom pricing
-*Contact us for a tailored quote*
-
-For organizations with 50+ members, custom SLA requirements, or white-label needs.
-
-**Everything in Pro, plus:**
-- Unlimited team members
-- Custom integrations & API access
-- Dedicated onboarding & account manager
-- SLA guarantees
-- White-label / custom domain option
-- On-premise deployment (optional)
-
-> 📩 Contact: [hello@performai.app](mailto:hello@performai.app)
+**Annual:** $1,000/yr (2 months free)
 
 ---
 
-## Pricing Comparison
+## Why Enterprise is the better deal at scale
 
-| Feature                          | Starter | Growth | Pro | Enterprise |
-|----------------------------------|:-------:|:------:|:---:|:----------:|
-| Team members                     | 5       | 20     | 50  | Unlimited  |
-| Ticket & task management         | ✅      | ✅     | ✅  | ✅         |
-| Time tracking                    | ✅      | ✅     | ✅  | ✅         |
-| Leave management                 | ✅      | ✅     | ✅  | ✅         |
-| Ticket watchers & @mentions      | ❌      | ✅     | ✅  | ✅         |
-| Subtasks                         | ❌      | ✅     | ✅  | ✅         |
-| Workload dashboard               | ❌      | ✅     | ✅  | ✅         |
-| Automated reminders & escalation | ❌      | ✅     | ✅  | ✅         |
-| Bulk actions                     | ❌      | ✅     | ✅  | ✅         |
-| Multi-tenancy                    | ❌      | ❌     | ✅  | ✅         |
-| GDPR / PECR compliance           | ❌      | ❌     | ✅  | ✅         |
-| 2FA / OTP                        | ❌      | ❌     | ✅  | ✅         |
-| Approval workflows               | ❌      | ❌     | ✅  | ✅         |
-| Priority support                 | ❌      | ❌     | ✅  | ✅         |
-| Custom integrations              | ❌      | ❌     | ❌  | ✅         |
-| White-label / on-premise         | ❌      | ❌     | ❌  | ✅         |
-| **Monthly (launch price)**       | **₱999** | **₱2,299** | **₱4,299** | **Custom** |
+A Business customer with 25 employees pays `$20 + (25 × $4.99) = $144.75/mo` with no attachments, no SMS, no dedicated support. Enterprise at $100 flat is cheaper and gets everything.
 
 ---
 
-## Annual Billing Discount
+## Feature Comparison
 
-Pay annually and save an additional **2 months free** (equivalent to ~17% off the monthly rate).
-
-| Plan       | Monthly price | Annual total (10 months billed) |
-|------------|:-------------:|:-------------------------------:|
-| Starter    | ₱999/mo       | ₱9,990/yr                       |
-| Growth     | ₱2,299/mo     | ₱22,990/yr                      |
-| Pro        | ₱4,299/mo     | ₱42,990/yr                      |
+| Feature                        |       Business        |      Enterprise      |
+|--------------------------------|:---------------------:|:--------------------:|
+| Ticketing + time tracking      |          ✅           |          ✅          |
+| Leave management               |          🔜           |          🔜          |
+| Browser extension              |          ✅           |          ✅          |
+| Rich text threads              |          ✅           |          ✅          |
+| File + image attachments       |          ❌           |          ✅          |
+| Storage setup (S3/Supabase)    |          ❌           |          ✅          |
+| SMS → ticket                   |          ❌           |          ✅          |
+| Email → ticket                 |          ❌           |          ✅          |
+| 2FA enforcement                |          ❌           |          ✅          |
+| White-label / on-premise       |          ❌           |          ✅          |
+| Custom integrations + API      |          ❌           |          ✅          |
+| Dedicated support + SLA        |          ❌           |          ✅          |
+| **Seats**                      |    **Pay per seat**   |   **25 + admin**     |
+| **Price**                      | **$20 + $4.99/seat**  |   **$100/mo flat**   |
 
 ---
 
-## Marketing Notes (Internal)
+## Stripe Implementation
 
-### Psychological anchors used
-- **Crossed-out original price** — always shown. The brain registers the crossed price first and uses it as the reference point; the discounted price then feels like a win.
-- **Percentage badge** — "33% off" is shown prominently. Percentage feels bigger than absolute savings at this price point.
-- **"Limited launch offer"** — creates urgency without a hard deadline. Can be updated to a real deadline when running campaigns.
-- **Per-week framing** on Starter ("less than ₱200/week") — small numbers feel more accessible than monthly totals.
-- **ROI framing** on Growth — "saves hours of status meetings" shifts the buyer's mental model from cost to investment.
-- **"Most popular" badge** on Growth — social proof, and it upsells away from the lowest tier.
-- **Annual billing = 2 months free** — framing as "free months" outperforms "17% discount" in conversion because free is a stronger word.
+### Schema (Organization)
+```prisma
+plan                    String    @default("trial") // "trial" | "business" | "enterprise"
+seat_count              Int       @default(1)
+trial_ends_at           DateTime?
+stripe_customer_id      String?   @unique
+stripe_subscription_id  String?   @unique
+stripe_base_item_id     String?
+stripe_seat_item_id     String?
+next_billing_date       DateTime?
+```
 
-### Recommended CTA copy
-- Starter: *"Start free trial"* → 14-day trial, no card required
-- Growth: *"Start free trial"* → 14-day trial
-- Pro: *"Talk to sales"* or *"Start free trial"*
-- Enterprise: *"Contact us"*
+### Price IDs (configs/stripe.config.ts)
+```ts
+export const STRIPE_PRICES = {
+  business: {
+    base:     { monthly: "price_xxx", annual: "price_xxx" }, // $20/mo
+    per_seat: { monthly: "price_xxx", annual: "price_xxx" }, // $4.99/seat
+  },
+  enterprise: {
+    base:     { monthly: "price_xxx", annual: "price_xxx" }, // $100/mo flat
+  },
+};
+```
 
-### Recommended launch sequence
-1. **Soft launch** — offer all plans at launch pricing indefinitely for first 50 customers (lock them in before raising prices)
-2. **Price increase announcement** — email existing users that pricing goes up in 30 days; converts fence-sitters
-3. **Referral discount** — give existing customers a unique link; each referral gives both parties 1 month free
+### Flow
+1. Org approved → `plan = "trial"`, `trial_ends_at = now + 14 days`
+2. Trial ends → `/billing` → Stripe Checkout (choose plan + seat count)
+3. Payment success → webhook → update `org.plan`, `org.seat_count` in DB
+4. Payment fails → Stripe retries 3× → org locked
+5. Seat changes → `stripe.subscriptions.update` with `proration_behavior: "create_prorations"`
+6. Cancel / portal → Stripe Customer Portal
+
+### Seat enforcement
+```ts
+const activeCount = await prisma.user.count({ where: { org_id, deleted_at: null } });
+if (activeCount >= org.seat_count) {
+  throw { status: 403, message: "Seat limit reached. Purchase more seats in Settings → Subscription." };
+}
+```
+
+### Feature gating
+```ts
+// enterprise-only features
+requirePlan(org, "enterprise"); // attachments, SMS, email inbound, 2FA, storage
+```
