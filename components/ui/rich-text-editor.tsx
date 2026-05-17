@@ -17,6 +17,7 @@ import { useOrgSettings } from "@/providers/org-settings-provider";
 import {
 	Bold, Italic, Underline as UnderlineIcon, Strikethrough,
 	Heading1, Heading2, Heading3,
+	List, ListOrdered,
 	AlignLeft, AlignCenter, AlignRight,
 	Code, FileCode,
 	Link as LinkIcon,
@@ -166,7 +167,7 @@ export function RichTextEditor({
 			<>
 				<div
 					className={cn(
-						"prose prose-sm max-w-none text-ink text-xs leading-relaxed [&_a]:text-mint [&_a]:underline [&_code]:bg-accent/60 [&_code]:px-1 [&_code]:rounded [&_pre]:bg-accent/60 [&_pre]:rounded-lg [&_pre]:p-3 [&_img]:w-40 [&_img]:h-28 [&_img]:object-cover [&_img]:rounded-lg [&_img]:my-1 [&_img]:cursor-zoom-in [&_img]:inline-block",
+						"prose prose-sm max-w-none text-ink text-xs leading-relaxed [&_a]:text-mint [&_a]:underline [&_code]:bg-accent/60 [&_code]:px-1 [&_code]:rounded [&_pre]:bg-accent/60 [&_pre]:rounded-lg [&_pre]:p-3 [&_img]:w-40 [&_img]:h-28 [&_img]:object-cover [&_img]:rounded-lg [&_img]:my-1 [&_img]:cursor-zoom-in [&_img]:inline-block [&_ul]:list-disc [&_ul]:pl-4 [&_ol]:list-decimal [&_ol]:pl-4 [&_li]:my-0.5",
 						className,
 					)}
 					onClick={(e) => {
@@ -240,6 +241,15 @@ export function RichTextEditor({
 
 				<Divider />
 
+				<ToolbarButton onClick={() => editor?.chain().focus().toggleBulletList().run()} active={editor?.isActive("bulletList")} title="Bullet list">
+					<List className="w-3 h-3" />
+				</ToolbarButton>
+				<ToolbarButton onClick={() => editor?.chain().focus().toggleOrderedList().run()} active={editor?.isActive("orderedList")} title="Numbered list">
+					<ListOrdered className="w-3 h-3" />
+				</ToolbarButton>
+
+				<Divider />
+
 				<ToolbarButton onClick={() => editor?.chain().focus().setTextAlign("left").run()} active={editor?.isActive({ textAlign: "left" })} title="Align left">
 					<AlignLeft className="w-3 h-3" />
 				</ToolbarButton>
@@ -282,7 +292,7 @@ export function RichTextEditor({
 
 			{/* Editor area */}
 			<div
-				className="px-3 py-2 cursor-text prose prose-sm max-w-none text-ink text-xs leading-relaxed [&_.ProseMirror]:outline-none [&_.ProseMirror_p.is-editor-empty:first-child::before]:content-[attr(data-placeholder)] [&_.ProseMirror_p.is-editor-empty:first-child::before]:text-ink-3/50 [&_.ProseMirror_p.is-editor-empty:first-child::before]:pointer-events-none [&_.ProseMirror_p.is-editor-empty:first-child::before]:float-left [&_.ProseMirror_p.is-editor-empty:first-child::before]:h-0 [&_a]:text-mint [&_a]:underline [&_code]:bg-accent/60 [&_code]:px-1 [&_code]:rounded [&_pre]:bg-accent/60 [&_pre]:rounded-lg [&_pre]:p-3 [&_img]:w-40 [&_img]:h-28 [&_img]:object-cover [&_img]:rounded-lg [&_img]:my-1 [&_img]:inline-block"
+				className="px-3 py-2 cursor-text prose prose-sm max-w-none text-ink text-xs leading-relaxed [&_.ProseMirror]:outline-none [&_.ProseMirror_p.is-editor-empty:first-child::before]:content-[attr(data-placeholder)] [&_.ProseMirror_p.is-editor-empty:first-child::before]:text-ink-3/50 [&_.ProseMirror_p.is-editor-empty:first-child::before]:pointer-events-none [&_.ProseMirror_p.is-editor-empty:first-child::before]:float-left [&_.ProseMirror_p.is-editor-empty:first-child::before]:h-0 [&_a]:text-mint [&_a]:underline [&_code]:bg-accent/60 [&_code]:px-1 [&_code]:rounded [&_pre]:bg-accent/60 [&_pre]:rounded-lg [&_pre]:p-3 [&_img]:w-40 [&_img]:h-28 [&_img]:object-cover [&_img]:rounded-lg [&_img]:my-1 [&_img]:inline-block [&_ul]:list-disc [&_ul]:pl-4 [&_ol]:list-decimal [&_ol]:pl-4 [&_li]:my-0.5"
 				style={{ minHeight }}
 				onClick={() => editor?.commands.focus()}
 				onPaste={handlePaste}

@@ -7,7 +7,36 @@ import { useAppSelector } from "@/store/hooks";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils/cn";
+import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import type { TicketTemplate } from "@/components/dashboard/tasks/types";
+
+function isRteEmpty(val: string | null | undefined): boolean {
+	if (!val) return true;
+	try {
+		const doc = JSON.parse(val);
+		const text = doc.content
+			?.flatMap((n: any) => n.content ?? [])
+			.map((n: any) => n.text ?? "")
+			.join("") ?? "";
+		return !text.trim();
+	} catch {
+		return !val.trim();
+	}
+}
+
+function rteToPlain(val: string | null | undefined): string {
+	if (!val) return "";
+	try {
+		const doc = JSON.parse(val);
+		return doc.content
+			?.flatMap((n: any) => n.content ?? [])
+			.map((n: any) => n.text ?? "")
+			.join(" ")
+			.trim() ?? "";
+	} catch {
+		return val;
+	}
+}
 
 const TYPE_LABEL: Record<string, string> = {
 	internal_task: "Task",
@@ -63,9 +92,9 @@ function TemplateForm({
 			ticket_type: ticketType || undefined,
 			priority: priority || undefined,
 			title: title.trim() || undefined,
-			description: description.trim() || undefined,
-			implementation_plan: implPlan.trim() || undefined,
-			rollback_plan: rollbackPlan.trim() || undefined,
+			description: isRteEmpty(description) ? undefined : description,
+			implementation_plan: isRteEmpty(implPlan) ? undefined : implPlan,
+			rollback_plan: isRteEmpty(rollbackPlan) ? undefined : rollbackPlan,
 		});
 	}
 
@@ -140,42 +169,31 @@ function TemplateForm({
 					/>
 				</div>
 				<div className="space-y-1.5">
-					<Label htmlFor="tpl-desc">Description</Label>
-					<textarea
-						id="tpl-desc"
+					<Label>Description</Label>
+					<RichTextEditor
 						value={description}
-						onChange={(e) => setDescription(e.target.value)}
-						rows={3}
-						maxLength={5000}
+						onChange={setDescription}
 						placeholder="Provide context, steps to reproduce, or acceptance criteria…"
-						className={cn(inputCls, "resize-none")}
+						minHeight={96}
 					/>
 				</div>
-				<div className="grid grid-cols-2 gap-4">
-					<div className="space-y-1.5">
-						<Label htmlFor="tpl-impl">Implementation plan</Label>
-						<textarea
-							id="tpl-impl"
-							value={implPlan}
-							onChange={(e) => setImplPlan(e.target.value)}
-							rows={4}
-							maxLength={5000}
-							placeholder={"- Step 1: Deploy to staging\n- Step 2: Run migrations\n- Step 3: Verify endpoints"}
-							className={cn(inputCls, "resize-none")}
-						/>
-					</div>
-					<div className="space-y-1.5">
-						<Label htmlFor="tpl-rollback">Rollback plan</Label>
-						<textarea
-							id="tpl-rollback"
-							value={rollbackPlan}
-							onChange={(e) => setRollbackPlan(e.target.value)}
-							rows={4}
-							maxLength={2000}
-							placeholder={"- Step 1: Revert deployment\n- Step 2: Restore DB snapshot"}
-							className={cn(inputCls, "resize-none")}
-						/>
-					</div>
+				<div className="space-y-1.5">
+					<Label>Implementation plan</Label>
+					<RichTextEditor
+						value={implPlan}
+						onChange={setImplPlan}
+						placeholder="Step 1: Deploy to staging&#10;Step 2: Run migrations&#10;Step 3: Verify all endpoints respond"
+						minHeight={112}
+					/>
+				</div>
+				<div className="space-y-1.5">
+					<Label>Rollback plan</Label>
+					<RichTextEditor
+						value={rollbackPlan}
+						onChange={setRollbackPlan}
+						placeholder="Step 1: Revert deployment&#10;Step 2: Restore database snapshot if needed"
+						minHeight={96}
+					/>
 				</div>
 			</div>
 
@@ -226,37 +244,38 @@ function TemplateCard({
 }) {
 	const [confirming, setConfirming] = useState(false);
 
+	const descPlain = rteToPlain(template.description);
 	const hasPlan = !!(template.implementation_plan || template.rollback_plan);
-	const hasDesc = !!template.description;
 
 	return (
-		<div className="flex flex-col rounded-xl border border-border bg-background hover:border-border/80 transition-colors">
+		<div className="flex flex-col rounded-xl border border-border bg-background hover:border-border/80 transition-colors overflow-hidden">
 			{/* Card header */}
-			<div className="flex items-start gap-3 px-4 pt-4 pb-3">
-				<div className="flex-1 min-w-0 space-y-1.5">
-					<div className="flex items-center gap-2 flex-wrap">
-						<p className="text-sm font-semibold text-ink truncate">{template.name}</p>
-						{template.is_shared && (
-							<span className="text-[10px] font-semibold uppercase tracking-wide text-mint bg-mint/10 px-1.5 py-0.5 rounded-md">
-								Shared
-							</span>
-						)}
-					</div>
-					{/* Type + priority badges */}
-					<div className="flex items-center gap-1.5 flex-wrap">
-						{template.ticket_type ? (
-							<span className={cn("text-[11px] font-medium px-2 py-0.5 rounded-md", TYPE_COLOR[template.ticket_type] ?? "text-ink-3 bg-accent")}>
-								{TYPE_LABEL[template.ticket_type] ?? template.ticket_type}
-							</span>
-						) : (
-							<span className="text-[11px] text-ink-3/40 italic">Any type</span>
-						)}
-						{template.priority && (
-							<span className={cn("text-[11px] font-medium px-2 py-0.5 rounded-md", PRIORITY_COLOR[template.priority] ?? "text-ink-3 bg-accent")}>
-								{PRIORITY_LABEL[template.priority]}
-							</span>
-						)}
-					</div>
+			<div className="px-4 pt-4 pb-3 space-y-2">
+				<div className="flex items-start gap-2 min-w-0">
+					<p className="text-sm font-semibold text-ink flex-1 min-w-0 wrap-break-word line-clamp-2 leading-snug">
+						{template.name}
+					</p>
+					{template.is_shared && (
+						<span className="shrink-0 text-[10px] font-semibold uppercase tracking-wide text-mint bg-mint/10 px-1.5 py-0.5 rounded-md mt-0.5">
+							Shared
+						</span>
+					)}
+				</div>
+
+				{/* Type + priority badges */}
+				<div className="flex items-center gap-1.5 flex-wrap">
+					{template.ticket_type ? (
+						<span className={cn("text-[11px] font-medium px-2 py-0.5 rounded-md shrink-0", TYPE_COLOR[template.ticket_type] ?? "text-ink-3 bg-accent")}>
+							{TYPE_LABEL[template.ticket_type] ?? template.ticket_type}
+						</span>
+					) : (
+						<span className="text-[11px] text-ink-3/40 italic">Any type</span>
+					)}
+					{template.priority && (
+						<span className={cn("text-[11px] font-medium px-2 py-0.5 rounded-md shrink-0", PRIORITY_COLOR[template.priority] ?? "text-ink-3 bg-accent")}>
+							{PRIORITY_LABEL[template.priority]}
+						</span>
+					)}
 				</div>
 			</div>
 
@@ -264,29 +283,29 @@ function TemplateCard({
 			{template.title && (
 				<div className="px-4 pb-3">
 					<p className="text-[10px] font-semibold uppercase tracking-widest text-ink-3/40 mb-1">Title</p>
-					<p className="text-xs text-ink-2 truncate">{template.title}</p>
+					<p className="text-xs text-ink-2 line-clamp-1 break-all">{template.title}</p>
 				</div>
 			)}
 
 			{/* Description preview */}
-			{hasDesc && (
+			{descPlain && (
 				<div className="px-4 pb-3">
 					<p className="text-[10px] font-semibold uppercase tracking-widest text-ink-3/40 mb-1">Description</p>
-					<p className="text-xs text-ink-3/70 line-clamp-2 whitespace-pre-line">{template.description}</p>
+					<p className="text-xs text-ink-3/70 line-clamp-2 wrap-break-word">{descPlain}</p>
 				</div>
 			)}
 
 			{/* Plans indicator */}
 			{hasPlan && (
-				<div className="px-4 pb-3 flex items-center gap-3">
+				<div className="px-4 pb-3 flex items-center gap-3 flex-wrap">
 					{template.implementation_plan && (
-						<span className="text-[11px] text-ink-3/50 flex items-center gap-1">
+						<span className="text-[11px] text-ink-3/50 flex items-center gap-1 shrink-0">
 							<span className="w-1.5 h-1.5 rounded-full bg-mint/60 inline-block" />
 							Implementation plan
 						</span>
 					)}
 					{template.rollback_plan && (
-						<span className="text-[11px] text-ink-3/50 flex items-center gap-1">
+						<span className="text-[11px] text-ink-3/50 flex items-center gap-1 shrink-0">
 							<span className="w-1.5 h-1.5 rounded-full bg-amber-400/70 inline-block" />
 							Rollback plan
 						</span>
@@ -294,9 +313,12 @@ function TemplateCard({
 				</div>
 			)}
 
+			{/* Spacer so footer always sticks to bottom */}
+			<div className="flex-1" />
+
 			{/* Actions footer */}
 			{canEdit && (
-				<div className="flex items-center gap-1 px-3 py-2 border-t border-border/40 bg-accent/20 rounded-b-xl mt-auto">
+				<div className="flex items-center gap-1 px-3 py-2 border-t border-border/40 bg-accent/20">
 					<Button variant="ghost" size="sm" className="text-xs h-7 px-2" onClick={onEdit}>
 						Edit
 					</Button>

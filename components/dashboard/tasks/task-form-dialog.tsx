@@ -14,9 +14,23 @@ import {
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Combobox } from "@/components/ui/combobox";
-import { cn } from "@/lib/utils/cn";
 import { LinksEditor, type TicketLink } from "./links-editor";
+import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import type { TicketTemplate } from "./types";
+
+function isRteEmpty(val: string): boolean {
+	if (!val) return true;
+	try {
+		const doc = JSON.parse(val);
+		const text = doc.content
+			?.flatMap((n: any) => n.content ?? [])
+			.map((n: any) => n.text ?? "")
+			.join("") ?? "";
+		return !text.trim();
+	} catch {
+		return !val.trim();
+	}
+}
 
 interface TaskFormDialogProps {
 	isPending: boolean;
@@ -178,15 +192,15 @@ export function TaskFormDialog({
 		try {
 			await onSubmit({
 				title: fullTitle,
-				description: description.trim() || undefined,
+				description: isRteEmpty(description) ? undefined : description,
 				ticket_type: ticketType || undefined,
 				priority: priority || undefined,
 				due_date: dueDate ? new Date(dueDate).toISOString() : undefined,
 				assigned_to: assignedTo || undefined,
 				client_name: clientName.trim() || undefined,
 				estimated_hours: estimatedHours ? parseFloat(estimatedHours) : undefined,
-				implementation_plan: implementationPlan.trim() || undefined,
-				rollback_plan: rollbackPlan.trim() || undefined,
+				implementation_plan: isRteEmpty(implementationPlan) ? undefined : implementationPlan,
+				rollback_plan: isRteEmpty(rollbackPlan) ? undefined : rollbackPlan,
 				links: links.filter((l) => l.url.trim()).map((l) => ({ url: l.url.trim(), label: l.label?.trim() || undefined })),
 				source: source || undefined,
 				assignee_permission: assigneePermission || undefined,
@@ -402,27 +416,21 @@ export function TaskFormDialog({
 
 					<div className="space-y-4">
 						<div className="space-y-1.5">
-							<Label htmlFor="impl-plan"><FieldOpt>Implementation plan</FieldOpt></Label>
-							<textarea
-								id="impl-plan"
+							<Label><FieldOpt>Implementation plan</FieldOpt></Label>
+							<RichTextEditor
 								value={implementationPlan}
-								onChange={(e) => setImplementationPlan(e.target.value)}
-								rows={3}
-								maxLength={5000}
-								placeholder={"- Step 1: Deploy to staging\n- Step 2: Run migrations\n• Verify all endpoints respond"}
-								className={cn(inputCls, "resize-none")}
+								onChange={setImplementationPlan}
+								placeholder="Step 1: Deploy to staging&#10;Step 2: Run migrations&#10;Step 3: Verify all endpoints respond"
+								minHeight={80}
 							/>
 						</div>
 						<div className="space-y-1.5">
-							<Label htmlFor="rollback-plan"><FieldOpt>Rollback plan</FieldOpt></Label>
-							<textarea
-								id="rollback-plan"
+							<Label><FieldOpt>Rollback plan</FieldOpt></Label>
+							<RichTextEditor
 								value={rollbackPlan}
-								onChange={(e) => setRollbackPlan(e.target.value)}
-								rows={2}
-								maxLength={2000}
-								placeholder={"- Step 1: Roll back deployment\n• Restore database snapshot if needed"}
-								className={cn(inputCls, "resize-none")}
+								onChange={setRollbackPlan}
+								placeholder="Step 1: Roll back deployment&#10;Step 2: Restore database snapshot if needed"
+								minHeight={64}
 							/>
 						</div>
 					</div>
@@ -431,30 +439,15 @@ export function TaskFormDialog({
 					<SectionDivider label="Links" />
 					<LinksEditor links={links} onChange={setLinks} />
 
-					{/* ── Description (last — future rich text editor) ── */}
+					{/* ── Description ── */}
 					<SectionDivider label="Description" />
 
-					<div className="space-y-1.5">
-						<Label htmlFor="task-desc" className="sr-only">Description</Label>
-						{/* Placeholder for future rich text / attachment area */}
-						<div className="rounded-lg border border-border focus-within:ring-1 focus-within:ring-mint overflow-hidden">
-							<textarea
-								id="task-desc"
-								value={description}
-								onChange={(e) => setDescription(e.target.value)}
-								rows={5}
-								maxLength={1000}
-								placeholder="What needs to be done? Provide context, steps to reproduce, acceptance criteria…"
-								className="w-full bg-background px-3 py-3 text-sm focus:outline-none placeholder:text-ink-3/40 resize-none"
-							/>
-							{/* Toolbar strip — stubbed for future rich-text / attachments */}
-							<div className="flex items-center gap-1 px-3 py-2 border-t border-border/40 bg-accent/40">
-								<span className="text-[10px] text-ink-3/50 font-medium">
-									Markdown supported &middot; Attachments coming soon
-								</span>
-							</div>
-						</div>
-					</div>
+					<RichTextEditor
+						value={description}
+						onChange={setDescription}
+						placeholder="What needs to be done? Provide context, steps to reproduce, acceptance criteria…"
+						minHeight={120}
+					/>
 
 					{!isAdmin && (
 						<p className="text-xs text-ink-3/70 bg-accent/50 border border-border/40 rounded-lg px-3 py-2">
