@@ -12,6 +12,7 @@ import {
 	DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { X } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Combobox } from "@/components/ui/combobox";
 import { LinksEditor, type TicketLink } from "./links-editor";
@@ -220,7 +221,17 @@ export function TaskFormDialog({
 				{/* Modal header */}
 				<div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-border/50 px-6 py-4">
 					<DialogHeader>
-						<DialogTitle className="text-base font-semibold">New Ticket</DialogTitle>
+						<div className="flex items-center justify-between">
+							<DialogTitle className="text-base font-semibold">New Ticket</DialogTitle>
+							<button
+								type="button"
+								onClick={() => { setOpen(false); resetForm(); }}
+								className="rounded-md p-1 text-ink-3/50 hover:text-ink hover:bg-accent/60 transition-colors"
+								aria-label="Close"
+							>
+								<X className="w-4 h-4" />
+							</button>
+						</div>
 					</DialogHeader>
 				</div>
 
