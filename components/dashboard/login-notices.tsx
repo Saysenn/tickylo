@@ -86,7 +86,7 @@ export function LoginNotices() {
 		notices.push({
 			id: "shift_not_set",
 			message:
-				"You haven't set your personal shift hours. Your timer will auto-close at organization shift end.",
+				"You haven't set personal shift hours. Your timer will auto-close based on your organization's shift schedule.",
 			href: "/dashboard/settings/profile",
 			linkLabel: "Set shift hours →",
 		});
