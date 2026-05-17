@@ -67,6 +67,32 @@ const COUNTRY_CODES = [
 	{ code: "+1-CA", flag: "🇨🇦", name: "CA" },
 ];
 
+const PHONE_PLACEHOLDER: Record<string, string> = {
+	"+63":    "912 345 6789",
+	"+1":     "(555) 234-5678",
+	"+1-CA":  "(416) 234-5678",
+	"+44":    "7911 123456",
+	"+61":    "412 345 678",
+	"+64":    "21 123 4567",
+	"+65":    "8123 4567",
+	"+60":    "12-345 6789",
+	"+62":    "812-3456-789",
+	"+66":    "81 234 5678",
+	"+84":    "91 234 56 78",
+	"+82":    "10-1234-5678",
+	"+81":    "90-1234-5678",
+	"+86":    "131 2345 6789",
+	"+852":   "5123 4567",
+	"+91":    "98765 43210",
+	"+971":   "50 123 4567",
+	"+966":   "51 234 5678",
+	"+49":    "1512 3456789",
+	"+33":    "6 12 34 56 78",
+	"+39":    "312 345 6789",
+	"+34":    "612 345 678",
+	"+31":    "6 12345678",
+};
+
 function parsePhone(raw: string): { dialCode: string; local: string } {
 	for (const c of COUNTRY_CODES) {
 		const code = c.code.replace("-CA", "");
@@ -218,7 +244,7 @@ export function ProfileMetaSection() {
 										<Input
 											id="meta-phone"
 											type="tel"
-											placeholder="912 345 6789"
+											placeholder={PHONE_PLACEHOLDER[dialCode] ?? "Phone number"}
 											value={localPhone}
 											onChange={(e) => setLocalPhone(e.target.value)}
 											className="h-9 text-sm"
