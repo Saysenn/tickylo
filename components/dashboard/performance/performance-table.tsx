@@ -5,7 +5,8 @@ import { useQuery } from "@tanstack/react-query";
 import APIService from "@/lib/infra/api";
 import { TimeDateRange } from "@/components/dashboard/time-manager/time-date-range";
 import { formatDurationMs, startOfMonthDateStr, todayDateStr } from "@/lib/utils/format";
-import { TrendingUp, Download, FileText, Search } from "lucide-react";
+import { TrendingUp, Download, FileText, Search, FileDown } from "lucide-react";
+import { exportAllPdf, exportEmployeePdf } from "@/lib/utils/export-pdf";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Combobox } from "@/components/ui/combobox";
@@ -49,6 +50,11 @@ function exportAllCsv(data: PerformanceEntry[], from: string, to: string) {
 		e.time_this_period_ms > 0 ? formatDurationMs(e.time_this_period_ms) : "",
 	]));
 	downloadCsv([header, ...rows].join("\n"), `report-all-${from}-to-${to}.csv`);
+}
+
+async function exportEmployeePdfReport(userId: string, from: string, to: string) {
+	const result = await APIService.performance.employeeReport(userId, from, to);
+	exportEmployeePdf(result as any, from, to);
 }
 
 async function exportEmployeeCsv(userId: string, from: string, to: string) {
@@ -116,18 +122,20 @@ function GenerateReportModal({ open, onClose, employees, defaultFrom, defaultTo,
 	const [selectedUser, setSelectedUser] = useState("all");
 	const [from, setFrom] = useState(defaultFrom);
 	const [to, setTo] = useState(defaultTo);
+	const [format, setFormat] = useState<"csv" | "pdf">("csv");
 	const [isGenerating, setIsGenerating] = useState(false);
 
 	const handleGenerate = async () => {
 		setIsGenerating(true);
 		try {
-			if (selectedUser === "all") {
-				exportAllCsv(allData, from, to);
-				onClose();
+			if (format === "csv") {
+				if (selectedUser === "all") exportAllCsv(allData, from, to);
+				else await exportEmployeeCsv(selectedUser, from, to);
 			} else {
-				await exportEmployeeCsv(selectedUser, from, to);
-				onClose();
+				if (selectedUser === "all") exportAllPdf(allData, from, to);
+				else await exportEmployeePdfReport(selectedUser, from, to);
 			}
+			onClose();
 		} finally {
 			setIsGenerating(false);
 		}
@@ -138,7 +146,7 @@ function GenerateReportModal({ open, onClose, employees, defaultFrom, defaultTo,
 			<DialogContent className="sm:max-w-sm">
 				<DialogHeader>
 					<DialogTitle>Generate Report</DialogTitle>
-					<DialogDescription>Select an employee and date range to export a CSV report.</DialogDescription>
+					<DialogDescription>Select an employee, date range, and format.</DialogDescription>
 				</DialogHeader>
 				<div className="space-y-4 pt-1">
 					<div className="space-y-1.5">
@@ -177,6 +185,27 @@ function GenerateReportModal({ open, onClose, employees, defaultFrom, defaultTo,
 						</div>
 					</div>
 
+					{/* Format toggle */}
+					<div className="space-y-1.5">
+						<Label className="text-xs">Format</Label>
+						<div className="flex rounded-md border border-border overflow-hidden text-sm">
+							<button
+								type="button"
+								onClick={() => setFormat("csv")}
+								className={`flex-1 py-1.5 text-center text-xs font-medium transition-colors ${format === "csv" ? "bg-mint text-ink" : "bg-background text-ink-3 hover:bg-accent"}`}
+							>
+								CSV
+							</button>
+							<button
+								type="button"
+								onClick={() => setFormat("pdf")}
+								className={`flex-1 py-1.5 text-center text-xs font-medium transition-colors ${format === "pdf" ? "bg-mint text-ink" : "bg-background text-ink-3 hover:bg-accent"}`}
+							>
+								PDF
+							</button>
+						</div>
+					</div>
+
 					<div className="flex justify-end gap-2 pt-1">
 						<Button variant="outline" size="sm" onClick={onClose}>Cancel</Button>
 						<Button
@@ -187,7 +216,7 @@ function GenerateReportModal({ open, onClose, employees, defaultFrom, defaultTo,
 							onClick={handleGenerate}
 						>
 							<Download className="w-3.5 h-3.5" />
-							Download CSV
+							Download {format.toUpperCase()}
 						</Button>
 					</div>
 				</div>
@@ -206,6 +235,7 @@ export function PerformanceTable() {
 	const [search,        setSearch]        = useState("");
 	const [reportOpen,    setReportOpen]    = useState(false);
 	const [rowGenerating, setRowGenerating] = useState<string | null>(null);
+	const [rowPdfGenerating, setRowPdfGenerating] = useState<string | null>(null);
 
 	const { data, isLoading, isError } = useQuery<PerformanceEntry[]>({
 		queryKey: ["performance", from, to],
@@ -225,6 +255,12 @@ export function PerformanceTable() {
 		setRowGenerating(userId);
 		try { await exportEmployeeCsv(userId, from, to); }
 		finally { setRowGenerating(null); }
+	};
+
+	const handleRowPdfExport = async (userId: string) => {
+		setRowPdfGenerating(userId);
+		try { await exportEmployeePdfReport(userId, from, to); }
+		finally { setRowPdfGenerating(null); }
 	};
 
 	return (
@@ -285,7 +321,7 @@ export function PerformanceTable() {
 								<th className="text-right px-4 py-2 text-xs font-semibold text-ink-3 uppercase tracking-wider">Completion Rate</th>
 								<th className="text-right px-4 py-2 text-xs font-semibold text-ink-3 uppercase tracking-wider hidden lg:table-cell">Avg Days</th>
 								<th className="text-right px-4 py-2 text-xs font-semibold text-ink-3 uppercase tracking-wider">Time Logged</th>
-								<th className="w-8 px-4 py-2" />
+								<th className="w-20 px-4 py-2" />
 							</tr>
 						</thead>
 						<tbody className="divide-y">
@@ -325,18 +361,32 @@ export function PerformanceTable() {
 											{entry.time_this_period_ms > 0 ? formatDurationMs(entry.time_this_period_ms) : "—"}
 										</td>
 										<td className="px-4 py-2 text-right">
-											<button
-												type="button"
-												title="Export report"
-												disabled={rowGenerating === entry.user.id}
-												onClick={() => handleRowExport(entry.user.id)}
-												className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-accent text-ink-3 hover:text-ink disabled:opacity-40"
-											>
-												{rowGenerating === entry.user.id
-													? <div className="w-3.5 h-3.5 border-2 border-mint/40 border-t-mint rounded-full animate-spin" />
-													: <Download className="w-3.5 h-3.5" />
-												}
-											</button>
+											<div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+												<button
+													type="button"
+													title="Export CSV"
+													disabled={rowGenerating === entry.user.id}
+													onClick={() => handleRowExport(entry.user.id)}
+													className="p-1 rounded hover:bg-accent text-ink-3 hover:text-ink disabled:opacity-40"
+												>
+													{rowGenerating === entry.user.id
+														? <div className="w-3.5 h-3.5 border-2 border-mint/40 border-t-mint rounded-full animate-spin" />
+														: <Download className="w-3.5 h-3.5" />
+													}
+												</button>
+												<button
+													type="button"
+													title="Export PDF"
+													disabled={rowPdfGenerating === entry.user.id}
+													onClick={() => handleRowPdfExport(entry.user.id)}
+													className="p-1 rounded hover:bg-accent text-ink-3 hover:text-ink disabled:opacity-40"
+												>
+													{rowPdfGenerating === entry.user.id
+														? <div className="w-3.5 h-3.5 border-2 border-mint/40 border-t-mint rounded-full animate-spin" />
+														: <FileDown className="w-3.5 h-3.5" />
+													}
+												</button>
+											</div>
 										</td>
 									</tr>
 								);
