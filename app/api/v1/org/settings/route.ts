@@ -14,11 +14,11 @@ export async function GET() {
 
 		const org = await prisma.organization.findUnique({
 			where: { id: orgId },
-			select: { attachments_enabled: true },
+			select: { attachments_enabled: true, org_join_code: true, name: true },
 		});
 		if (!org) return errorResponse("Organization not found", 404);
 
-		return ok({ attachments_enabled: org.attachments_enabled });
+		return ok({ attachments_enabled: org.attachments_enabled, org_join_code: org.org_join_code, name: org.name });
 	} catch (e) {
 		console.error("[GET /org/settings]", e);
 		return errorResponse("Internal server error", 500);

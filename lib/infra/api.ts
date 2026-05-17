@@ -349,7 +349,7 @@ class APIService {
 	// Org Settings
 	// ---------------------------------------------------------------------------
 	public orgSettings = {
-		get: () => axiosService.get<{ attachments_enabled: boolean }>(`${apiVersion}/org/settings`),
+		get: () => axiosService.get<{ attachments_enabled: boolean; org_join_code: string; name: string }>(`${apiVersion}/org/settings`),
 		update: (data: { attachments_enabled: boolean }) => axiosService.patch(`${apiVersion}/org/settings`, data),
 	};
 

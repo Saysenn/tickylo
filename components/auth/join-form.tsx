@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Users, CheckCircle2, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -10,15 +10,23 @@ import APIService from "@/lib/infra/api";
 
 type Step = "code" | "details" | "success";
 
-export function JoinForm() {
+export function JoinForm({ initialCode }: { initialCode?: string }) {
 	const [step, setStep] = useState<Step>("code");
-	const [code, setCode] = useState("");
+	const [code, setCode] = useState(initialCode ?? "");
 	const [orgName, setOrgName] = useState("");
 	const [form, setForm] = useState({ name: "", email: "", password: "" });
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState("");
 	const [acceptedPrivacy, setAcceptedPrivacy] = useState(false);
 	const [acceptedTerms, setAcceptedTerms] = useState(false);
+
+	useEffect(() => {
+		if (initialCode) {
+			APIService.org.checkJoinCode(initialCode)
+				.then((org: any) => { setOrgName(org.name); setStep("details"); })
+				.catch(() => {});
+		}
+	}, [initialCode]);
 
 	function setField(field: string, value: string) {
 		setForm((prev) => ({ ...prev, [field]: value }));

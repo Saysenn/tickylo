@@ -6,7 +6,13 @@ export const metadata = {
 	description: "Join your company workspace on Tickworks",
 };
 
-export default function JoinPage() {
+export default async function JoinPage({
+	searchParams,
+}: {
+	searchParams: Promise<{ code?: string }>;
+}) {
+	const { code } = await searchParams;
+
 	return (
 		<main className="relative min-h-screen flex items-center justify-center bg-background overflow-hidden px-4 py-12">
 			<div className="pointer-events-none absolute inset-0">
@@ -24,7 +30,7 @@ export default function JoinPage() {
 					</svg>
 					Back
 				</Link>
-				<JoinForm />
+				<JoinForm initialCode={code} />
 			</div>
 		</main>
 	);
