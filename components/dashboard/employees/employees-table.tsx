@@ -10,7 +10,14 @@ import { Button } from "@/components/ui/button";
 import { EmployeeFormDialog } from "./employee-form-dialog";
 import { EmployeeDeleteDialog } from "./employee-delete-dialog";
 import { Pagination } from "@/components/ui/pagination";
-import { UserPlus, Pencil, Trash2, Users, Search } from "lucide-react";
+import { UserPlus, Pencil, Trash2, Users, Search, CheckSquare } from "lucide-react";
+import {
+	SelectRoot,
+	SelectTrigger,
+	SelectValue,
+	SelectContent,
+	SelectItem,
+} from "@/components/ui/select";
 import { cn } from "@/lib/utils/cn";
 import { formatInitials, formatDate } from "@/lib/utils/format";
 import type { Employee } from "./types";
@@ -31,6 +38,8 @@ export function EmployeesTable() {
 	const queryClient = useQueryClient();
 	const searchParam = searchParams.get("search") ?? "";
 	const [searchInput, setSearchInput] = useState(searchParam);
+	const [bulkMode, setBulkMode] = useState(false);
+	const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
 	const goToPage = (p: number) => {
 		const params = new URLSearchParams(searchParams.toString());
@@ -96,6 +105,17 @@ export function EmployeesTable() {
 		},
 	});
 
+	const { mutateAsync: bulkAction, isPending: isBulkPending } = useMutation({
+		mutationFn: ({ action, role }: { action: "delete" | "change_role"; role?: string }) =>
+			APIService.employees.bulk(action, [...selectedIds], role),
+		onSuccess: () => {
+			setSelectedIds(new Set());
+			setBulkMode(false);
+			invalidateAll();
+			resetPage();
+		},
+	});
+
 	if (isLoading) {
 		return (
 			<div className="flex items-center justify-center py-24">
@@ -135,26 +155,37 @@ export function EmployeesTable() {
 						{list.length} {list.length === 1 ? "member" : "members"}
 					</p>
 				</div>
-				<EmployeeFormDialog
-					mode="create"
-					isPending={isCreating}
-					onSubmit={async (data) => {
-						await createEmployee(
-							data as {
-								name: string;
-								email: string;
-								password: string;
-								role: string;
-							},
-						);
-					}}
-					trigger={
-						<Button size="sm">
-							<UserPlus className="w-4 h-4" />
-							Add employee
-						</Button>
-					}
-				/>
+				<div className="flex items-center gap-2">
+					<Button
+						size="sm"
+						variant={bulkMode ? "outline" : "ghost"}
+						className={cn("h-8 text-xs gap-1.5", bulkMode ? "border-mint/40 text-mint" : "text-ink-3")}
+						onClick={() => { setBulkMode((v) => !v); setSelectedIds(new Set()); }}
+					>
+						<CheckSquare className="w-3.5 h-3.5" />
+						{bulkMode ? "Exit Bulk" : "Bulk"}
+					</Button>
+					<EmployeeFormDialog
+						mode="create"
+						isPending={isCreating}
+						onSubmit={async (data) => {
+							await createEmployee(
+								data as {
+									name: string;
+									email: string;
+									password: string;
+									role: string;
+								},
+							);
+						}}
+						trigger={
+							<Button size="sm">
+								<UserPlus className="w-4 h-4" />
+								Add employee
+							</Button>
+						}
+					/>
+				</div>
 			</div>
 
 			{/* Empty state */}
@@ -170,6 +201,45 @@ export function EmployeesTable() {
 				</div>
 			)}
 
+			{/* Bulk action bar */}
+			{bulkMode && (
+				<div className="flex items-center gap-3 px-4 py-2.5 rounded-xl bg-mint/8 border border-mint/20">
+					<span className="text-xs font-medium text-ink-2">
+						{selectedIds.size > 0 ? `${selectedIds.size} selected` : "Select employees to act on"}
+					</span>
+					<div className="flex items-center gap-2 ml-auto">
+						<SelectRoot
+							onValueChange={(v) => bulkAction({ action: "change_role", role: v })}
+							disabled={isBulkPending || selectedIds.size === 0}
+						>
+							<SelectTrigger className="h-7 text-xs w-[130px]">
+								<SelectValue placeholder="Change role" />
+							</SelectTrigger>
+							<SelectContent>
+								<SelectItem value="employee">Set Employee</SelectItem>
+								<SelectItem value="admin">Set Admin</SelectItem>
+							</SelectContent>
+						</SelectRoot>
+						<Button
+							size="sm" variant="outline"
+							className="h-7 text-xs gap-1.5 text-destructive border-red-500/30 hover:bg-red-500/10 hover:text-destructive"
+							disabled={isBulkPending || selectedIds.size === 0}
+							onClick={() => bulkAction({ action: "delete" })}
+						>
+							<Trash2 className="w-3.5 h-3.5" />
+							Delete
+						</Button>
+						<Button
+							size="sm" variant="ghost"
+							className="h-7 text-xs text-ink-3"
+							onClick={() => { setSelectedIds(new Set()); setBulkMode(false); }}
+						>
+							Cancel
+						</Button>
+					</div>
+				</div>
+			)}
+
 			{/* Table */}
 			{list.length > 0 && (
 				<div key={page} className="animate-fade-in space-y-4">
@@ -177,6 +247,14 @@ export function EmployeesTable() {
 						<table className="w-full min-w-[600px] text-sm">
 							<thead>
 								<tr className="border-b bg-accent/30">
+									<th className={cn("w-8 px-3 py-2", !bulkMode && "hidden")}>
+										<input
+											type="checkbox"
+											className="rounded border-border accent-mint"
+											checked={list.length > 0 && selectedIds.size === list.length}
+											onChange={(e) => setSelectedIds(e.target.checked ? new Set(list.map((emp) => emp.id)) : new Set())}
+										/>
+									</th>
 									<th className="text-left px-4 py-2 text-xs font-semibold text-ink-3 uppercase tracking-wider">
 										Member
 									</th>
@@ -202,9 +280,21 @@ export function EmployeesTable() {
 								) : list.map((employee: Employee) => (
 									<tr
 										key={employee.id}
-										className="hover:bg-accent/20 transition-colors cursor-pointer"
+										className={cn("hover:bg-accent/20 transition-colors cursor-pointer", selectedIds.has(employee.id) && "bg-mint/5")}
 										onClick={() => router.push(`/dashboard/employees/${employee.id}`)}
 									>
+										<td className={cn("w-8 px-3 py-2", !bulkMode && "hidden")} onClick={(e) => e.stopPropagation()}>
+											<input
+												type="checkbox"
+												className="rounded border-border accent-mint"
+												checked={selectedIds.has(employee.id)}
+												onChange={(e) => {
+													const next = new Set(selectedIds);
+													e.target.checked ? next.add(employee.id) : next.delete(employee.id);
+													setSelectedIds(next);
+												}}
+											/>
+										</td>
 										{/* Avatar + name + email */}
 										<td className="px-4 py-2">
 											<div className="flex items-center gap-3">

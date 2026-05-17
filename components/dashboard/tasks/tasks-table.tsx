@@ -10,7 +10,7 @@ import { Pagination } from "@/components/ui/pagination";
 import { TaskFormDialog } from "./task-form-dialog";
 import { TimeOutDialog } from "@/components/dashboard/time-tracker/time-out-dialog";
 import { useAppSelector } from "@/store/hooks";
-import { formatDate, formatDueDate, formatDurationMs } from "@/lib/utils/format";
+import { formatDueDate, formatDurationMs } from "@/lib/utils/format";
 import { cn } from "@/lib/utils/cn";
 import { ClipboardList, Plus, Trash2, CheckCheck, UserCog, X, SlidersHorizontal, Clock, CheckSquare, Search } from "lucide-react";
 import { ROWS_PER_PAGE } from "@/configs/pagination.config";
@@ -74,7 +74,6 @@ export function TasksTable() {
 	const [viewFilter, setViewFilter] = useState<"assigned" | "unassigned" | "all">("assigned");
 	const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 	const [bulkMode, setBulkMode] = useState(false);
-	const [bulkAssignTo, setBulkAssignTo] = useState("");
 	const [bulkAssignOpen, setBulkAssignOpen] = useState(false);
 	const [filtersOpen, setFiltersOpen] = useState(false);
 
@@ -192,14 +191,6 @@ const { mutateAsync: claimTask, isPending: isClaiming } = useMutation({
 		onSuccess: invalidateAll,
 	});
 
-	// Employees for bulk-assign (admin only, loaded lazily)
-	const { data: employeesResult } = useQuery<{ data: { id: string; name: string | null; email: string }[] }>({
-		queryKey: ["employees-list"],
-		queryFn: () => APIService.employees.list(1, 50),
-		enabled: isAdmin && bulkAssignOpen,
-		staleTime: 300_000,
-	});
-	const employees = employeesResult?.data ?? [];
 
 	const { mutateAsync: bulkAction, isPending: isBulkPending } = useMutation({
 		mutationFn: ({ action, ...payload }: { action: "assign" | "complete" | "delete" | "status" | "priority" | "due_date"; user_id?: string; status?: string; priority?: string; due_date?: string | null }) =>
@@ -207,8 +198,7 @@ const { mutateAsync: claimTask, isPending: isClaiming } = useMutation({
 		onSuccess: () => {
 			setSelectedIds(new Set());
 			setBulkMode(false);
-			setBulkAssignTo("");
-			setBulkAssignOpen(false);
+						setBulkAssignOpen(false);
 			invalidateAll();
 		},
 	});
@@ -411,7 +401,7 @@ const { mutateAsync: claimTask, isPending: isClaiming } = useMutation({
 						<Button
 							size="sm" variant="outline"
 							className="h-7 text-xs gap-1.5 text-green-700 border-green-500/30 hover:bg-green-500/10"
-							disabled={isBulkPending}
+							disabled={isBulkPending || selectedIds.size === 0}
 							onClick={() => bulkAction({ action: "complete" })}
 						>
 							<CheckCheck className="w-3.5 h-3.5" />
@@ -420,7 +410,7 @@ const { mutateAsync: claimTask, isPending: isClaiming } = useMutation({
 						<Button
 							size="sm" variant="outline"
 							className="h-7 text-xs gap-1.5 text-destructive border-red-500/30 hover:bg-red-500/10 hover:text-destructive"
-							disabled={isBulkPending}
+							disabled={isBulkPending || selectedIds.size === 0}
 							onClick={() => bulkAction({ action: "delete" })}
 						>
 							<Trash2 className="w-3.5 h-3.5" />
@@ -430,7 +420,7 @@ const { mutateAsync: claimTask, isPending: isClaiming } = useMutation({
 						{/* Bulk status */}
 						<SelectRoot
 							onValueChange={(v) => bulkAction({ action: "status", status: v })}
-							disabled={isBulkPending}
+							disabled={isBulkPending || selectedIds.size === 0}
 						>
 							<SelectTrigger className="h-7 text-xs w-[110px]">
 								<SelectValue placeholder="Set status" />
@@ -447,7 +437,7 @@ const { mutateAsync: claimTask, isPending: isClaiming } = useMutation({
 						{/* Bulk priority */}
 						<SelectRoot
 							onValueChange={(v) => bulkAction({ action: "priority", priority: v })}
-							disabled={isBulkPending}
+							disabled={isBulkPending || selectedIds.size === 0}
 						>
 							<SelectTrigger className="h-7 text-xs w-[110px]">
 								<SelectValue placeholder="Set priority" />
@@ -688,7 +678,7 @@ const { mutateAsync: claimTask, isPending: isClaiming } = useMutation({
 					isPending={isBulkPending}
 					confirmLabel="Confirm"
 					onConfirm={(eid) => bulkAction({ action: "assign", user_id: eid })}
-					onClose={() => { setBulkAssignOpen(false); setBulkAssignTo(""); }}
+					onClose={() => setBulkAssignOpen(false)}
 				/>
 			)}
 		</div>

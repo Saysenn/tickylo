@@ -89,6 +89,8 @@ class APIService {
 		) => axiosService.patch(`${apiVersion}/employees/${id}`, data),
 		remove: (id: string) =>
 			axiosService.delete(`${apiVersion}/employees/${id}`),
+		bulk: (action: "delete" | "change_role", ids: string[], role?: string) =>
+			axiosService.post(`${apiVersion}/employees/bulk`, { action, ids, role }),
 	};
 
 	// ---------------------------------------------------------------------------

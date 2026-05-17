@@ -259,6 +259,40 @@ export async function getWorkload(admin: Caller) {
 	return workload;
 }
 
+export async function bulkEmployeeAction(
+	action: "delete" | "change_role",
+	ids: string[],
+	admin: Caller,
+	role?: string,
+) {
+	if (action === "change_role" && !role)
+		throw Object.assign(new Error("role is required for change_role action"), { status: 400 });
+
+	const supabaseAdmin = createAdminClient();
+	const succeeded: string[] = [];
+	const failed: string[] = [];
+
+	for (const id of ids) {
+		try {
+			if (action === "delete") {
+				if (admin.id === id) { failed.push(id); continue; }
+				const { error } = await supabaseAdmin.auth.admin.deleteUser(id);
+				if (error) { failed.push(id); continue; }
+				auditLog({ org_id: admin.app_metadata?.org_id as string | undefined, actor_id: admin.id, actor_role: ROLES.ADMIN, action: "DELETE", entity_type: "employee", entity_id: id });
+			} else if (action === "change_role") {
+				const { error } = await supabaseAdmin.auth.admin.updateUserById(id, { app_metadata: { role } });
+				if (error) { failed.push(id); continue; }
+				auditLog({ org_id: admin.app_metadata?.org_id as string | undefined, actor_id: admin.id, actor_role: ROLES.ADMIN, action: "UPDATE", entity_type: "employee", entity_id: id, after: { role } });
+			}
+			succeeded.push(id);
+		} catch {
+			failed.push(id);
+		}
+	}
+
+	return { succeeded, failed };
+}
+
 export async function deleteEmployee(id: string, admin: Caller) {
 	if (admin.id === id) throw Object.assign(new Error("Cannot delete your own account"), { status: 400 });
 
