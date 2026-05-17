@@ -298,20 +298,15 @@ const { mutateAsync: claimTask, isPending: isClaiming } = useMutation({
 
 					<div className="flex items-center gap-2 ml-auto">
 						<p className="text-sm text-ink-3">{result?.total ?? 0} {(result?.total ?? 0) === 1 ? "ticket" : "tickets"}</p>
-						{isAdmin && (
-							<Button
-								size="sm"
-								variant={bulkMode ? "outline" : "ghost"}
-								className={cn("h-8 text-xs gap-1.5", bulkMode ? "border-mint/40 text-mint" : "text-ink-3")}
-								onClick={() => {
-									setBulkMode((v) => !v);
-									setSelectedIds(new Set());
-								}}
-							>
-								<CheckSquare className="w-3.5 h-3.5" />
-								{bulkMode ? "Exit Bulk" : "Bulk"}
-							</Button>
-						)}
+						<Button
+							size="sm"
+							variant={bulkMode ? "outline" : "ghost"}
+							className={cn("h-8 text-xs gap-1.5", bulkMode ? "border-mint/40 text-mint" : "text-ink-3")}
+							onClick={() => { setBulkMode((v) => !v); setSelectedIds(new Set()); }}
+						>
+							<CheckSquare className="w-3.5 h-3.5" />
+							{bulkMode ? "Exit Bulk" : "Bulk"}
+						</Button>
 						<TaskFormDialog
 							isPending={isCreating}
 							onSubmit={async (data) => { await createTask(data); }}
@@ -383,21 +378,23 @@ const { mutateAsync: claimTask, isPending: isClaiming } = useMutation({
 			</div>
 
 			{/* Inline bulk action bar */}
-			{isAdmin && bulkMode && (
+			{bulkMode && (
 				<div className="flex items-center gap-3 px-4 py-2.5 rounded-xl bg-mint/8 border border-mint/20">
 					<span className="text-xs font-medium text-ink-2">
 						{selectedIds.size > 0 ? `${selectedIds.size} selected` : "Select tickets to act on"}
 					</span>
 					<div className="flex items-center gap-2 ml-auto">
-						<Button
-							size="sm" variant="outline"
-							className="h-7 text-xs gap-1.5"
-							disabled={isBulkPending || selectedIds.size === 0}
-							onClick={() => setBulkAssignOpen(true)}
-						>
-							<UserCog className="w-3.5 h-3.5" />
-							Reassign
-						</Button>
+						{isAdmin && (
+							<Button
+								size="sm" variant="outline"
+								className="h-7 text-xs gap-1.5"
+								disabled={isBulkPending || selectedIds.size === 0}
+								onClick={() => setBulkAssignOpen(true)}
+							>
+								<UserCog className="w-3.5 h-3.5" />
+								Reassign
+							</Button>
+						)}
 						<Button
 							size="sm" variant="outline"
 							className="h-7 text-xs gap-1.5 text-green-700 border-green-500/30 hover:bg-green-500/10"
@@ -407,48 +404,49 @@ const { mutateAsync: claimTask, isPending: isClaiming } = useMutation({
 							<CheckCheck className="w-3.5 h-3.5" />
 							Complete
 						</Button>
-						<Button
-							size="sm" variant="outline"
-							className="h-7 text-xs gap-1.5 text-destructive border-red-500/30 hover:bg-red-500/10 hover:text-destructive"
-							disabled={isBulkPending || selectedIds.size === 0}
-							onClick={() => bulkAction({ action: "delete" })}
-						>
-							<Trash2 className="w-3.5 h-3.5" />
-							Delete
-						</Button>
-
-						{/* Bulk status */}
-						<SelectRoot
-							onValueChange={(v) => bulkAction({ action: "status", status: v })}
-							disabled={isBulkPending || selectedIds.size === 0}
-						>
-							<SelectTrigger className="h-7 text-xs w-[110px]">
-								<SelectValue placeholder="Set status" />
-							</SelectTrigger>
-							<SelectContent>
-								<SelectItem value="open">Open</SelectItem>
-								<SelectItem value="in_progress">In Progress</SelectItem>
-								<SelectItem value="assigned">Assigned</SelectItem>
-								<SelectItem value="stale">Stale</SelectItem>
-								<SelectItem value="completed">Completed</SelectItem>
-							</SelectContent>
-						</SelectRoot>
-
-						{/* Bulk priority */}
-						<SelectRoot
-							onValueChange={(v) => bulkAction({ action: "priority", priority: v })}
-							disabled={isBulkPending || selectedIds.size === 0}
-						>
-							<SelectTrigger className="h-7 text-xs w-[110px]">
-								<SelectValue placeholder="Set priority" />
-							</SelectTrigger>
-							<SelectContent>
-								<SelectItem value="low">Low</SelectItem>
-								<SelectItem value="medium">Medium</SelectItem>
-								<SelectItem value="high">High</SelectItem>
-							</SelectContent>
-						</SelectRoot>
-
+						{isAdmin && (
+							<Button
+								size="sm" variant="outline"
+								className="h-7 text-xs gap-1.5 text-destructive border-red-500/30 hover:bg-red-500/10 hover:text-destructive"
+								disabled={isBulkPending || selectedIds.size === 0}
+								onClick={() => bulkAction({ action: "delete" })}
+							>
+								<Trash2 className="w-3.5 h-3.5" />
+								Delete
+							</Button>
+						)}
+						{isAdmin && (
+							<SelectRoot
+								onValueChange={(v) => bulkAction({ action: "status", status: v })}
+								disabled={isBulkPending || selectedIds.size === 0}
+							>
+								<SelectTrigger className="h-7 text-xs w-[110px]">
+									<SelectValue placeholder="Set status" />
+								</SelectTrigger>
+								<SelectContent>
+									<SelectItem value="open">Open</SelectItem>
+									<SelectItem value="in_progress">In Progress</SelectItem>
+									<SelectItem value="assigned">Assigned</SelectItem>
+									<SelectItem value="stale">Stale</SelectItem>
+									<SelectItem value="completed">Completed</SelectItem>
+								</SelectContent>
+							</SelectRoot>
+						)}
+						{isAdmin && (
+							<SelectRoot
+								onValueChange={(v) => bulkAction({ action: "priority", priority: v })}
+								disabled={isBulkPending || selectedIds.size === 0}
+							>
+								<SelectTrigger className="h-7 text-xs w-[110px]">
+									<SelectValue placeholder="Set priority" />
+								</SelectTrigger>
+								<SelectContent>
+									<SelectItem value="low">Low</SelectItem>
+									<SelectItem value="medium">Medium</SelectItem>
+									<SelectItem value="high">High</SelectItem>
+								</SelectContent>
+							</SelectRoot>
+						)}
 						<Button
 							size="sm" variant="ghost"
 							className="h-7 text-xs text-ink-3"
@@ -478,19 +476,17 @@ const { mutateAsync: claimTask, isPending: isClaiming } = useMutation({
 						<table className="w-full min-w-[640px] text-sm">
 							<thead>
 								<tr className="border-b bg-accent/30">
-									{isAdmin && (
-										<th className={cn("w-8 px-3 py-2", !bulkMode && "hidden")}>
-											<input
-												type="checkbox"
-												checked={list.length > 0 && selectedIds.size === list.length}
-												onChange={(e) => {
-													if (e.target.checked) setSelectedIds(new Set(list.map((t: Task) => t.id)));
-													else setSelectedIds(new Set());
-												}}
-												className="accent-mint cursor-pointer"
-											/>
-										</th>
-									)}
+									<th className={cn("w-8 px-3 py-2", !bulkMode && "hidden")}>
+										<input
+											type="checkbox"
+											checked={list.length > 0 && selectedIds.size === list.length}
+											onChange={(e) => {
+												if (e.target.checked) setSelectedIds(new Set(list.map((t: Task) => t.id)));
+												else setSelectedIds(new Set());
+											}}
+											className="accent-mint cursor-pointer"
+										/>
+									</th>
 									<th className="text-left px-4 py-2 text-xs font-semibold text-ink-3 uppercase tracking-wider">
 										Title
 									</th>
@@ -519,13 +515,12 @@ const { mutateAsync: claimTask, isPending: isClaiming } = useMutation({
 										className={cn("hover:bg-accent/20 transition-colors cursor-pointer", selectedIds.has(task.id) && "bg-mint/5")}
 										onClick={() => router.push(`/dashboard/tickets/${task.id}`)}
 									>
-										{isAdmin && (
-											<td className={cn("w-8 px-3 py-2", !bulkMode && "hidden")} onClick={(e) => e.stopPropagation()}>
-												<input
-													type="checkbox"
-													checked={selectedIds.has(task.id)}
-													onChange={(e) => {
-														const next = new Set(selectedIds);
+										<td className={cn("w-8 px-3 py-2", !bulkMode && "hidden")} onClick={(e) => e.stopPropagation()}>
+											<input
+												type="checkbox"
+												checked={selectedIds.has(task.id)}
+												onChange={(e) => {
+													const next = new Set(selectedIds);
 														if (e.target.checked) next.add(task.id);
 														else next.delete(task.id);
 														setSelectedIds(next);
@@ -533,7 +528,6 @@ const { mutateAsync: claimTask, isPending: isClaiming } = useMutation({
 													className="accent-mint cursor-pointer"
 												/>
 											</td>
-										)}
 										<td className="px-4 py-2">
 											<div className="flex items-center gap-1.5">
 												<p className="text-xs font-medium text-ink truncate max-w-[200px]">
