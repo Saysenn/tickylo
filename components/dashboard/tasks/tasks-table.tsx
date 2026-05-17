@@ -8,7 +8,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Pagination } from "@/components/ui/pagination";
 import { TaskFormDialog } from "./task-form-dialog";
-import { TaskDeleteDialog } from "./task-delete-dialog";
 import { TimeOutDialog } from "@/components/dashboard/time-tracker/time-out-dialog";
 import { useAppSelector } from "@/store/hooks";
 import { formatDate, formatDueDate, formatDurationMs } from "@/lib/utils/format";
@@ -164,12 +163,7 @@ export function TasksTable() {
 		onSuccess: () => { invalidateAll(); resetPage(); },
 	});
 
-	const { mutateAsync: removeTask, isPending: isDeleting } = useMutation({
-		mutationFn: (id: string) => APIService.tasks.remove(id),
-		onSuccess: () => { invalidateAll(); resetPage(); },
-	});
-
-	const { mutateAsync: claimTask, isPending: isClaiming } = useMutation({
+const { mutateAsync: claimTask, isPending: isClaiming } = useMutation({
 		mutationFn: (id: string) => APIService.tasks.claim(id),
 		onSuccess: invalidateAll,
 	});
@@ -208,8 +202,8 @@ export function TasksTable() {
 	const employees = employeesResult?.data ?? [];
 
 	const { mutateAsync: bulkAction, isPending: isBulkPending } = useMutation({
-		mutationFn: ({ action, user_id }: { action: "assign" | "complete" | "delete"; user_id?: string }) =>
-			APIService.tasks.bulk(action, [...selectedIds], user_id),
+		mutationFn: ({ action, ...payload }: { action: "assign" | "complete" | "delete" | "status" | "priority" | "due_date"; user_id?: string; status?: string; priority?: string; due_date?: string | null }) =>
+			APIService.tasks.bulk(action, [...selectedIds], payload),
 		onSuccess: () => {
 			setSelectedIds(new Set());
 			setBulkMode(false);
@@ -399,14 +393,16 @@ export function TasksTable() {
 			</div>
 
 			{/* Inline bulk action bar */}
-			{isAdmin && bulkMode && selectedIds.size > 0 && (
+			{isAdmin && bulkMode && (
 				<div className="flex items-center gap-3 px-4 py-2.5 rounded-xl bg-mint/8 border border-mint/20">
-					<span className="text-xs font-medium text-ink-2">{selectedIds.size} selected</span>
+					<span className="text-xs font-medium text-ink-2">
+						{selectedIds.size > 0 ? `${selectedIds.size} selected` : "Select tickets to act on"}
+					</span>
 					<div className="flex items-center gap-2 ml-auto">
 						<Button
 							size="sm" variant="outline"
 							className="h-7 text-xs gap-1.5"
-							disabled={isBulkPending}
+							disabled={isBulkPending || selectedIds.size === 0}
 							onClick={() => setBulkAssignOpen(true)}
 						>
 							<UserCog className="w-3.5 h-3.5" />
@@ -430,6 +426,39 @@ export function TasksTable() {
 							<Trash2 className="w-3.5 h-3.5" />
 							Delete
 						</Button>
+
+						{/* Bulk status */}
+						<SelectRoot
+							onValueChange={(v) => bulkAction({ action: "status", status: v })}
+							disabled={isBulkPending}
+						>
+							<SelectTrigger className="h-7 text-xs w-[110px]">
+								<SelectValue placeholder="Set status" />
+							</SelectTrigger>
+							<SelectContent>
+								<SelectItem value="open">Open</SelectItem>
+								<SelectItem value="in_progress">In Progress</SelectItem>
+								<SelectItem value="assigned">Assigned</SelectItem>
+								<SelectItem value="stale">Stale</SelectItem>
+								<SelectItem value="completed">Completed</SelectItem>
+							</SelectContent>
+						</SelectRoot>
+
+						{/* Bulk priority */}
+						<SelectRoot
+							onValueChange={(v) => bulkAction({ action: "priority", priority: v })}
+							disabled={isBulkPending}
+						>
+							<SelectTrigger className="h-7 text-xs w-[110px]">
+								<SelectValue placeholder="Set priority" />
+							</SelectTrigger>
+							<SelectContent>
+								<SelectItem value="low">Low</SelectItem>
+								<SelectItem value="medium">Medium</SelectItem>
+								<SelectItem value="high">High</SelectItem>
+							</SelectContent>
+						</SelectRoot>
+
 						<Button
 							size="sm" variant="ghost"
 							className="h-7 text-xs text-ink-3"
@@ -623,22 +652,6 @@ export function TasksTable() {
 														</Button>
 													)}
 
-												{isAdmin && (
-													<TaskDeleteDialog
-														task={task}
-														isPending={isDeleting}
-														onConfirm={async () => { await removeTask(task.id); }}
-														trigger={
-															<Button
-																variant="ghost"
-																size="sm"
-																className="h-7 text-xs text-destructive hover:text-destructive"
-															>
-																Delete
-															</Button>
-														}
-													/>
-												)}
 											</div>
 										</td>
 									</tr>

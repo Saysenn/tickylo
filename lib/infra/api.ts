@@ -237,8 +237,11 @@ class APIService {
 			reject: (id: string, reason?: string) =>
 				axiosService.patch(`${apiVersion}/ticket/${id}/due-date-request/reject`, { reason }),
 		},
-		bulk: (action: "assign" | "complete" | "delete", ids: string[], user_id?: string) =>
-			axiosService.post(`${apiVersion}/ticket/bulk`, { action, ids, user_id }),
+		bulk: (
+			action: "assign" | "complete" | "delete" | "status" | "priority" | "due_date",
+			ids: string[],
+			payload?: { user_id?: string; status?: string; priority?: string; due_date?: string | null },
+		) => axiosService.post(`${apiVersion}/ticket/bulk`, { action, ids, ...payload }),
 	};
 
 	// ---------------------------------------------------------------------------

@@ -1071,11 +1071,29 @@ export async function removeWatcher(ticketId: string, caller: Caller) {
 
 // ─── Bulk Operations ──────────────────────────────────────────────────────────
 
-export type BulkAction = "assign" | "complete" | "delete";
+export type BulkAction = "assign" | "complete" | "delete" | "status" | "priority" | "due_date";
 
-export async function bulkTicketAction(action: BulkAction, ids: string[], admin: Caller, userId?: string) {
+const VALID_STATUSES  = ["open", "assigned", "in_progress", "completed", "stale"] as const;
+const VALID_PRIORITIES = ["low", "medium", "high"] as const;
+
+interface BulkPayload {
+	user_id?:  string;
+	status?:   string;
+	priority?: string;
+	due_date?: string | null;
+}
+
+export async function bulkTicketAction(action: BulkAction, ids: string[], admin: Caller, payload: BulkPayload = {}) {
+	const { user_id: userId, status, priority, due_date } = payload;
+
 	if (action === "assign" && !userId)
 		throw Object.assign(new Error("user_id is required for assign action"), { status: 400 });
+	if (action === "status" && (!status || !VALID_STATUSES.includes(status as any)))
+		throw Object.assign(new Error("valid status is required"), { status: 400 });
+	if (action === "priority" && (!priority || !VALID_PRIORITIES.includes(priority as any)))
+		throw Object.assign(new Error("valid priority is required"), { status: 400 });
+	if (action === "due_date" && due_date === undefined)
+		throw Object.assign(new Error("due_date is required"), { status: 400 });
 
 	const succeeded: string[] = [];
 	const failed: string[] = [];
@@ -1110,6 +1128,18 @@ export async function bulkTicketAction(action: BulkAction, ids: string[], admin:
 					createNotification({ user_id: ticket.user_id, type: "task_deleted", title: "Ticket deleted", body: `"${ticket.title}" has been deleted by admin.` }).catch(() => {});
 				else if (!ticket.user_id)
 					notifyEmployees({ type: "task_deleted", title: "Ticket deleted", body: `"${ticket.title}" has been removed by admin.` }).catch(() => {});
+			} else if (action === "status") {
+				if (ticket.status === status) { succeeded.push(id); continue; }
+				await prisma.ticket.update({ where: { id }, data: { status: status as any } });
+				auditLog({ org_id: callerOrgId(admin), actor_id: admin.id, actor_role: ROLES.ADMIN, action: "UPDATE", entity_type: "ticket", entity_id: id, before: { status: ticket.status }, after: { status } });
+			} else if (action === "priority") {
+				if (ticket.priority === priority) { succeeded.push(id); continue; }
+				await prisma.ticket.update({ where: { id }, data: { priority: priority as any } });
+				auditLog({ org_id: callerOrgId(admin), actor_id: admin.id, actor_role: ROLES.ADMIN, action: "UPDATE", entity_type: "ticket", entity_id: id, before: { priority: ticket.priority }, after: { priority } });
+			} else if (action === "due_date") {
+				const newDate = due_date ? new Date(due_date) : null;
+				await prisma.ticket.update({ where: { id }, data: { due_date: newDate } });
+				auditLog({ org_id: callerOrgId(admin), actor_id: admin.id, actor_role: ROLES.ADMIN, action: "UPDATE", entity_type: "ticket", entity_id: id, before: { due_date: ticket.due_date }, after: { due_date: newDate } });
 			}
 			succeeded.push(id);
 		} catch {

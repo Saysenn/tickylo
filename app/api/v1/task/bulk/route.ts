@@ -5,9 +5,12 @@ import { requireAdmin } from "@/lib/auth/require-admin";
 import * as TicketService from "@/services/ticket.service";
 
 const schema = z.object({
-	action: z.enum(["assign", "complete", "delete"]),
+	action: z.enum(["assign", "complete", "delete", "status", "priority", "due_date"]),
 	ids: z.array(z.string()).min(1).max(100),
-	user_id: z.string().uuid().optional(),
+	user_id:  z.string().uuid().optional(),
+	status:   z.string().optional(),
+	priority: z.string().optional(),
+	due_date: z.string().nullable().optional(),
 });
 
 export async function POST(request: NextRequest) {
@@ -17,7 +20,8 @@ export async function POST(request: NextRequest) {
 		const body = await request.json();
 		const validated = schema.safeParse(body);
 		if (!validated.success) return errorResponse(validated.error.issues[0]?.message ?? "Invalid input", 400);
-		const result = await TicketService.bulkTicketAction(validated.data.action, validated.data.ids, admin, validated.data.user_id);
+		const { action, ids, user_id, status, priority, due_date } = validated.data;
+		const result = await TicketService.bulkTicketAction(action, ids, admin, { user_id, status, priority, due_date });
 		return ok(result);
 	} catch (err: any) {
 		if (err.status) return errorResponse(err.message, err.status);
