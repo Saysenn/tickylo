@@ -38,7 +38,7 @@ export async function listEmployees(admin: Caller, page = 1, limit = 10, search?
 		  }
 		: {};
 
-	const where = { ...withOrg(orgId), ...searchFilter };
+	const where = { ...withOrg(orgId), role: ROLES.EMPLOYEE, ...searchFilter };
 
 	const [orgUsers, total] = await Promise.all([
 		prisma.user.findMany({

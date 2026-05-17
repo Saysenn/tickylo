@@ -150,19 +150,6 @@ export default async function EmployeeDetailPage({
 				}
 			/>
 
-			{/* Leave — coming soon */}
-			<section className="rounded-lg border bg-background p-6 space-y-4">
-				<h2 className="font-semibold text-ink">Leave</h2>
-				<div className="flex flex-col items-center justify-center py-8 gap-3 text-center">
-					<span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-mint/10 text-mint text-xs font-medium">
-						Coming Soon
-					</span>
-					<p className="text-sm text-ink-3 max-w-xs">
-						Leave management is coming soon.
-					</p>
-				</div>
-			</section>
-
 			{/* Tasks */}
 			<section className="rounded-lg border bg-background p-6 space-y-4">
 				<h2 className="font-semibold text-ink">Tasks</h2>

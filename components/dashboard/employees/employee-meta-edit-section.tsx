@@ -8,14 +8,8 @@ import APIService from "@/lib/infra/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-	SelectRoot,
-	SelectTrigger,
-	SelectValue,
-	SelectContent,
-	SelectItem,
-} from "@/components/ui/select";
-import { formatDate, toDateInput, toIntInput } from "@/lib/utils/format";
+import { Combobox } from "@/components/ui/combobox";
+import { formatDate, toDateInput } from "@/lib/utils/format";
 
 interface Meta {
 	phone: string | null;
@@ -37,12 +31,65 @@ interface Props {
 	initialMeta: Meta | null;
 }
 
-const VISA_STATUS_OPTIONS = [
-	{ value: "valid", label: "Valid" },
-	{ value: "expired", label: "Expired" },
-	{ value: "pending", label: "Pending" },
-	{ value: "not_applicable", label: "Not applicable" },
+const COUNTRY_CODES = [
+	{ code: "+63", flag: "🇵🇭", name: "PH" },
+	{ code: "+1",  flag: "🇺🇸", name: "US" },
+	{ code: "+44", flag: "🇬🇧", name: "GB" },
+	{ code: "+61", flag: "🇦🇺", name: "AU" },
+	{ code: "+64", flag: "🇳🇿", name: "NZ" },
+	{ code: "+65", flag: "🇸🇬", name: "SG" },
+	{ code: "+60", flag: "🇲🇾", name: "MY" },
+	{ code: "+62", flag: "🇮🇩", name: "ID" },
+	{ code: "+66", flag: "🇹🇭", name: "TH" },
+	{ code: "+84", flag: "🇻🇳", name: "VN" },
+	{ code: "+82", flag: "🇰🇷", name: "KR" },
+	{ code: "+81", flag: "🇯🇵", name: "JP" },
+	{ code: "+86", flag: "🇨🇳", name: "CN" },
+	{ code: "+852", flag: "🇭🇰", name: "HK" },
+	{ code: "+91", flag: "🇮🇳", name: "IN" },
+	{ code: "+971", flag: "🇦🇪", name: "UAE" },
+	{ code: "+966", flag: "🇸🇦", name: "SA" },
+	{ code: "+49", flag: "🇩🇪", name: "DE" },
+	{ code: "+33", flag: "🇫🇷", name: "FR" },
+	{ code: "+39", flag: "🇮🇹", name: "IT" },
+	{ code: "+34", flag: "🇪🇸", name: "ES" },
+	{ code: "+31", flag: "🇳🇱", name: "NL" },
+	{ code: "+1-CA", flag: "🇨🇦", name: "CA" },
 ];
+
+const PHONE_PLACEHOLDER: Record<string, string> = {
+	"+63":    "912 345 6789",
+	"+1":     "(555) 234-5678",
+	"+1-CA":  "(416) 234-5678",
+	"+44":    "7911 123456",
+	"+61":    "412 345 678",
+	"+64":    "21 123 4567",
+	"+65":    "8123 4567",
+	"+60":    "12-345 6789",
+	"+62":    "812-3456-789",
+	"+66":    "81 234 5678",
+	"+84":    "91 234 56 78",
+	"+82":    "10-1234-5678",
+	"+81":    "90-1234-5678",
+	"+86":    "131 2345 6789",
+	"+852":   "5123 4567",
+	"+91":    "98765 43210",
+	"+971":   "50 123 4567",
+	"+966":   "51 234 5678",
+	"+49":    "1512 3456789",
+	"+33":    "6 12 34 56 78",
+	"+39":    "312 345 6789",
+	"+34":    "612 345 678",
+	"+31":    "6 12345678",
+};
+
+function parsePhone(raw: string): { dialCode: string; local: string } {
+	for (const c of COUNTRY_CODES) {
+		const code = c.code.replace("-CA", "");
+		if (raw.startsWith(code)) return { dialCode: c.code, local: raw.slice(code.length).trim() };
+	}
+	return { dialCode: "+63", local: raw };
+}
 
 export function EmployeeMetaEditSection({ employeeId, initialMeta }: Props) {
 	const router = useRouter();
@@ -50,34 +97,31 @@ export function EmployeeMetaEditSection({ employeeId, initialMeta }: Props) {
 	const [error, setError] = useState<string | null>(null);
 
 	const m = initialMeta;
-	const [phone, setPhone] = useState(m?.phone ?? "");
+
+	const parsed = parsePhone(m?.phone ?? "");
+	const [dialCode, setDialCode] = useState(parsed.dialCode);
+	const [localPhone, setLocalPhone] = useState(parsed.local);
 	const [dob, setDob] = useState(toDateInput(m?.dob));
 	const [address, setAddress] = useState(m?.address ?? "");
-	const [passport, setPassport] = useState(m?.passport_number ?? "");
-	const [visaStatus, setVisaStatus] = useState(m?.visa_status ?? "");
-	const [visaExpiry, setVisaExpiry] = useState(toDateInput(m?.visa_expiry));
-	const [salary, setSalary] = useState(m?.salary != null ? String(m.salary) : "");
 	const [dateJoined, setDateJoined] = useState(toDateInput(m?.date_joined));
-	const [sickLeave, setSickLeave] = useState(toIntInput(m?.sick_leave ?? null));
-	const [vacationLeave, setVacationLeave] = useState(toIntInput(m?.vacation_leave ?? null));
-	const [emergencyLeave, setEmergencyLeave] = useState(toIntInput(m?.emergency_leave ?? null));
-	const [personalLeave, setPersonalLeave] = useState(toIntInput(m?.personal_leave ?? null));
+
+	const fullPhone = localPhone ? `${dialCode.replace("-CA", "")}${localPhone}` : null;
 
 	const { mutate, isPending } = useMutation({
 		mutationFn: () =>
 			APIService.employees.updateMeta(employeeId, {
-				phone: phone || null,
+				phone: fullPhone,
 				dob: dob || null,
 				address: address || null,
-				passport_number: passport || null,
-				visa_status: visaStatus || null,
-				visa_expiry: visaExpiry || null,
-				salary: salary !== "" ? parseFloat(salary) : null,
+				passport_number: null,
+				visa_status: null,
+				visa_expiry: null,
+				salary: null,
 				date_joined: dateJoined || null,
-				sick_leave: sickLeave !== "" ? parseInt(sickLeave, 10) : null,
-				vacation_leave: vacationLeave !== "" ? parseInt(vacationLeave, 10) : null,
-				emergency_leave: emergencyLeave !== "" ? parseInt(emergencyLeave, 10) : null,
-				personal_leave: personalLeave !== "" ? parseInt(personalLeave, 10) : null,
+				sick_leave: null,
+				vacation_leave: null,
+				emergency_leave: null,
+				personal_leave: null,
 			}),
 		onSuccess: () => {
 			setEditing(false);
@@ -94,16 +138,6 @@ export function EmployeeMetaEditSection({ employeeId, initialMeta }: Props) {
 			{ label: "Date of birth", value: m?.dob ? formatDate(m.dob) : null },
 			{ label: "Date joined", value: m?.date_joined ? formatDate(m.date_joined) : null },
 			{ label: "Address", value: m?.address },
-			{
-				label: "Salary",
-				value: m?.salary != null ? `$${m.salary.toLocaleString()}` : null,
-			},
-			{ label: "Visa status", value: m?.visa_status },
-			{
-				label: "Visa expiry",
-				value: m?.visa_expiry ? formatDate(m.visa_expiry) : null,
-			},
-			{ label: "Passport", value: m?.passport_number },
 		];
 
 		return (
@@ -158,13 +192,27 @@ export function EmployeeMetaEditSection({ employeeId, initialMeta }: Props) {
 				<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 					<div className="space-y-1.5">
 						<Label htmlFor="emp-phone">Phone</Label>
-						<Input
-							id="emp-phone"
-							type="tel"
-							placeholder="+1 555 000 0000"
-							value={phone}
-							onChange={(e) => setPhone(e.target.value)}
-						/>
+						<div className="flex gap-1.5">
+							<Combobox
+								options={COUNTRY_CODES.map((c) => ({
+									value: c.code,
+									label: `${c.flag} ${c.name} ${c.code.replace("-CA", "")}`,
+								}))}
+								value={dialCode}
+								onChange={setDialCode}
+								placeholder="+63"
+								searchPlaceholder="Search country…"
+								emptyText="No country found."
+								className="w-36 shrink-0"
+							/>
+							<Input
+								id="emp-phone"
+								type="tel"
+								placeholder={PHONE_PLACEHOLDER[dialCode] ?? "Phone number"}
+								value={localPhone}
+								onChange={(e) => setLocalPhone(e.target.value)}
+							/>
+						</div>
 					</div>
 
 					<div className="space-y-1.5">
@@ -174,59 +222,6 @@ export function EmployeeMetaEditSection({ employeeId, initialMeta }: Props) {
 							type="date"
 							value={dob}
 							onChange={(e) => setDob(e.target.value)}
-						/>
-					</div>
-
-					<div className="space-y-1.5">
-						<Label>Visa Status</Label>
-						<SelectRoot
-							value={visaStatus || undefined}
-							onValueChange={setVisaStatus}
-						>
-							<SelectTrigger>
-								<SelectValue placeholder="— Select status —" />
-							</SelectTrigger>
-							<SelectContent>
-								{VISA_STATUS_OPTIONS.map((o) => (
-									<SelectItem key={o.value} value={o.value}>
-										{o.label}
-									</SelectItem>
-								))}
-							</SelectContent>
-						</SelectRoot>
-					</div>
-
-					<div className="space-y-1.5">
-						<Label htmlFor="emp-visa-expiry">Visa Expiry</Label>
-						<Input
-							id="emp-visa-expiry"
-							type="date"
-							value={visaExpiry}
-							onChange={(e) => setVisaExpiry(e.target.value)}
-						/>
-					</div>
-
-					<div className="space-y-1.5">
-						<Label htmlFor="emp-passport">Passport Number</Label>
-						<Input
-							id="emp-passport"
-							type="text"
-							placeholder="A12345678"
-							value={passport}
-							onChange={(e) => setPassport(e.target.value)}
-						/>
-					</div>
-
-					<div className="space-y-1.5">
-						<Label htmlFor="emp-salary">Salary</Label>
-						<Input
-							id="emp-salary"
-							type="number"
-							min="0"
-							step="0.01"
-							placeholder="50000"
-							value={salary}
-							onChange={(e) => setSalary(e.target.value)}
 						/>
 					</div>
 
@@ -251,57 +246,6 @@ export function EmployeeMetaEditSection({ employeeId, initialMeta }: Props) {
 						value={address}
 						onChange={(e) => setAddress(e.target.value)}
 					/>
-				</div>
-
-				{/* Leave balances */}
-				<div>
-					<p className="text-sm font-medium text-ink mb-3">Leave Balances (days)</p>
-					<div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-						<div className="space-y-1.5">
-							<Label htmlFor="emp-sick">Sick</Label>
-							<Input
-								id="emp-sick"
-								type="number"
-								min="0"
-								placeholder="0"
-								value={sickLeave}
-								onChange={(e) => setSickLeave(e.target.value)}
-							/>
-						</div>
-						<div className="space-y-1.5">
-							<Label htmlFor="emp-vacation">Vacation</Label>
-							<Input
-								id="emp-vacation"
-								type="number"
-								min="0"
-								placeholder="0"
-								value={vacationLeave}
-								onChange={(e) => setVacationLeave(e.target.value)}
-							/>
-						</div>
-						<div className="space-y-1.5">
-							<Label htmlFor="emp-emergency">Emergency</Label>
-							<Input
-								id="emp-emergency"
-								type="number"
-								min="0"
-								placeholder="0"
-								value={emergencyLeave}
-								onChange={(e) => setEmergencyLeave(e.target.value)}
-							/>
-						</div>
-						<div className="space-y-1.5">
-							<Label htmlFor="emp-personal">Personal</Label>
-							<Input
-								id="emp-personal"
-								type="number"
-								min="0"
-								placeholder="0"
-								value={personalLeave}
-								onChange={(e) => setPersonalLeave(e.target.value)}
-							/>
-						</div>
-					</div>
 				</div>
 
 				{/* Actions */}

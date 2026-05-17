@@ -47,7 +47,7 @@ const navGroups: NavGroup[] = [
 			},
 			{
 				label: "Reports",
-				href: "/dashboard/performance",
+				href: "/dashboard/reports",
 				icon: BarChart2,
 				roles: ["admin"],
 			},
