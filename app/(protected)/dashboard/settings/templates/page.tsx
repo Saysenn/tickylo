@@ -74,7 +74,7 @@ function TemplateForm({
 	isSaving: boolean;
 }) {
 	const [name, setName] = useState(initial?.name ?? "");
-	const [isShared, setIsShared] = useState(initial?.is_shared ?? false);
+	const [isShared, setIsShared] = useState(initial?.is_shared ?? true);
 	const [ticketType, setTicketType] = useState(initial?.ticket_type ?? "");
 	const [priority, setPriority] = useState(initial?.priority ?? "");
 	const [title, setTitle] = useState(initial?.title ?? "");
@@ -99,11 +99,10 @@ function TemplateForm({
 	}
 
 	return (
-		<div className="rounded-xl border border-border bg-background divide-y divide-border/50">
+		<div className="rounded-xl border border-border bg-background">
+			<div className="px-4 py-3 space-y-3">
 
-			{/* Identity */}
-			<div className="p-5 space-y-4">
-				<p className="text-[10px] font-semibold uppercase tracking-widest text-ink-3/50">Identity</p>
+				{/* Row 1: name */}
 				<div className="space-y-1.5">
 					<Label htmlFor="tpl-name">Template name</Label>
 					<input
@@ -117,24 +116,9 @@ function TemplateForm({
 						autoFocus
 					/>
 				</div>
-				{isAdmin && (
-					<label className="flex items-center gap-2.5 cursor-pointer select-none">
-						<input
-							type="checkbox"
-							checked={isShared}
-							onChange={(e) => setIsShared(e.target.checked)}
-							className="rounded border-border accent-mint"
-						/>
-						<span className="text-sm text-ink-2">Share with entire organisation</span>
-						<span className="text-[11px] text-ink-3/50 ml-0.5">— visible to all employees</span>
-					</label>
-				)}
-			</div>
 
-			{/* Prefill defaults */}
-			<div className="p-5 space-y-4">
-				<p className="text-[10px] font-semibold uppercase tracking-widest text-ink-3/50">Prefill defaults</p>
-				<div className="grid grid-cols-2 gap-4">
+				{/* Row 2: type + priority + title in one row */}
+				<div className="grid grid-cols-2 gap-3 sm:grid-cols-[1fr_1fr_2fr]">
 					<div className="space-y-1.5">
 						<Label htmlFor="tpl-type">Type</Label>
 						<select id="tpl-type" value={ticketType} onChange={(e) => setTicketType(e.target.value)} className={selectCls}>
@@ -155,58 +139,82 @@ function TemplateForm({
 							<option value="critical">Critical</option>
 						</select>
 					</div>
+					<div className="col-span-2 sm:col-span-1 space-y-1.5">
+						<Label htmlFor="tpl-title">Title prefill</Label>
+						<input
+							id="tpl-title"
+							type="text"
+							value={title}
+							onChange={(e) => setTitle(e.target.value)}
+							maxLength={190}
+							placeholder="Leave blank — user writes their own"
+							className={inputCls}
+						/>
+					</div>
 				</div>
-				<div className="space-y-1.5">
-					<Label htmlFor="tpl-title">Title</Label>
-					<input
-						id="tpl-title"
-						type="text"
-						value={title}
-						onChange={(e) => setTitle(e.target.value)}
-						maxLength={190}
-						placeholder="Leave blank to let the user write their own title"
-						className={inputCls}
-					/>
-				</div>
+
+				{/* Description */}
 				<div className="space-y-1.5">
 					<Label>Description</Label>
 					<RichTextEditor
 						value={description}
 						onChange={setDescription}
 						placeholder="Provide context, steps to reproduce, or acceptance criteria…"
-						minHeight={96}
+						minHeight={72}
 					/>
 				</div>
-				<div className="space-y-1.5">
-					<Label>Implementation plan</Label>
-					<RichTextEditor
-						value={implPlan}
-						onChange={setImplPlan}
-						placeholder="Step 1: Deploy to staging&#10;Step 2: Run migrations&#10;Step 3: Verify all endpoints respond"
-						minHeight={112}
-					/>
-				</div>
-				<div className="space-y-1.5">
-					<Label>Rollback plan</Label>
-					<RichTextEditor
-						value={rollbackPlan}
-						onChange={setRollbackPlan}
-						placeholder="Step 1: Revert deployment&#10;Step 2: Restore database snapshot if needed"
-						minHeight={96}
-					/>
-				</div>
-			</div>
 
-			{/* Footer */}
-			<div className="px-5 py-4 flex items-center gap-2">
-				{error && <p className="flex-1 text-xs text-destructive">{error}</p>}
-				<div className="flex items-center gap-2 ml-auto">
-					<Button type="button" variant="ghost" size="sm" onClick={onCancel}>
-						Cancel
-					</Button>
-					<Button type="button" size="sm" onClick={handleSave} isLoading={isSaving} disabled={isSaving}>
-						{initial?.id ? "Save changes" : "Create template"}
-					</Button>
+				{/* Plans side by side */}
+				<div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+					<div className="space-y-1.5">
+						<Label>Implementation plan</Label>
+						<RichTextEditor
+							value={implPlan}
+							onChange={setImplPlan}
+							placeholder="Step 1: Deploy to staging&#10;Step 2: Run migrations&#10;Step 3: Verify endpoints"
+							minHeight={80}
+						/>
+					</div>
+					<div className="space-y-1.5">
+						<Label>Rollback plan</Label>
+						<RichTextEditor
+							value={rollbackPlan}
+							onChange={setRollbackPlan}
+							placeholder="Step 1: Revert deployment&#10;Step 2: Restore DB snapshot"
+							minHeight={80}
+						/>
+					</div>
+				</div>
+
+				{/* Footer */}
+				{error && <p className="text-xs text-destructive">{error}</p>}
+				<div className="flex items-center justify-between gap-2 pt-1 border-t border-border/40">
+					{isAdmin ? (
+						<div className="flex flex-col gap-0.5">
+							<label className="flex items-center gap-2 cursor-pointer select-none">
+								<input
+									type="checkbox"
+									checked={isShared}
+									onChange={(e) => setIsShared(e.target.checked)}
+									className="rounded border-border accent-mint"
+								/>
+								<span className="text-sm text-ink-2">Share org-wide</span>
+							</label>
+							<p className="text-[11px] text-ink-3/50 pl-5">
+								{isShared
+									? "All employees can see and apply this template."
+									: "Only you can see this template."}
+							</p>
+						</div>
+					) : <span />}
+					<div className="flex items-center gap-2">
+						<Button type="button" variant="ghost" size="sm" onClick={onCancel}>
+							Cancel
+						</Button>
+						<Button type="button" size="sm" onClick={handleSave} isLoading={isSaving} disabled={isSaving}>
+							{initial?.id ? "Save changes" : "Create template"}
+						</Button>
+					</div>
 				</div>
 			</div>
 		</div>
