@@ -100,14 +100,15 @@ export default function NotificationsPage() {
 	const queryClient = useQueryClient();
 
 	const [tab, setTab] = useState<"all" | "unread">("all");
+	const [typeGroup, setTypeGroup] = useState<string>("");
 	const [page, setPage] = useState(1);
 	const [selected, setSelected] = useState<Set<string>>(new Set());
 
-	const queryKey = ["notifications-page", tab, page];
+	const queryKey = ["notifications-page", tab, typeGroup, page];
 
 	const { data, isLoading } = useQuery<NotificationsResponse>({
 		queryKey,
-		queryFn: () => APIService.notifications.list(page, LIMIT, tab === "unread"),
+		queryFn: () => APIService.notifications.list(page, LIMIT, tab === "unread", typeGroup || undefined),
 	});
 
 	const notifications = data?.data ?? [];
@@ -148,6 +149,13 @@ export default function NotificationsPage() {
 
 	const handleTabChange = (t: "all" | "unread") => {
 		setTab(t);
+		setTypeGroup("");
+		setPage(1);
+		setSelected(new Set());
+	};
+
+	const handleTypeGroup = (g: string) => {
+		setTypeGroup((prev) => (prev === g ? "" : g));
 		setPage(1);
 		setSelected(new Set());
 	};
@@ -213,6 +221,31 @@ export default function NotificationsPage() {
 						)}
 					>
 						{t === "unread" ? `Unread${unreadCount > 0 ? ` (${unreadCount})` : ""}` : "All"}
+					</button>
+				))}
+			</div>
+
+			{/* Type filter pills */}
+			<div className="flex items-center gap-2 flex-wrap">
+				{([
+					{ key: "", label: "All types" },
+					{ key: "tasks", label: "Tasks" },
+					{ key: "timers", label: "Timers" },
+					{ key: "leave", label: "Leave" },
+					{ key: "comments", label: "Comments" },
+				] as const).map(({ key, label }) => (
+					<button
+						key={key}
+						type="button"
+						onClick={() => handleTypeGroup(key)}
+						className={cn(
+							"h-7 px-3 rounded-full text-xs font-medium border transition-colors",
+							typeGroup === key
+								? "bg-mint/15 border-mint/30 text-mint"
+								: "bg-background border-border text-ink-3 hover:text-ink hover:border-border/80",
+						)}
+					>
+						{label}
 					</button>
 				))}
 			</div>

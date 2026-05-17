@@ -11,10 +11,12 @@ export async function GET(request: NextRequest) {
 		const user = await requireUser();
 		if (!user) return errorResponse("Unauthorized", 401);
 		const { searchParams } = new URL(request.url);
+		const typeGroup = searchParams.get("type_group") as NotificationsService.NotificationTypeGroup | null;
 		const result = await NotificationsService.listNotifications(user, {
 			page: Number(searchParams.get("page") ?? 1),
 			limit: Number(searchParams.get("limit") ?? 20),
 			unread_only: searchParams.get("unread_only") === "true",
+			type_group: typeGroup ?? undefined,
 		});
 		return ok(result);
 	} catch (err) {

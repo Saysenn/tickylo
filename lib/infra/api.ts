@@ -56,6 +56,13 @@ class APIService {
 	// ---------------------------------------------------------------------------
 	// Employees
 	// ---------------------------------------------------------------------------
+	public ticketTemplates = {
+		list: () => axiosService.get(`${apiVersion}/ticket-templates`),
+		create: (data: object) => axiosService.post(`${apiVersion}/ticket-templates`, data),
+		update: (id: string, data: object) => axiosService.put(`${apiVersion}/ticket-templates/${id}`, data),
+		remove: (id: string) => axiosService.delete(`${apiVersion}/ticket-templates/${id}`),
+	};
+
 	public employees = {
 		list: (page = 1, limit = 10, search?: string) =>
 			axiosService.get(`${apiVersion}/employees`, { page, limit, search }),
@@ -296,8 +303,8 @@ class APIService {
 	// Notifications
 	// ---------------------------------------------------------------------------
 	public notifications = {
-		list: (page = 1, limit = 20, unread_only = false) =>
-			axiosService.get(`${apiVersion}/notifications`, { page, limit, unread_only }),
+		list: (page = 1, limit = 20, unread_only = false, type_group?: string) =>
+			axiosService.get(`${apiVersion}/notifications`, { page, limit, unread_only, ...(type_group ? { type_group } : {}) }),
 		readAll: () =>
 			axiosService.patch(`${apiVersion}/notifications/read-all`, {}),
 		read: (id: string) =>

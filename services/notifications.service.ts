@@ -3,14 +3,24 @@ import type { Caller } from "./ticket.service";
 
 const callerOrgId = (c: Caller) => c.app_metadata?.org_id as string | undefined;
 
+export const NOTIFICATION_TYPE_GROUPS = {
+	tasks:    ["task_assigned", "task_reassigned", "task_claimed", "task_completed", "task_available", "task_started", "task_updated", "task_deleted", "task_watched"],
+	timers:   ["timer_auto_closed", "due_date_reminder", "priority_escalated"],
+	leave:    ["leave_requested", "leave_approved", "leave_rejected"],
+	comments: ["comment_added", "comment_mention"],
+} as const;
+
+export type NotificationTypeGroup = keyof typeof NOTIFICATION_TYPE_GROUPS;
+
 export type ListNotificationsParams = {
 	page?: number;
 	limit?: number;
 	unread_only?: boolean;
+	type_group?: NotificationTypeGroup;
 };
 
 export async function listNotifications(caller: Caller, params: ListNotificationsParams) {
-	const { page = 1, limit = 20, unread_only = false } = params;
+	const { page = 1, limit = 20, unread_only = false, type_group } = params;
 	const take = Math.min(50, Math.max(1, limit));
 	const skip = (Math.max(1, page) - 1) * take;
 	const orgId = callerOrgId(caller);
@@ -19,6 +29,9 @@ export async function listNotifications(caller: Caller, params: ListNotification
 		user_id: caller.id,
 		...(orgId ? { org_id: orgId } : {}),
 		...(unread_only ? { read: false } : {}),
+		...(type_group && NOTIFICATION_TYPE_GROUPS[type_group]
+			? { type: { in: [...NOTIFICATION_TYPE_GROUPS[type_group]] } }
+			: {}),
 	};
 
 	const [notifications, total, unreadCount] = await Promise.all([

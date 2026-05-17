@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { User, SlidersHorizontal, Building2, CreditCard } from "lucide-react";
+import { User, SlidersHorizontal, Building2, CreditCard, LayoutTemplate } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import { useAppSelector } from "@/store/hooks";
 import { ROLES } from "@/configs/rbac.config";
@@ -16,6 +16,7 @@ interface NavItem {
 const accountItems: NavItem[] = [
 	{ label: "Profile",      href: "/dashboard/settings/profile",      icon: User },
 	{ label: "Preferences",  href: "/dashboard/settings/preferences",  icon: SlidersHorizontal },
+	{ label: "Templates",    href: "/dashboard/settings/templates",    icon: LayoutTemplate },
 ];
 
 const orgItems: NavItem[] = [

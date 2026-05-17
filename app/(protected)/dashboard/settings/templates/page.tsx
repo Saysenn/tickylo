@@ -1,0 +1,462 @@
+"use client";
+
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import APIService from "@/lib/infra/api";
+import { useAppSelector } from "@/store/hooks";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils/cn";
+import type { TicketTemplate } from "@/components/dashboard/tasks/types";
+
+const TYPE_LABEL: Record<string, string> = {
+	internal_task: "Task",
+	request: "Request",
+	incident: "Incident",
+	change: "RFC",
+};
+
+const PRIORITY_LABEL: Record<string, string> = {
+	low: "Low",
+	medium: "Medium",
+	high: "High",
+	critical: "Critical",
+};
+
+const inputCls =
+	"w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-mint placeholder:text-ink-3/40";
+
+const selectCls =
+	"w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-mint";
+
+// ── Create / Edit form ──────────────────────────────────────────────────────
+
+function TemplateForm({
+	initial,
+	isAdmin,
+	onSave,
+	onCancel,
+	isSaving,
+}: {
+	initial?: Partial<TicketTemplate>;
+	isAdmin: boolean;
+	onSave: (data: Partial<TicketTemplate>) => void;
+	onCancel: () => void;
+	isSaving: boolean;
+}) {
+	const [name, setName] = useState(initial?.name ?? "");
+	const [isShared, setIsShared] = useState(initial?.is_shared ?? false);
+	const [ticketType, setTicketType] = useState(initial?.ticket_type ?? "");
+	const [priority, setPriority] = useState(initial?.priority ?? "");
+	const [title, setTitle] = useState(initial?.title ?? "");
+	const [description, setDescription] = useState(initial?.description ?? "");
+	const [implPlan, setImplPlan] = useState(initial?.implementation_plan ?? "");
+	const [rollbackPlan, setRollbackPlan] = useState(initial?.rollback_plan ?? "");
+	const [error, setError] = useState("");
+
+	function handleSave() {
+		setError("");
+		if (!name.trim()) { setError("Template name is required."); return; }
+		onSave({
+			name: name.trim(),
+			is_shared: isAdmin ? isShared : false,
+			ticket_type: ticketType || undefined,
+			priority: priority || undefined,
+			title: title.trim() || undefined,
+			description: description.trim() || undefined,
+			implementation_plan: implPlan.trim() || undefined,
+			rollback_plan: rollbackPlan.trim() || undefined,
+		});
+	}
+
+	return (
+		<div className="rounded-xl border border-border bg-background divide-y divide-border/50">
+
+			{/* Identity */}
+			<div className="p-5 space-y-4">
+				<p className="text-[10px] font-semibold uppercase tracking-widest text-ink-3/50">Identity</p>
+				<div className="space-y-1.5">
+					<Label htmlFor="tpl-name">Template name</Label>
+					<input
+						id="tpl-name"
+						type="text"
+						value={name}
+						onChange={(e) => setName(e.target.value)}
+						maxLength={100}
+						placeholder="e.g. Standard Incident Response"
+						className={inputCls}
+						autoFocus
+					/>
+				</div>
+				{isAdmin && (
+					<label className="flex items-center gap-2.5 cursor-pointer select-none">
+						<input
+							type="checkbox"
+							checked={isShared}
+							onChange={(e) => setIsShared(e.target.checked)}
+							className="rounded border-border accent-mint"
+						/>
+						<span className="text-sm text-ink-2">Share with entire organisation</span>
+						<span className="text-[11px] text-ink-3/50 ml-0.5">— visible to all employees</span>
+					</label>
+				)}
+			</div>
+
+			{/* Prefill defaults */}
+			<div className="p-5 space-y-4">
+				<p className="text-[10px] font-semibold uppercase tracking-widest text-ink-3/50">Prefill defaults</p>
+				<div className="grid grid-cols-2 gap-4">
+					<div className="space-y-1.5">
+						<Label htmlFor="tpl-type">Type</Label>
+						<select id="tpl-type" value={ticketType} onChange={(e) => setTicketType(e.target.value)} className={selectCls}>
+							<option value="">No prefill</option>
+							<option value="internal_task">Internal Task</option>
+							<option value="request">Request</option>
+							<option value="incident">Incident</option>
+							<option value="change">Request for Change</option>
+						</select>
+					</div>
+					<div className="space-y-1.5">
+						<Label htmlFor="tpl-priority">Priority</Label>
+						<select id="tpl-priority" value={priority} onChange={(e) => setPriority(e.target.value)} className={selectCls}>
+							<option value="">No prefill</option>
+							<option value="low">Low</option>
+							<option value="medium">Medium</option>
+							<option value="high">High</option>
+							<option value="critical">Critical</option>
+						</select>
+					</div>
+				</div>
+				<div className="space-y-1.5">
+					<Label htmlFor="tpl-title">Title</Label>
+					<input
+						id="tpl-title"
+						type="text"
+						value={title}
+						onChange={(e) => setTitle(e.target.value)}
+						maxLength={190}
+						placeholder="Leave blank to let the user write their own title"
+						className={inputCls}
+					/>
+				</div>
+				<div className="space-y-1.5">
+					<Label htmlFor="tpl-desc">Description</Label>
+					<textarea
+						id="tpl-desc"
+						value={description}
+						onChange={(e) => setDescription(e.target.value)}
+						rows={3}
+						maxLength={5000}
+						placeholder="Provide context, steps to reproduce, or acceptance criteria…"
+						className={cn(inputCls, "resize-none")}
+					/>
+				</div>
+				<div className="grid grid-cols-2 gap-4">
+					<div className="space-y-1.5">
+						<Label htmlFor="tpl-impl">Implementation plan</Label>
+						<textarea
+							id="tpl-impl"
+							value={implPlan}
+							onChange={(e) => setImplPlan(e.target.value)}
+							rows={4}
+							maxLength={5000}
+							placeholder={"- Step 1: Deploy to staging\n- Step 2: Run migrations\n- Step 3: Verify endpoints"}
+							className={cn(inputCls, "resize-none")}
+						/>
+					</div>
+					<div className="space-y-1.5">
+						<Label htmlFor="tpl-rollback">Rollback plan</Label>
+						<textarea
+							id="tpl-rollback"
+							value={rollbackPlan}
+							onChange={(e) => setRollbackPlan(e.target.value)}
+							rows={4}
+							maxLength={2000}
+							placeholder={"- Step 1: Revert deployment\n- Step 2: Restore DB snapshot"}
+							className={cn(inputCls, "resize-none")}
+						/>
+					</div>
+				</div>
+			</div>
+
+			{/* Footer */}
+			<div className="px-5 py-4 flex items-center gap-2">
+				{error && <p className="flex-1 text-xs text-destructive">{error}</p>}
+				<div className="flex items-center gap-2 ml-auto">
+					<Button type="button" variant="ghost" size="sm" onClick={onCancel}>
+						Cancel
+					</Button>
+					<Button type="button" size="sm" onClick={handleSave} isLoading={isSaving} disabled={isSaving}>
+						{initial?.id ? "Save changes" : "Create template"}
+					</Button>
+				</div>
+			</div>
+		</div>
+	);
+}
+
+const PRIORITY_COLOR: Record<string, string> = {
+	low:      "text-sky-500 bg-sky-500/10",
+	medium:   "text-amber-500 bg-amber-500/10",
+	high:     "text-orange-500 bg-orange-500/10",
+	critical: "text-destructive bg-destructive/10",
+};
+
+const TYPE_COLOR: Record<string, string> = {
+	internal_task: "text-violet-500 bg-violet-500/10",
+	request:       "text-blue-500 bg-blue-500/10",
+	incident:      "text-destructive bg-destructive/10",
+	change:        "text-amber-600 bg-amber-500/10",
+};
+
+// ── Template card ─────────────────────────────────────────────────────────────
+
+function TemplateCard({
+	template,
+	canEdit,
+	onEdit,
+	onDelete,
+	isDeleting,
+}: {
+	template: TicketTemplate;
+	canEdit: boolean;
+	onEdit: () => void;
+	onDelete: () => void;
+	isDeleting: boolean;
+}) {
+	const [confirming, setConfirming] = useState(false);
+
+	const hasPlan = !!(template.implementation_plan || template.rollback_plan);
+	const hasDesc = !!template.description;
+
+	return (
+		<div className="flex flex-col rounded-xl border border-border bg-background hover:border-border/80 transition-colors">
+			{/* Card header */}
+			<div className="flex items-start gap-3 px-4 pt-4 pb-3">
+				<div className="flex-1 min-w-0 space-y-1.5">
+					<div className="flex items-center gap-2 flex-wrap">
+						<p className="text-sm font-semibold text-ink truncate">{template.name}</p>
+						{template.is_shared && (
+							<span className="text-[10px] font-semibold uppercase tracking-wide text-mint bg-mint/10 px-1.5 py-0.5 rounded-md">
+								Shared
+							</span>
+						)}
+					</div>
+					{/* Type + priority badges */}
+					<div className="flex items-center gap-1.5 flex-wrap">
+						{template.ticket_type ? (
+							<span className={cn("text-[11px] font-medium px-2 py-0.5 rounded-md", TYPE_COLOR[template.ticket_type] ?? "text-ink-3 bg-accent")}>
+								{TYPE_LABEL[template.ticket_type] ?? template.ticket_type}
+							</span>
+						) : (
+							<span className="text-[11px] text-ink-3/40 italic">Any type</span>
+						)}
+						{template.priority && (
+							<span className={cn("text-[11px] font-medium px-2 py-0.5 rounded-md", PRIORITY_COLOR[template.priority] ?? "text-ink-3 bg-accent")}>
+								{PRIORITY_LABEL[template.priority]}
+							</span>
+						)}
+					</div>
+				</div>
+			</div>
+
+			{/* Title prefill */}
+			{template.title && (
+				<div className="px-4 pb-3">
+					<p className="text-[10px] font-semibold uppercase tracking-widest text-ink-3/40 mb-1">Title</p>
+					<p className="text-xs text-ink-2 truncate">{template.title}</p>
+				</div>
+			)}
+
+			{/* Description preview */}
+			{hasDesc && (
+				<div className="px-4 pb-3">
+					<p className="text-[10px] font-semibold uppercase tracking-widest text-ink-3/40 mb-1">Description</p>
+					<p className="text-xs text-ink-3/70 line-clamp-2 whitespace-pre-line">{template.description}</p>
+				</div>
+			)}
+
+			{/* Plans indicator */}
+			{hasPlan && (
+				<div className="px-4 pb-3 flex items-center gap-3">
+					{template.implementation_plan && (
+						<span className="text-[11px] text-ink-3/50 flex items-center gap-1">
+							<span className="w-1.5 h-1.5 rounded-full bg-mint/60 inline-block" />
+							Implementation plan
+						</span>
+					)}
+					{template.rollback_plan && (
+						<span className="text-[11px] text-ink-3/50 flex items-center gap-1">
+							<span className="w-1.5 h-1.5 rounded-full bg-amber-400/70 inline-block" />
+							Rollback plan
+						</span>
+					)}
+				</div>
+			)}
+
+			{/* Actions footer */}
+			{canEdit && (
+				<div className="flex items-center gap-1 px-3 py-2 border-t border-border/40 bg-accent/20 rounded-b-xl mt-auto">
+					<Button variant="ghost" size="sm" className="text-xs h-7 px-2" onClick={onEdit}>
+						Edit
+					</Button>
+					<div className="ml-auto flex items-center gap-1">
+						{confirming ? (
+							<>
+								<Button
+									variant="destructive"
+									size="sm"
+									className="text-xs h-7 px-2"
+									onClick={() => { onDelete(); setConfirming(false); }}
+									isLoading={isDeleting}
+									disabled={isDeleting}
+								>
+									Confirm
+								</Button>
+								<Button variant="ghost" size="sm" className="text-xs h-7 px-2" onClick={() => setConfirming(false)}>
+									Cancel
+								</Button>
+							</>
+						) : (
+							<Button
+								variant="ghost"
+								size="sm"
+								className="text-xs h-7 px-2 text-destructive hover:text-destructive"
+								onClick={() => setConfirming(true)}
+							>
+								Delete
+							</Button>
+						)}
+					</div>
+				</div>
+			)}
+		</div>
+	);
+}
+
+// ── Page ─────────────────────────────────────────────────────────────────────
+
+export default function TemplatesSettingsPage() {
+	const user = useAppSelector((s) => s.auth.user);
+	const isAdmin = user?.role === "admin";
+	const userId = user?.id ?? "";
+
+	const [creating, setCreating] = useState(false);
+	const [editingId, setEditingId] = useState<string | null>(null);
+	const [deletingId, setDeletingId] = useState<string | null>(null);
+
+	const queryClient = useQueryClient();
+
+	const { data: result, isLoading } = useQuery({
+		queryKey: ["ticket-templates"],
+		queryFn: () => APIService.ticketTemplates.list(),
+		staleTime: 120_000,
+	});
+	const templates: TicketTemplate[] = Array.isArray(result) ? result : [];
+
+	const createMutation = useMutation({
+		mutationFn: (data: object) => APIService.ticketTemplates.create(data),
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["ticket-templates"] });
+			setCreating(false);
+		},
+	});
+
+	const updateMutation = useMutation({
+		mutationFn: ({ id, data }: { id: string; data: object }) =>
+			APIService.ticketTemplates.update(id, data),
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["ticket-templates"] });
+			setEditingId(null);
+		},
+	});
+
+	const deleteMutation = useMutation({
+		mutationFn: (id: string) => APIService.ticketTemplates.remove(id),
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["ticket-templates"] });
+			setDeletingId(null);
+		},
+	});
+
+	const shared = templates.filter((t) => t.is_shared);
+	const personal = templates.filter((t) => !t.is_shared);
+
+	function renderSection(label: string, items: TicketTemplate[]) {
+		if (items.length === 0) return null;
+		return (
+			<div className="space-y-2">
+				<p className="text-[10px] font-semibold uppercase tracking-widest text-ink-3/50">{label}</p>
+				<div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+					{items.map((t) =>
+						editingId === t.id ? (
+							<div key={t.id} className="sm:col-span-2">
+								<TemplateForm
+									initial={t}
+									isAdmin={isAdmin}
+									onSave={(data) => updateMutation.mutate({ id: t.id, data })}
+									onCancel={() => setEditingId(null)}
+									isSaving={updateMutation.isPending}
+								/>
+							</div>
+						) : (
+							<TemplateCard
+								key={t.id}
+								template={t}
+								canEdit={isAdmin || t.user_id === userId}
+								onEdit={() => setEditingId(t.id)}
+								onDelete={() => {
+									setDeletingId(t.id);
+									deleteMutation.mutate(t.id);
+								}}
+								isDeleting={deletingId === t.id && deleteMutation.isPending}
+							/>
+						)
+					)}
+				</div>
+			</div>
+		);
+	}
+
+	return (
+		<div className="space-y-6">
+			<div className="flex items-center justify-between">
+				<div>
+					<p className="text-[11px] font-semibold uppercase tracking-widest text-ink-3/60">Templates</p>
+					<p className="text-xs text-ink-3/50 mt-1">
+						Pre-fill ticket fields when creating new tickets.
+						{isAdmin && " Shared templates are visible to all employees."}
+					</p>
+				</div>
+				{!creating && (
+					<Button size="sm" onClick={() => { setCreating(true); setEditingId(null); }}>
+						New template
+					</Button>
+				)}
+			</div>
+
+			{creating && (
+				<TemplateForm
+					isAdmin={isAdmin}
+					onSave={(data) => createMutation.mutate(data as object)}
+					onCancel={() => setCreating(false)}
+					isSaving={createMutation.isPending}
+				/>
+			)}
+
+			{isLoading && (
+				<p className="text-sm text-ink-3/50 py-8 text-center">Loading templates…</p>
+			)}
+
+			{!isLoading && templates.length === 0 && !creating && (
+				<div className="text-center py-12 rounded-xl border border-dashed border-border">
+					<p className="text-sm text-ink-3/60">No templates yet.</p>
+					<p className="text-xs text-ink-3/40 mt-1">Create one to pre-fill common ticket fields.</p>
+				</div>
+			)}
+
+			{renderSection("Shared", shared)}
+			{renderSection("Personal", personal)}
+		</div>
+	);
+}

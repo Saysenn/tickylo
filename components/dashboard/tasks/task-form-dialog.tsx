@@ -16,6 +16,7 @@ import { Label } from "@/components/ui/label";
 import { Combobox } from "@/components/ui/combobox";
 import { cn } from "@/lib/utils/cn";
 import { LinksEditor, type TicketLink } from "./links-editor";
+import type { TicketTemplate } from "./types";
 
 interface TaskFormDialogProps {
 	isPending: boolean;
@@ -107,6 +108,34 @@ export function TaskFormDialog({
 	const [assigneePermission, setAssigneePermission] = useState("editor");
 	const [error, setError] = useState("");
 
+	// Template state
+	const [selectedTemplateId, setSelectedTemplateId] = useState("");
+
+	const { data: templatesResult, isLoading: templatesLoading } = useQuery({
+		queryKey: ["ticket-templates"],
+		queryFn: () => APIService.ticketTemplates.list(),
+		enabled: open,
+		staleTime: 120_000,
+	});
+	const templates: TicketTemplate[] = Array.isArray(templatesResult) ? templatesResult : [];
+
+	const applyTemplate = useCallback((template: TicketTemplate) => {
+		if (template.ticket_type) setTicketType(template.ticket_type);
+		if (template.priority) setPriority(template.priority);
+		if (template.title) {
+			const prefix = TYPE_PREFIX[template.ticket_type ?? "internal_task"] ?? "TASK";
+			const body = template.title.startsWith(`${prefix}: `)
+				? template.title.slice(prefix.length + 2)
+				: template.title;
+			setTitleBody(body);
+		}
+		setDescription(template.description ?? "");
+		setImplementationPlan(template.implementation_plan ?? "");
+		setRollbackPlan(template.rollback_plan ?? "");
+		setLinks(Array.isArray(template.links) ? template.links.map((l) => ({ url: l.url, label: l.label ?? "" })) : []);
+		requestAnimationFrame(() => titleRef.current?.focus());
+	}, []);
+
 	const { data: employeesResult } = useQuery({
 		queryKey: ["employees", 1],
 		queryFn: () => APIService.employees.list(1, 50),
@@ -138,6 +167,7 @@ export function TaskFormDialog({
 		setSource("");
 		setAssigneePermission("editor");
 		setError("");
+		setSelectedTemplateId("");
 	}
 
 	async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -181,6 +211,45 @@ export function TaskFormDialog({
 				</div>
 
 				<form onSubmit={handleSubmit} className="px-6 py-5 space-y-5">
+
+					{/* ── Template selector ── */}
+					<div className="flex items-center gap-2 p-3 rounded-lg bg-accent/50 border border-border/40">
+						<span className="text-xs text-ink-3/70 shrink-0">Template:</span>
+						{templatesLoading ? (
+							<span className="flex-1 text-xs text-ink-3/40 italic">Loading…</span>
+						) : templates.length > 0 ? (
+							<select
+								className="flex-1 rounded-md border border-border bg-background px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-mint"
+								value={selectedTemplateId}
+								onChange={(e) => {
+									const id = e.target.value;
+									const t = templates.find((t) => t.id === id);
+									if (t) {
+										applyTemplate(t);
+										setSelectedTemplateId("");
+									}
+								}}
+							>
+								<option value="">Select a template…</option>
+								{templates.filter((t) => t.is_shared).length > 0 && (
+									<optgroup label="Shared">
+										{templates.filter((t) => t.is_shared).map((t) => (
+											<option key={t.id} value={t.id}>{t.name}</option>
+										))}
+									</optgroup>
+								)}
+								{templates.filter((t) => !t.is_shared).length > 0 && (
+									<optgroup label="Personal">
+										{templates.filter((t) => !t.is_shared).map((t) => (
+											<option key={t.id} value={t.id}>{t.name}</option>
+										))}
+									</optgroup>
+								)}
+							</select>
+						) : (
+							<span className="flex-1 text-xs text-ink-3/50 italic">No templates saved yet</span>
+						)}
+					</div>
 
 					{/* ── Classification ── */}
 					<SectionDivider label="Classification" />

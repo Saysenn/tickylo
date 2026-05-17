@@ -35,10 +35,11 @@ model Organization {
   had_trial              Boolean   @default(false)
   is_internal            Boolean   @default(false)       // bypasses all billing gates (test/internal accounts)
 
-  users         User[]
-  join_requests UserJoinRequest[]
-  work_schedule WorkSchedule?
-  storage       OrgStorage?
+  users            User[]
+  join_requests    UserJoinRequest[]
+  work_schedule    WorkSchedule?
+  storage          OrgStorage?
+  ticket_templates TicketTemplate[]
 
   @@map("organizations")
 }
@@ -179,6 +180,7 @@ model User {
   transferRequestsReviewed TransferRequest[] @relation("TransferReviewer")
   transferRequestsTargeted TransferRequest[] @relation("TransferTarget")
   deletionRequest          DeletionRequest?
+  ticketTemplates          TicketTemplate[]
 
   created_at DateTime      @default(now())
   updated_at DateTime      @updatedAt
@@ -513,6 +515,29 @@ model TransferRequest {
   @@index([task_id, status])
   @@index([org_id])
   @@map("transfer_requests")
+}
+
+model TicketTemplate {
+  id                  String   @id @default(cuid())
+  org_id              String
+  user_id             String
+  name                String
+  is_shared           Boolean  @default(false)
+  ticket_type         String?
+  priority            String?
+  title               String?
+  description         String?
+  implementation_plan String?
+  rollback_plan       String?
+  links               Json?
+  created_at          DateTime @default(now())
+  updated_at          DateTime @updatedAt
+
+  org    Organization @relation(fields: [org_id], references: [id], onDelete: Cascade)
+  author User         @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([org_id, user_id])
+  @@map("ticket_templates")
 }
 
 model TicketTypeConfig {

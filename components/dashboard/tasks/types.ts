@@ -37,6 +37,20 @@ export interface Ticket {
 
 export type Task = Ticket; // backward-compat alias — remove after all imports updated
 
+export interface TicketTemplate {
+	id: string;
+	name: string;
+	is_shared: boolean;
+	user_id: string;
+	ticket_type?: string | null;
+	priority?: string | null;
+	title?: string | null;
+	description?: string | null;
+	implementation_plan?: string | null;
+	rollback_plan?: string | null;
+	links?: TicketLink[] | null;
+}
+
 export interface TaskPage {
 	data: Ticket[];
 	page: number;
