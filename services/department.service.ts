@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/infra/prisma";
 import { withOrg } from "@/lib/utils/org-filter";
 import { auditLog } from "@/lib/utils/audit";
+import { createNotification } from "@/lib/utils/create-notification";
 import { ROLES } from "@/configs/rbac.config";
 import type { Caller } from "./ticket.service";
 
@@ -56,6 +57,17 @@ export async function createDepartment(admin: Caller, data: { name: string; mana
 		},
 	});
 
+	if (manager_id) {
+		createNotification({
+			user_id: manager_id,
+			org_id: orgId,
+			type: "department_manager",
+			title: "You're now a department manager",
+			body: `You have been assigned as the manager of the ${name} department.`,
+			link: "/dashboard/settings/profile",
+		}).catch(() => {});
+	}
+
 	auditLog({
 		org_id: orgId,
 		actor_id: admin.id,
@@ -88,6 +100,18 @@ export async function updateDepartment(id: string, admin: Caller, data: { name?:
 			_count: { select: { users: true } },
 		},
 	});
+
+	const newManagerId = data.manager_id;
+	if (newManagerId && newManagerId !== department.manager_id) {
+		createNotification({
+			user_id: newManagerId,
+			org_id: orgId,
+			type: "department_manager",
+			title: "You're now a department manager",
+			body: `You have been assigned as the manager of the ${updated.name} department.`,
+			link: "/dashboard/settings/profile",
+		}).catch(() => {});
+	}
 
 	auditLog({
 		org_id: orgId,

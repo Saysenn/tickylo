@@ -4,10 +4,11 @@ import type { Caller } from "./ticket.service";
 const callerOrgId = (c: Caller) => c.app_metadata?.org_id as string | undefined;
 
 export const NOTIFICATION_TYPE_GROUPS = {
-	tasks:    ["task_assigned", "task_reassigned", "task_claimed", "task_completed", "task_available", "task_started", "task_updated", "task_deleted", "task_watched"],
-	timers:   ["timer_auto_closed", "due_date_reminder", "priority_escalated"],
-	leave:    ["leave_requested", "leave_approved", "leave_rejected"],
-	comments: ["comment_added", "comment_mention"],
+	tasks:       ["task_assigned", "task_reassigned", "task_claimed", "task_completed", "task_available", "task_started", "task_updated", "task_deleted", "task_watched"],
+	timers:      ["timer_auto_closed", "due_date_reminder", "priority_escalated"],
+	leave:       ["leave_requested", "leave_approved", "leave_rejected"],
+	comments:    ["comment_added", "comment_mention"],
+	departments: ["department_assigned", "department_manager"],
 } as const;
 
 export type NotificationTypeGroup = keyof typeof NOTIFICATION_TYPE_GROUPS;

@@ -18,7 +18,7 @@ import { Combobox } from "@/components/ui/combobox";
 import {
 	DialogRoot, DialogContent, DialogHeader, DialogTitle, DialogClose,
 } from "@/components/ui/dialog";
-import { formatInitials, formatDate, formatDuration } from "@/lib/utils/format";
+import { formatInitials, formatDate, formatDurationMs } from "@/lib/utils/format";
 import { cn } from "@/lib/utils/cn";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -100,6 +100,7 @@ export interface EmployeeDetailBodyProps {
 	timeEntries: TimeEntry[];
 	totalTimeMs: number;
 	department: { id: string; name: string } | null;
+	isDepartmentManager: boolean;
 	departmentsEnabled: boolean;
 }
 
@@ -296,7 +297,7 @@ function EditDialog({
 export function EmployeeDetailBody({
 	employeeId, name, email, avatarUrl, role, createdAt, lastSignInAt,
 	meta, tasks, taskTotal, taskCompleted, timeEntries, totalTimeMs,
-	department, departmentsEnabled,
+	department, isDepartmentManager, departmentsEnabled,
 }: EmployeeDetailBodyProps) {
 	const [activeTab, setActiveTab] = useState<Tab>("overview");
 	const [editOpen, setEditOpen] = useState(false);
@@ -312,7 +313,7 @@ export function EmployeeDetailBody({
 			})),
 			...timeEntries.slice(0, 3).map((e) => ({
 				date: e.startTime,
-				text: `Logged ${formatDuration(e.durationMs)} on: ${e.title ?? "—"}`,
+				text: `Logged ${formatDurationMs(e.durationMs)} on: ${e.title ?? "—"}`,
 			})),
 		];
 		return items
@@ -328,7 +329,7 @@ export function EmployeeDetailBody({
 	];
 
 	const aboutFields = [
-		{ icon: Building2, label: "Department", value: department?.name ?? "—" },
+		{ icon: Building2, label: "Department", value: department?.name ?? "—", managerBadge: isDepartmentManager && !!department },
 		{ icon: User2,     label: "Role",       value: null, badge: role },
 		{ icon: MapPin,    label: "Location",   value: meta?.address ?? "—" },
 		{ icon: Phone,     label: "Phone",      value: meta?.phone ?? "—" },
@@ -440,7 +441,7 @@ export function EmployeeDetailBody({
 							<div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-0">
 								{/* Left: structured fields */}
 								<div className="divide-y divide-border/50">
-									{aboutFields.map(({ icon: Icon, label, value, badge }) => (
+									{aboutFields.map(({ icon: Icon, label, value, badge, managerBadge }) => (
 										<div key={label} className="flex items-center gap-3 py-2.5">
 											<Icon className="w-4 h-4 text-ink-3 shrink-0" />
 											<span className="text-xs text-ink-3 w-24 shrink-0">{label}</span>
@@ -456,7 +457,14 @@ export function EmployeeDetailBody({
 												>
 													{badge}
 												</Badge>
-											) : (
+											) : managerBadge ? (
+												<div className="flex items-center gap-1.5 min-w-0">
+													<span className="text-xs text-ink truncate">{value}</span>
+													<Badge variant="outline" className="text-[10px] bg-amber-500/10 text-amber-700 border-amber-500/20 shrink-0">
+														Manager
+													</Badge>
+												</div>
+										) : (
 												<span className="text-xs text-ink truncate">{value}</span>
 											)}
 										</div>
@@ -583,7 +591,7 @@ export function EmployeeDetailBody({
 													<tr key={entry.id} className="hover:bg-accent/10">
 														<td className="px-4 py-2.5 text-xs text-ink-3">{formatDate(entry.startTime)}</td>
 														<td className="px-4 py-2.5 text-xs text-ink">{entry.title ?? <span className="text-ink-3">—</span>}</td>
-														<td className="px-4 py-2.5 text-xs text-ink-3">{formatDuration(entry.durationMs)}</td>
+														<td className="px-4 py-2.5 text-xs text-ink-3">{formatDurationMs(entry.durationMs)}</td>
 													</tr>
 												))}
 											</tbody>
@@ -591,7 +599,7 @@ export function EmployeeDetailBody({
 									</div>
 									<div className="flex justify-end mt-2">
 										<p className="text-xs text-ink-3">
-											Total: <span className="font-semibold text-ink">{formatDuration(totalTimeMs)}</span>
+											Total: <span className="font-semibold text-ink">{formatDurationMs(totalTimeMs)}</span>
 										</p>
 									</div>
 								</>
@@ -724,7 +732,7 @@ export function EmployeeDetailBody({
 				<section className="rounded-xl border bg-background p-5">
 					<div className="flex items-center justify-between mb-4">
 						<h2 className="font-semibold text-ink">Time Logs <span className="font-normal text-ink-3 text-xs">(last 30 days)</span></h2>
-						<p className="text-xs text-ink-3">Total: <span className="font-semibold text-ink">{formatDuration(totalTimeMs)}</span></p>
+						<p className="text-xs text-ink-3">Total: <span className="font-semibold text-ink">{formatDurationMs(totalTimeMs)}</span></p>
 					</div>
 					{timeEntries.length > 0 ? (
 						<div className="rounded-lg border overflow-x-auto">
@@ -741,7 +749,7 @@ export function EmployeeDetailBody({
 										<tr key={entry.id} className="hover:bg-accent/10">
 											<td className="px-4 py-2.5 text-xs text-ink-3">{formatDate(entry.startTime)}</td>
 											<td className="px-4 py-2.5 text-xs text-ink">{entry.title ?? <span className="text-ink-3">—</span>}</td>
-											<td className="px-4 py-2.5 text-xs text-ink-3">{formatDuration(entry.durationMs)}</td>
+											<td className="px-4 py-2.5 text-xs text-ink-3">{formatDurationMs(entry.durationMs)}</td>
 										</tr>
 									))}
 								</tbody>

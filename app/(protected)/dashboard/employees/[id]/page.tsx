@@ -125,6 +125,7 @@ export default async function EmployeeDetailPage({
 			}))}
 			totalTimeMs={totalTimeMs}
 			department={userWithDept?.department ?? userWithDept?.managed_departments?.[0] ?? null}
+			isDepartmentManager={!!(userWithDept?.managed_departments?.[0])}
 			departmentsEnabled={org?.departments_enabled ?? false}
 		/>
 	);

@@ -4,6 +4,7 @@ import { withOrg } from "@/lib/utils/org-filter";
 import { auditLog } from "@/lib/utils/audit";
 import { sendEmail } from "@/lib/email/send";
 import { employeeWelcomeEmail } from "@/lib/email/templates";
+import { createNotification } from "@/lib/utils/create-notification";
 import { ROLES, DEFAULT_ROLE, type Role } from "@/configs/rbac.config";
 import type { Caller } from "./ticket.service";
 
@@ -269,8 +270,18 @@ export async function updateEmployee(id: string, admin: Caller, data: UpdateEmpl
 		if (department_id !== null) {
 			const dept = await prisma.department.findFirst({ where: withOrg(orgId, { id: department_id }) });
 			if (!dept) throw Object.assign(new Error("Department not found in this organization"), { status: 400 });
+			await prisma.user.update({ where: { id }, data: { department_id } });
+			createNotification({
+				user_id: id,
+				org_id: orgId,
+				type: "department_assigned",
+				title: "You've been added to a department",
+				body: `You have been assigned to the ${dept.name} department.`,
+				link: "/dashboard/settings/profile",
+			}).catch(() => {});
+		} else {
+			await prisma.user.update({ where: { id }, data: { department_id } });
 		}
-		await prisma.user.update({ where: { id }, data: { department_id } });
 	}
 
 	auditLog({
@@ -322,6 +333,16 @@ export async function bulkEmployeeAction(
 		const dept = await prisma.department.findFirst({ where: withOrg(orgId, { id: department_id }) });
 		if (!dept) throw Object.assign(new Error("Department not found in this organization"), { status: 400 });
 		await prisma.user.updateMany({ where: { ...withOrg(orgId), id: { in: ids } }, data: { department_id } });
+		prisma.notification.createMany({
+			data: ids.map((uid) => ({
+				user_id: uid,
+				org_id: orgId ?? null,
+				type: "department_assigned",
+				title: "You've been added to a department",
+				body: `You have been assigned to the ${dept.name} department.`,
+				link: "/dashboard/settings/profile",
+			})),
+		}).catch(() => {});
 		return { succeeded: ids, failed: [] };
 	}
 
