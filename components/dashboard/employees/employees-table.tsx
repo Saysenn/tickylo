@@ -429,8 +429,19 @@ export function EmployeesTable() {
 										</td>
 
 										{departmentsEnabled && (
-											<td className="px-4 py-2 text-ink-3 hidden lg:table-cell text-xs">
-												{employee.department?.name ?? "—"}
+											<td className="px-4 py-2 hidden lg:table-cell">
+												{employee.department ? (
+													<div className="flex items-center gap-1.5">
+														<span className="text-xs text-ink-3">{employee.department.name}</span>
+														{employee.is_department_manager && (
+															<Badge variant="outline" className="text-[10px] bg-amber-500/10 text-amber-700 border-amber-500/20">
+																Manager
+															</Badge>
+														)}
+													</div>
+												) : (
+													<span className="text-xs text-ink-3">—</span>
+												)}
 											</td>
 										)}
 

@@ -91,6 +91,7 @@ export async function listEmployees(
 		role: (u.role ?? DEFAULT_ROLE) as Role,
 		last_sign_in_at: authMap.get(u.id)?.last_sign_in_at ?? null,
 		department: u.department ?? u.managed_departments?.[0] ?? null,
+		is_department_manager: !!(u.managed_departments?.[0]),
 	}));
 
 	return { data: employees, page, total, totalPages: Math.ceil(total / perPage) || 1 };
