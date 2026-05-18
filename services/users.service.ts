@@ -1,11 +1,22 @@
 import { prisma } from "@/lib/infra/prisma";
 import type { Caller } from "./ticket.service";
 
-const ALLOWED_FIELDS = ["phone", "address", "passport_number", "visa_status", "visa_expiry", "dob"] as const;
+const ALLOWED_FIELDS = ["phone", "address", "passport_number", "visa_status", "visa_expiry", "dob", "bio", "skills", "notes"] as const;
 type AllowedField = (typeof ALLOWED_FIELDS)[number];
 
 export async function getUserMeta(caller: Caller) {
-	return prisma.userMetaData.findUnique({ where: { user_id: caller.id } }) ?? null;
+	const [meta, userRow] = await Promise.all([
+		prisma.userMetaData.findUnique({ where: { user_id: caller.id } }),
+		prisma.user.findFirst({
+			where: { id: caller.id },
+			select: {
+				department: { select: { id: true, name: true } },
+				managed_departments: { select: { id: true, name: true }, take: 1 },
+			},
+		}),
+	]);
+	const department = userRow?.department ?? userRow?.managed_departments?.[0] ?? null;
+	return meta ? { ...meta, department } : { department };
 }
 
 export async function updateUserMeta(caller: Caller, body: Record<string, unknown>) {

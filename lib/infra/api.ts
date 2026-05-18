@@ -36,6 +36,9 @@ class APIService {
 			passport_number?: string;
 			visa_status?: string;
 			visa_expiry?: string;
+			bio?: string | null;
+			skills?: string | null;
+			notes?: string | null;
 		}) => axiosService.patch(`${apiVersion}/users/meta`, data),
 		export: () => axiosService.instance.get(`/v1/users/export`, { responseType: "blob" }),
 		requestDeletion: () => axiosService.post(`${apiVersion}/users/deletion-request`, {}),

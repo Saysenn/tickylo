@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { ClipboardList } from "lucide-react";
+import { ClipboardList, Building2 } from "lucide-react";
 import APIService from "@/lib/infra/api";
 import {
 	Card,
@@ -25,8 +25,8 @@ import {
 import { formatDate, toDateInput } from "@/lib/utils/format";
 
 interface UserMeta {
-	id: string;
-	user_id: string;
+	id?: string;
+	user_id?: string;
 	phone: string | null;
 	dob: string | null;
 	address: string | null;
@@ -39,6 +39,10 @@ interface UserMeta {
 	vacation_leave: number | null;
 	emergency_leave: number | null;
 	personal_leave: number | null;
+	bio: string | null;
+	skills: string | null;
+	notes: string | null;
+	department: { id: string; name: string } | null;
 }
 
 const COUNTRY_CODES = [
@@ -113,6 +117,12 @@ export function ProfileMetaSection() {
 	const [localPhone, setLocalPhone] = useState("");
 	const [dob, setDob] = useState("");
 	const [address, setAddress] = useState("");
+	const [passportNumber, setPassportNumber] = useState("");
+	const [visaStatus, setVisaStatus] = useState("");
+	const [visaExpiry, setVisaExpiry] = useState("");
+	const [bio, setBio] = useState("");
+	const [skills, setSkills] = useState("");
+	const [notes, setNotes] = useState("");
 
 	const [successMsg, setSuccessMsg] = useState<string | null>(null);
 	const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -166,6 +176,12 @@ export function ProfileMetaSection() {
 			setLocalPhone(parsed.local);
 			setDob(toDateInput(meta.dob));
 			setAddress(meta.address ?? "");
+			setPassportNumber(meta.passport_number ?? "");
+			setVisaStatus(meta.visa_status ?? "");
+			setVisaExpiry(toDateInput(meta.visa_expiry));
+			setBio(meta.bio ?? "");
+			setSkills(meta.skills ?? "");
+			setNotes(meta.notes ?? "");
 		}
 	}, [meta]);
 
@@ -177,6 +193,12 @@ export function ProfileMetaSection() {
 				phone: fullPhone,
 				dob: dob || undefined,
 				address: address || undefined,
+				passport_number: passportNumber || undefined,
+				visa_status: visaStatus || undefined,
+				visa_expiry: visaExpiry || undefined,
+				bio: bio || null,
+				skills: skills || null,
+				notes: notes || null,
 			}),
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ["user-meta"] });
@@ -197,7 +219,8 @@ export function ProfileMetaSection() {
 			meta.sick_leave != null ||
 			meta.vacation_leave != null ||
 			meta.emergency_leave != null ||
-			meta.personal_leave != null);
+			meta.personal_leave != null ||
+			meta.department != null);
 
 	return (
 		<Card>
@@ -277,6 +300,83 @@ export function ProfileMetaSection() {
 								/>
 							</div>
 
+							{/* Travel & Documents */}
+							<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+								<div className="space-y-1.5">
+									<Label htmlFor="meta-passport">Passport Number</Label>
+									<Input
+										id="meta-passport"
+										type="text"
+										placeholder="A12345678"
+										value={passportNumber}
+										onChange={(e) => setPassportNumber(e.target.value)}
+										className="h-9 text-sm"
+									/>
+								</div>
+
+								<div className="space-y-1.5">
+									<Label htmlFor="meta-visa-status">Visa Status</Label>
+									<Input
+										id="meta-visa-status"
+										type="text"
+										placeholder="e.g. Work Permit, PR, Citizen"
+										value={visaStatus}
+										onChange={(e) => setVisaStatus(e.target.value)}
+										className="h-9 text-sm"
+									/>
+								</div>
+							</div>
+
+							<div className="space-y-1.5">
+								<Label htmlFor="meta-visa-expiry">Visa Expiry</Label>
+								<Input
+									id="meta-visa-expiry"
+									type="date"
+									value={visaExpiry}
+									onChange={(e) => setVisaExpiry(e.target.value)}
+									className="h-9 text-sm w-full sm:w-1/2"
+								/>
+							</div>
+
+							{/* Bio */}
+							<div className="space-y-1.5">
+								<Label htmlFor="meta-bio">Bio</Label>
+								<textarea
+									id="meta-bio"
+									rows={3}
+									placeholder="A short description about yourself…"
+									value={bio}
+									onChange={(e) => setBio(e.target.value)}
+									className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 resize-none"
+								/>
+							</div>
+
+							{/* Skills */}
+							<div className="space-y-1.5">
+								<Label htmlFor="meta-skills">Skills</Label>
+								<textarea
+									id="meta-skills"
+									rows={3}
+									placeholder="e.g. TypeScript, React, Node.js (one per line or comma-separated)"
+									value={skills}
+									onChange={(e) => setSkills(e.target.value)}
+									className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 resize-none"
+								/>
+							</div>
+
+							{/* Notes */}
+							<div className="space-y-1.5">
+								<Label htmlFor="meta-notes">Notes</Label>
+								<textarea
+									id="meta-notes"
+									rows={3}
+									placeholder="Any additional notes…"
+									value={notes}
+									onChange={(e) => setNotes(e.target.value)}
+									className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 resize-none"
+								/>
+							</div>
+
 							{/* Save row */}
 							<div className="flex items-center gap-3 pt-1">
 								<Button size="sm" onClick={() => mutate()} disabled={isPending}>
@@ -314,6 +414,18 @@ export function ProfileMetaSection() {
 									</div>
 
 									<div className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-3 text-sm">
+										{meta?.department != null && (
+											<div>
+												<p className="text-xs text-ink-3 uppercase tracking-wider mb-0.5">
+													Department
+												</p>
+												<div className="flex items-center gap-1.5">
+													<Building2 className="w-3.5 h-3.5 text-ink-3" />
+													<p className="font-medium text-ink">{meta.department.name}</p>
+												</div>
+											</div>
+										)}
+
 										{meta?.salary != null && (
 											<div>
 												<p className="text-xs text-ink-3 uppercase tracking-wider mb-0.5">
