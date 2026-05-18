@@ -20,6 +20,9 @@ const META_FIELDS = [
 	"vacation_leave",
 	"emergency_leave",
 	"personal_leave",
+	"bio",
+	"skills",
+	"notes",
 ] as const;
 
 // ─── List ─────────────────────────────────────────────────────────────────────
@@ -223,6 +226,9 @@ export type UpdateEmployeeData = {
 	vacation_leave?: number | null;
 	emergency_leave?: number | null;
 	personal_leave?: number | null;
+	bio?: string | null;
+	skills?: string | null;
+	notes?: string | null;
 	department_id?: string | null;
 };
 

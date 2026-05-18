@@ -105,6 +105,9 @@ class APIService {
 				vacation_leave?: number | null;
 				emergency_leave?: number | null;
 				personal_leave?: number | null;
+				bio?: string | null;
+				skills?: string | null;
+				notes?: string | null;
 				department_id?: string | null;
 			},
 		) => axiosService.patch(`${apiVersion}/employees/${id}`, data),

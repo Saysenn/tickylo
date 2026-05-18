@@ -22,6 +22,9 @@ const updateEmployeeSchema = z.object({
 	emergency_leave: z.number().int().min(0).optional().nullable(),
 	personal_leave: z.number().int().min(0).optional().nullable(),
 	department_id: z.string().nullable().optional(),
+	bio: z.string().nullable().optional(),
+	skills: z.string().nullable().optional(),
+	notes: z.string().nullable().optional(),
 });
 
 export async function GET(

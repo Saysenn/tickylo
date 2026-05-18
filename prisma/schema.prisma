@@ -271,6 +271,10 @@ model UserMetaData {
   emergency_leave Int? @default(0)
   personal_leave  Int? @default(0)
 
+  bio             String?
+  skills          String?
+  notes           String?
+
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
