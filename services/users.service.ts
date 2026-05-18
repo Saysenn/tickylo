@@ -16,7 +16,8 @@ export async function getUserMeta(caller: Caller) {
 		}),
 	]);
 	const department = userRow?.department ?? userRow?.managed_departments?.[0] ?? null;
-	return meta ? { ...meta, department } : { department };
+	const is_department_manager = !!(userRow?.managed_departments?.[0]);
+	return meta ? { ...meta, department, is_department_manager } : { department, is_department_manager };
 }
 
 export async function updateUserMeta(caller: Caller, body: Record<string, unknown>) {

@@ -44,6 +44,7 @@ interface UserMeta {
 	skills: string | null;
 	notes: string | null;
 	department: { id: string; name: string } | null;
+	is_department_manager: boolean;
 }
 
 const COUNTRY_CODES = [
@@ -428,9 +429,14 @@ export function ProfileMetaSection() {
 								{meta?.department != null && (
 									<div>
 										<p className="text-xs text-ink-3 uppercase tracking-wider mb-0.5">Department</p>
-										<div className="flex items-center gap-1.5">
+										<div className="flex items-center gap-1.5 flex-wrap">
 											<Building2 className="w-3.5 h-3.5 text-ink-3" />
 											<p className="font-medium text-ink">{meta.department.name}</p>
+											{meta.is_department_manager && (
+												<Badge variant="outline" className="text-[10px] bg-amber-500/10 text-amber-700 border-amber-500/20">
+													Manager
+												</Badge>
+											)}
 										</div>
 									</div>
 								)}
