@@ -56,7 +56,7 @@ export function EmployeesTable() {
 	const { data: deptData } = useQuery({
 		queryKey: ["departments"],
 		queryFn: () => APIService.departments.list(),
-		enabled: departmentsEnabled && filterVisible,
+		enabled: departmentsEnabled && (filterVisible || bulkMode),
 		staleTime: 30_000,
 	});
 	const departments = deptData?.data ?? [];
@@ -293,6 +293,34 @@ export function EmployeesTable() {
 								<SelectItem value="admin">Set Admin</SelectItem>
 							</SelectContent>
 						</SelectRoot>
+						{departmentsEnabled && (
+							<Combobox
+								options={[
+									{ value: "__assign__", label: "Assign to dept…", disabled: true },
+									...departments.map((d: any) => ({ value: d.id, label: d.name })),
+								]}
+								value=""
+								onChange={(deptId) => {
+									if (deptId) bulkAction({ action: "assign_department", department_id: deptId });
+								}}
+								placeholder="Assign dept…"
+								searchPlaceholder="Search departments…"
+								emptyText="No departments."
+								className="h-7 text-xs w-[140px]"
+								disabled={isBulkPending || selectedIds.size === 0 || departments.length === 0}
+							/>
+						)}
+						{departmentsEnabled && (
+							<Button
+								size="sm" variant="outline"
+								className="h-7 text-xs gap-1.5"
+								disabled={isBulkPending || selectedIds.size === 0}
+								onClick={() => bulkAction({ action: "remove_department" })}
+							>
+								<X className="w-3.5 h-3.5" />
+								Remove dept
+							</Button>
+						)}
 						<Button
 							size="sm" variant="outline"
 							className="h-7 text-xs gap-1.5 text-destructive border-red-500/30 hover:bg-red-500/10 hover:text-destructive"

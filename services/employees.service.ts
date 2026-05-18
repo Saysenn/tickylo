@@ -73,6 +73,7 @@ export async function listEmployees(
 				role: true,
 				created_at: true,
 				department: { select: { id: true, name: true } },
+				managed_departments: { select: { id: true, name: true }, take: 1 },
 			},
 			orderBy: { created_at: "desc" },
 			take: perPage,
@@ -89,6 +90,7 @@ export async function listEmployees(
 		...u,
 		role: (u.role ?? DEFAULT_ROLE) as Role,
 		last_sign_in_at: authMap.get(u.id)?.last_sign_in_at ?? null,
+		department: u.department ?? u.managed_departments?.[0] ?? null,
 	}));
 
 	return { data: employees, page, total, totalPages: Math.ceil(total / perPage) || 1 };
