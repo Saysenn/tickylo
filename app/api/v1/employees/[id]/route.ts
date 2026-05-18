@@ -8,7 +8,7 @@ import { auditLog } from "@/lib/utils/audit";
 
 const updateEmployeeSchema = z.object({
 	name: z.string().min(2).max(100).optional(),
-	role: z.enum([ROLES.ADMIN, ROLES.EMPLOYEE]).optional(),
+	role: z.enum([ROLES.ADMIN, ROLES.MANAGER, ROLES.EMPLOYEE]).optional(),
 	phone: z.string().optional().nullable(),
 	dob: z.string().optional().nullable(),
 	address: z.string().optional().nullable(),
@@ -21,6 +21,7 @@ const updateEmployeeSchema = z.object({
 	vacation_leave: z.number().int().min(0).optional().nullable(),
 	emergency_leave: z.number().int().min(0).optional().nullable(),
 	personal_leave: z.number().int().min(0).optional().nullable(),
+	department_id: z.string().nullable().optional(),
 });
 
 export async function GET(

@@ -20,6 +20,7 @@ model Organization {
   logo_url            String?
   org_join_code       String   @unique @default(cuid())
   attachments_enabled Boolean  @default(true)
+  departments_enabled Boolean  @default(false)
   created_at          DateTime @default(now())
   updated_at          DateTime @updatedAt
 
@@ -40,6 +41,7 @@ model Organization {
   work_schedule    WorkSchedule?
   storage          OrgStorage?
   ticket_templates TicketTemplate[]
+  departments      Department[]
 
   @@map("organizations")
 }
@@ -184,8 +186,9 @@ model User {
 
   created_at DateTime      @default(now())
   updated_at DateTime      @updatedAt
-  org        Organization? @relation(fields: [org_id], references: [id], onDelete: SetNull)
-  department Department?   @relation(fields: [department_id], references: [id])
+  org                 Organization? @relation(fields: [org_id], references: [id], onDelete: SetNull)
+  department          Department?   @relation("DepartmentMembers", fields: [department_id], references: [id], onDelete: SetNull)
+  managed_departments Department[]  @relation("DepartmentManager")
 
   @@index([org_id])
   @@index([department_id])
@@ -207,14 +210,20 @@ model DeletionRequest {
 }
 
 model Department {
-  id     String  @id @default(cuid())
-  org_id String?
-  name   String
+  id         String   @id @default(cuid())
+  org_id     String?
+  name       String
+  manager_id String?
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 
-  users User[]
+  org     Organization? @relation(fields: [org_id], references: [id], onDelete: Cascade)
+  manager User?         @relation("DepartmentManager", fields: [manager_id], references: [id], onDelete: SetNull)
+  users   User[]        @relation("DepartmentMembers")
 
   @@unique([org_id, name])
   @@index([org_id])
+  @@index([manager_id])
   @@map("departments")
 }
 

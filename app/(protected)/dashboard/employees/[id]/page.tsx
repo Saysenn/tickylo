@@ -11,6 +11,7 @@ import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { EmployeeMetaEditSection } from "@/components/dashboard/employees/employee-meta-edit-section";
 import { EmployeeLeaveBalanceSection } from "@/components/dashboard/employees/employee-leave-balance-section";
+import { EmployeeDepartmentSection } from "@/components/dashboard/employees/employee-department-section";
 
 export const metadata = { title: "Employee Details" };
 
@@ -48,8 +49,10 @@ export default async function EmployeeDetailPage({
 	const thirtyDaysAgo = new Date();
 	thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
+	const orgId = admin.app_metadata?.org_id as string | undefined;
+
 	// Fetch all related data in parallel
-	const [meta, leaves, tasks, timeEntries] = await Promise.all([
+	const [meta, leaves, tasks, timeEntries, org, userWithDept] = await Promise.all([
 		prisma.userMetaData.findUnique({ where: { user_id: id } }),
 		prisma.leave.findMany({
 			where: { user_id: id },
@@ -70,6 +73,8 @@ export default async function EmployeeDetailPage({
 			orderBy: { start_time: "desc" },
 			take: 20,
 		}),
+		orgId ? prisma.organization.findUnique({ where: { id: orgId }, select: { departments_enabled: true } }) : Promise.resolve(null),
+		prisma.user.findFirst({ where: { id }, select: { department: { select: { id: true, name: true } } } }),
 	]);
 
 	const totalTimeMs = timeEntries.reduce((acc, entry) => {
@@ -126,6 +131,14 @@ export default async function EmployeeDetailPage({
 					</p>
 				</div>
 			</div>
+
+			{/* Department (when enabled) */}
+			{org?.departments_enabled && (
+				<EmployeeDepartmentSection
+					employeeId={id}
+					initialDepartment={userWithDept?.department ?? null}
+				/>
+			)}
 
 			{/* Metadata — editable by admin */}
 			<EmployeeMetaEditSection

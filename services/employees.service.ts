@@ -24,7 +24,14 @@ const META_FIELDS = [
 
 // ─── List ─────────────────────────────────────────────────────────────────────
 
-export async function listEmployees(admin: Caller, page = 1, limit = 10, search?: string) {
+export async function listEmployees(
+	admin: Caller,
+	page = 1,
+	limit = 10,
+	search?: string,
+	department_id?: string,
+	role_filter?: "managers",
+) {
 	const orgId = admin.app_metadata?.org_id as string | undefined;
 	const perPage = Math.min(100, Math.max(1, limit));
 	const skip = (Math.max(1, page) - 1) * perPage;
@@ -38,12 +45,31 @@ export async function listEmployees(admin: Caller, page = 1, limit = 10, search?
 		  }
 		: {};
 
-	const where = { ...withOrg(orgId), role: ROLES.EMPLOYEE, ...searchFilter };
+	// "Managers only" = users who manage a department in this org (relation-based, role-agnostic)
+	// "All employees"  = users with employee or manager role (excludes admins)
+	const roleFilter = role_filter === "managers"
+		? { managed_departments: { some: { org_id: orgId } } }
+		: { role: { in: [ROLES.EMPLOYEE, ROLES.MANAGER] } };
+
+	// Department filter includes both members (department_id) and the dept's manager
+	const deptFilter = department_id
+		? { OR: [{ department_id }, { managed_departments: { some: { id: department_id } } }] }
+		: {};
+
+	const where = { ...withOrg(orgId), ...roleFilter, ...searchFilter, ...deptFilter };
 
 	const [orgUsers, total] = await Promise.all([
 		prisma.user.findMany({
 			where,
-			select: { id: true, email: true, name: true, avatar_url: true, role: true, created_at: true },
+			select: {
+				id: true,
+				email: true,
+				name: true,
+				avatar_url: true,
+				role: true,
+				created_at: true,
+				department: { select: { id: true, name: true } },
+			},
 			orderBy: { created_at: "desc" },
 			take: perPage,
 			skip,
@@ -61,7 +87,7 @@ export async function listEmployees(admin: Caller, page = 1, limit = 10, search?
 		last_sign_in_at: authMap.get(u.id)?.last_sign_in_at ?? null,
 	}));
 
-	return { data: employees, page, totalPages: Math.ceil(total / perPage) || 1 };
+	return { data: employees, page, total, totalPages: Math.ceil(total / perPage) || 1 };
 }
 
 // ─── Create ───────────────────────────────────────────────────────────────────
@@ -197,10 +223,12 @@ export type UpdateEmployeeData = {
 	vacation_leave?: number | null;
 	emergency_leave?: number | null;
 	personal_leave?: number | null;
+	department_id?: string | null;
 };
 
 export async function updateEmployee(id: string, admin: Caller, data: UpdateEmployeeData) {
-	const { name, role, ...rest } = data;
+	const orgId = admin.app_metadata?.org_id as string | undefined;
+	const { name, role, department_id, ...rest } = data;
 	const supabaseAdmin = createAdminClient();
 
 	const updatePayload: Parameters<typeof supabaseAdmin.auth.admin.updateUserById>[1] = {};
@@ -231,14 +259,22 @@ export async function updateEmployee(id: string, admin: Caller, data: UpdateEmpl
 		});
 	}
 
+	if (department_id !== undefined) {
+		if (department_id !== null) {
+			const dept = await prisma.department.findFirst({ where: withOrg(orgId, { id: department_id }) });
+			if (!dept) throw Object.assign(new Error("Department not found in this organization"), { status: 400 });
+		}
+		await prisma.user.update({ where: { id }, data: { department_id } });
+	}
+
 	auditLog({
-		org_id: admin.app_metadata?.org_id as string | undefined,
+		org_id: orgId,
 		actor_id: admin.id,
 		actor_role: ROLES.ADMIN,
 		action: "UPDATE",
 		entity_type: "employee",
 		entity_id: id,
-		after: { name, role, ...metaUpdate },
+		after: { name, role, ...metaUpdate, ...(department_id !== undefined ? { department_id } : {}) },
 	});
 
 	return { id, name, role };
@@ -260,17 +296,33 @@ export async function getWorkload(admin: Caller) {
 }
 
 export async function bulkEmployeeAction(
-	action: "delete" | "change_role",
+	action: "delete" | "change_role" | "assign_department" | "remove_department",
 	ids: string[],
 	admin: Caller,
 	role?: string,
+	department_id?: string | null,
 ) {
+	const orgId = admin.app_metadata?.org_id as string | undefined;
 	if (action === "change_role" && !role)
 		throw Object.assign(new Error("role is required for change_role action"), { status: 400 });
+	if (action === "assign_department" && !department_id)
+		throw Object.assign(new Error("department_id is required for assign_department action"), { status: 400 });
 
 	const supabaseAdmin = createAdminClient();
 	const succeeded: string[] = [];
 	const failed: string[] = [];
+
+	if (action === "assign_department" && department_id) {
+		const dept = await prisma.department.findFirst({ where: withOrg(orgId, { id: department_id }) });
+		if (!dept) throw Object.assign(new Error("Department not found in this organization"), { status: 400 });
+		await prisma.user.updateMany({ where: { ...withOrg(orgId), id: { in: ids } }, data: { department_id } });
+		return { succeeded: ids, failed: [] };
+	}
+
+	if (action === "remove_department") {
+		await prisma.user.updateMany({ where: { ...withOrg(orgId), id: { in: ids } }, data: { department_id: null } });
+		return { succeeded: ids, failed: [] };
+	}
 
 	for (const id of ids) {
 		try {
@@ -278,11 +330,12 @@ export async function bulkEmployeeAction(
 				if (admin.id === id) { failed.push(id); continue; }
 				const { error } = await supabaseAdmin.auth.admin.deleteUser(id);
 				if (error) { failed.push(id); continue; }
-				auditLog({ org_id: admin.app_metadata?.org_id as string | undefined, actor_id: admin.id, actor_role: ROLES.ADMIN, action: "DELETE", entity_type: "employee", entity_id: id });
+				auditLog({ org_id: orgId, actor_id: admin.id, actor_role: ROLES.ADMIN, action: "DELETE", entity_type: "employee", entity_id: id });
 			} else if (action === "change_role") {
 				const { error } = await supabaseAdmin.auth.admin.updateUserById(id, { app_metadata: { role } });
 				if (error) { failed.push(id); continue; }
-				auditLog({ org_id: admin.app_metadata?.org_id as string | undefined, actor_id: admin.id, actor_role: ROLES.ADMIN, action: "UPDATE", entity_type: "employee", entity_id: id, after: { role } });
+				await prisma.user.update({ where: { id }, data: { role } });
+				auditLog({ org_id: orgId, actor_id: admin.id, actor_role: ROLES.ADMIN, action: "UPDATE", entity_type: "employee", entity_id: id, after: { role } });
 			}
 			succeeded.push(id);
 		} catch {

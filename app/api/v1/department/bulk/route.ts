@@ -2,14 +2,12 @@ import { NextRequest } from "next/server";
 import { z } from "zod";
 import { ok, errorResponse } from "@/lib/utils/response";
 import { requireAdmin } from "@/lib/auth/require-admin";
-import { ROLES } from "@/configs/rbac.config";
-import * as EmployeeService from "@/services/employees.service";
+import * as DepartmentService from "@/services/department.service";
 
 const schema = z.object({
-	action: z.enum(["delete", "change_role", "assign_department", "remove_department"]),
+	action: z.enum(["delete"]),
 	ids: z.array(z.string()).min(1).max(100),
-	role: z.enum([ROLES.ADMIN, ROLES.MANAGER, ROLES.EMPLOYEE]).optional(),
-	department_id: z.string().nullable().optional(),
+	force: z.boolean().optional(),
 });
 
 export async function POST(request: NextRequest) {
@@ -19,12 +17,12 @@ export async function POST(request: NextRequest) {
 		const body = await request.json();
 		const validated = schema.safeParse(body);
 		if (!validated.success) return errorResponse(validated.error.issues[0]?.message ?? "Invalid input", 400);
-		const { action, ids, role, department_id } = validated.data;
-		const result = await EmployeeService.bulkEmployeeAction(action, ids, admin, role, department_id);
+		const { ids, force } = validated.data;
+		const result = await DepartmentService.bulkDeleteDepartments(ids, admin, force ?? false);
 		return ok(result);
 	} catch (err: any) {
 		if (err.status) return errorResponse(err.message, err.status);
-		console.error("[employees:bulk:POST]", err);
+		console.error("[department:bulk:POST]", err);
 		return errorResponse("Internal server error", 500);
 	}
 }

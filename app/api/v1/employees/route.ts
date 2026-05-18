@@ -19,11 +19,14 @@ export async function GET(request: NextRequest) {
 		if (!caller) return errorResponse("Forbidden", 403);
 
 		const { searchParams } = new URL(request.url);
+		const roleFilterParam = searchParams.get("role_filter");
 		const result = await EmployeeService.listEmployees(
 			caller,
 			parseInt(searchParams.get("page") ?? "1", 10),
 			parseInt(searchParams.get("limit") ?? "10", 10),
 			searchParams.get("search") ?? undefined,
+			searchParams.get("department_id") ?? undefined,
+			roleFilterParam === "managers" ? "managers" : undefined,
 		);
 
 		return ok(result);

@@ -8,4 +8,5 @@ export interface Employee {
   role: Role;
   created_at: string;
   last_sign_in_at: string | null;
+  department: { id: string; name: string } | null;
 }

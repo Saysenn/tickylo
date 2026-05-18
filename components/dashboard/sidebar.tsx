@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
 import { Logo } from "@/components/logo";
 import {
 	LayoutDashboard,
@@ -12,15 +13,18 @@ import {
 	BarChart2,
 	Shield,
 	Inbox,
+	Building2,
 } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import type { Role } from "@/configs/rbac.config";
+import APIService from "@/lib/infra/api";
 
 interface NavItem {
 	label: string;
 	href: string;
 	icon: React.ElementType;
-	roles?: Role[]; // if set, only these roles see this item
+	roles?: Role[];
+	hidden?: boolean;
 }
 
 interface NavGroup {
@@ -34,74 +38,48 @@ interface SidebarProps {
 	role: Role;
 }
 
-const navGroups: NavGroup[] = [
-	{
-		title: "Overview",
-		items: [
-			{ label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-			{
-				label: "Team Overview",
-				href: "/dashboard/time-manager",
-				icon: Clock,
-				roles: ["admin"],
-			},
-			{
-				label: "Reports",
-				href: "/dashboard/reports",
-				icon: BarChart2,
-				roles: ["admin"],
-			},
-		],
-	},
-	{
-		title: "Management",
-		items: [
-			{
-				label: "Employees",
-				href: "/dashboard/employees",
-				icon: Users,
-				roles: ["admin"],
-			},
-			{
-				label: "Requests",
-				href: "/dashboard/ticket-requests",
-				icon: Inbox,
-				roles: ["admin"],
-			},
-		],
-	},
-	{
-		title: "Work",
-		items: [
-			{
-				label: "Time Tracker",
-				href: "/dashboard/time-tracker",
-				icon: AlarmClock,
-			},
-			{ label: "Tickets", href: "/dashboard/tickets", icon: ClipboardList },
-		],
-	},
-	{
-		title: "Logs",
-		items: [
-			{
-				label: "Time Logs",
-				href: "/dashboard/time-logs",
-				icon: Clock,
-				roles: ["admin"],
-			},
-			{
-				label: "Ticket Logs",
-				href: "/dashboard/audit-logs",
-				icon: Shield,
-				roles: ["admin"],
-			},
-		],
-	},
-];
 
 export function Sidebar({ isOpen = false, onClose, role }: SidebarProps) {
 	const pathname = usePathname();
+	const { data: orgSettings } = useQuery({
+		queryKey: ["org-settings"],
+		queryFn: () => APIService.orgSettings.get(),
+		staleTime: 300_000,
+	});
+	const departmentsEnabled = orgSettings?.departments_enabled ?? false;
+
+	const navGroups: NavGroup[] = [
+		{
+			title: "Overview",
+			items: [
+				{ label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+				{ label: "Team Overview", href: "/dashboard/time-manager", icon: Clock, roles: ["admin"] },
+				{ label: "Reports", href: "/dashboard/reports", icon: BarChart2, roles: ["admin"] },
+			],
+		},
+		{
+			title: "Management",
+			items: [
+				{ label: "Employees", href: "/dashboard/employees", icon: Users, roles: ["admin"] },
+				{ label: "Departments", href: "/dashboard/departments", icon: Building2, roles: ["admin"], hidden: !departmentsEnabled },
+				{ label: "Requests", href: "/dashboard/ticket-requests", icon: Inbox, roles: ["admin"] },
+			],
+		},
+		{
+			title: "Work",
+			items: [
+				{ label: "Time Tracker", href: "/dashboard/time-tracker", icon: AlarmClock },
+				{ label: "Tickets", href: "/dashboard/tickets", icon: ClipboardList },
+			],
+		},
+		{
+			title: "Logs",
+			items: [
+				{ label: "Time Logs", href: "/dashboard/time-logs", icon: Clock, roles: ["admin"] },
+				{ label: "Ticket Logs", href: "/dashboard/audit-logs", icon: Shield, roles: ["admin"] },
+			],
+		},
+	];
 
 	const NavLink = ({ label, href, icon: Icon }: NavItem) => {
 		const isActive =
@@ -141,7 +119,7 @@ export function Sidebar({ isOpen = false, onClose, role }: SidebarProps) {
 				{navGroups.map(({ title, items }) => {
 					/** get visible items based on user role */
 					const visible = items.filter(
-						(item: NavItem) => !item.roles || item.roles.includes(role),
+						(item: NavItem) => !item.hidden && (!item.roles || item.roles.includes(role)),
 					);
 					/** if there is no roles defined, means it is visible to all */
 					if (visible.length === 0) return null;

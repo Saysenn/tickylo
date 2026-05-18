@@ -4,7 +4,10 @@ import { ok, errorResponse } from "@/lib/utils/response";
 import { requireAdmin } from "@/lib/auth/require-admin";
 import * as DepartmentService from "@/services/department.service";
 
-const updateSchema = z.object({ name: z.string().min(2).max(200).optional() });
+const updateSchema = z.object({
+	name: z.string().min(2).max(200).optional(),
+	manager_id: z.string().nullable().optional(),
+});
 
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
 	try {
@@ -23,12 +26,16 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 	}
 }
 
-export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
 	try {
 		const admin = await requireAdmin();
 		if (!admin) return errorResponse("Forbidden", 403);
 		const { id } = await params;
-		await DepartmentService.deleteDepartment(id, admin);
+		const force = new URL(req.url).searchParams.get("force") === "true";
+		const result = await DepartmentService.deleteDepartment(id, admin, force);
+		if ("hasEmployees" in result) {
+			return ok({ error: "has_employees", count: result.count, message: `Department has ${result.count} employees.` }, 409);
+		}
 		return ok({ success: true });
 	} catch (err: any) {
 		if (err.status) return errorResponse(err.message, err.status);

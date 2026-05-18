@@ -5,7 +5,10 @@ import { requireUser } from "@/lib/auth/require-user";
 import { requireAdmin } from "@/lib/auth/require-admin";
 import * as DepartmentService from "@/services/department.service";
 
-const createSchema = z.object({ name: z.string().min(2).max(200) });
+const createSchema = z.object({
+	name: z.string().min(2).max(200),
+	manager_id: z.string().nullable().optional(),
+});
 
 export async function GET(request: NextRequest) {
 	try {
@@ -27,7 +30,7 @@ export async function POST(request: NextRequest) {
 		const body = await request.json();
 		const validated = createSchema.safeParse(body);
 		if (!validated.success) return errorResponse(validated.error.issues[0]?.message ?? "Invalid input", 400);
-		const result = await DepartmentService.createDepartment(admin, validated.data.name);
+		const result = await DepartmentService.createDepartment(admin, validated.data);
 		return ok(result, 201);
 	} catch (err: any) {
 		if (err.status) return errorResponse(err.message, err.status);

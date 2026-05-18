@@ -224,6 +224,10 @@ export function formatRelativeTime(iso: string): string {
 	return formatDate(iso);
 }
 
+export function formatMemberCount(n: number): string {
+	return `${n} ${n === 1 ? "member" : "members"}`;
+}
+
 // ── Timezones ─────────────────────────────────────────────────────────────────
 
 export const TIMEZONES: { value: string; label: string }[] = [

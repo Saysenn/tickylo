@@ -63,9 +63,22 @@ class APIService {
 		remove: (id: string) => axiosService.delete(`${apiVersion}/ticket-templates/${id}`),
 	};
 
+	public departments = {
+		list: (page = 1, limit = 50) =>
+			axiosService.get(`${apiVersion}/department`, { page, limit }),
+		create: (data: { name: string; manager_id?: string | null }) =>
+			axiosService.post(`${apiVersion}/department`, data),
+		update: (id: string, data: { name?: string; manager_id?: string | null }) =>
+			axiosService.patch(`${apiVersion}/department/${id}`, data),
+		remove: (id: string, force = false) =>
+			axiosService.delete(`${apiVersion}/department/${id}${force ? "?force=true" : ""}`),
+		bulk: (action: "delete", ids: string[], force = false) =>
+			axiosService.post(`${apiVersion}/department/bulk`, { action, ids, force }),
+	};
+
 	public employees = {
-		list: (page = 1, limit = 10, search?: string) =>
-			axiosService.get(`${apiVersion}/employees`, { page, limit, search }),
+		list: (page = 1, limit = 10, search?: string, department_id?: string, role_filter?: "managers") =>
+			axiosService.get(`${apiVersion}/employees`, { page, limit, search, department_id, role_filter }),
 		workload: () =>
 			axiosService.get<Record<string, number>>(`${apiVersion}/employees/workload`),
 		get: (id: string) => axiosService.get(`${apiVersion}/employees/${id}`),
@@ -92,12 +105,17 @@ class APIService {
 				vacation_leave?: number | null;
 				emergency_leave?: number | null;
 				personal_leave?: number | null;
+				department_id?: string | null;
 			},
 		) => axiosService.patch(`${apiVersion}/employees/${id}`, data),
 		remove: (id: string) =>
 			axiosService.delete(`${apiVersion}/employees/${id}`),
-		bulk: (action: "delete" | "change_role", ids: string[], role?: string) =>
-			axiosService.post(`${apiVersion}/employees/bulk`, { action, ids, role }),
+		bulk: (
+			action: "delete" | "change_role" | "assign_department" | "remove_department",
+			ids: string[],
+			role?: string,
+			department_id?: string | null,
+		) => axiosService.post(`${apiVersion}/employees/bulk`, { action, ids, role, department_id }),
 	};
 
 	// ---------------------------------------------------------------------------
@@ -349,8 +367,8 @@ class APIService {
 	// Org Settings
 	// ---------------------------------------------------------------------------
 	public orgSettings = {
-		get: () => axiosService.get<{ attachments_enabled: boolean; org_join_code: string; name: string }>(`${apiVersion}/org/settings`),
-		update: (data: { attachments_enabled: boolean }) => axiosService.patch(`${apiVersion}/org/settings`, data),
+		get: () => axiosService.get<{ attachments_enabled: boolean; departments_enabled: boolean; org_join_code: string; name: string }>(`${apiVersion}/org/settings`),
+		update: (data: { attachments_enabled?: boolean; departments_enabled?: boolean }) => axiosService.patch(`${apiVersion}/org/settings`, data),
 	};
 
 	// ---------------------------------------------------------------------------

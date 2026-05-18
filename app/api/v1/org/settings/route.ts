@@ -14,11 +14,16 @@ export async function GET() {
 
 		const org = await prisma.organization.findUnique({
 			where: { id: orgId },
-			select: { attachments_enabled: true, org_join_code: true, name: true },
+			select: { attachments_enabled: true, departments_enabled: true, org_join_code: true, name: true },
 		});
 		if (!org) return errorResponse("Organization not found", 404);
 
-		return ok({ attachments_enabled: org.attachments_enabled, org_join_code: org.org_join_code, name: org.name });
+		return ok({
+			attachments_enabled: org.attachments_enabled,
+			departments_enabled: org.departments_enabled,
+			org_join_code: org.org_join_code,
+			name: org.name,
+		});
 	} catch (e) {
 		console.error("[GET /org/settings]", e);
 		return errorResponse("Internal server error", 500);
@@ -26,7 +31,8 @@ export async function GET() {
 }
 
 const patchSchema = z.object({
-	attachments_enabled: z.boolean(),
+	attachments_enabled: z.boolean().optional(),
+	departments_enabled: z.boolean().optional(),
 });
 
 export async function PATCH(req: NextRequest) {
@@ -40,13 +46,17 @@ export async function PATCH(req: NextRequest) {
 		const parsed = patchSchema.safeParse(body);
 		if (!parsed.success) return errorResponse(parsed.error.message, 400);
 
+		const updateData: Record<string, boolean> = {};
+		if (parsed.data.attachments_enabled !== undefined) updateData.attachments_enabled = parsed.data.attachments_enabled;
+		if (parsed.data.departments_enabled !== undefined) updateData.departments_enabled = parsed.data.departments_enabled;
+
 		const org = await prisma.organization.update({
 			where: { id: orgId },
-			data: { attachments_enabled: parsed.data.attachments_enabled },
-			select: { attachments_enabled: true },
+			data: updateData,
+			select: { attachments_enabled: true, departments_enabled: true },
 		});
 
-		return ok({ attachments_enabled: org.attachments_enabled });
+		return ok({ attachments_enabled: org.attachments_enabled, departments_enabled: org.departments_enabled });
 	} catch (e) {
 		console.error("[PATCH /org/settings]", e);
 		return errorResponse("Internal server error", 500);
