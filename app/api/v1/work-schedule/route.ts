@@ -3,6 +3,7 @@ import { z } from "zod";
 import { ok, errorResponse } from "@/lib/utils/response";
 import { getSessionOrg, isSessionOrg } from "@/lib/auth/get-session-org";
 import { getWorkSchedule, upsertWorkSchedule } from "@/services/work-schedule.service";
+import { getOrgForGate, requireFeature } from "@/lib/utils/plan-gate.server";
 
 const workScheduleSchema = z.object({
 	timezone: z.string().min(1),
@@ -34,6 +35,10 @@ export async function PUT(req: NextRequest) {
 		if (!isSessionOrg(session)) return session;
 		if (!session.isAdmin) return errorResponse("Forbidden", 403);
 		if (!session.orgId) return errorResponse("No organization", 400);
+		const org = await getOrgForGate(session.orgId);
+		if (!org) return errorResponse("Organization not found", 404);
+		const gate = requireFeature(org, "work_schedule");
+		if (gate) return gate;
 
 		const body = await req.json();
 		const parsed = workScheduleSchema.safeParse(body);

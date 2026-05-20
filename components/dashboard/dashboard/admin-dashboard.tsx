@@ -10,6 +10,8 @@ import { TasksListWidget } from "./tasks-list-widget";
 import { TimerCard } from "./timer-card";
 import { WorkloadChart } from "@/components/dashboard/tasks/workload-chart";
 import { Users, BarChart2, ClipboardList, Ticket } from "lucide-react";
+import { usePlan } from "@/providers/org-settings-provider";
+import { canAccess } from "@/lib/utils/plan-gate";
 
 interface AdminDashboardData {
 	employees: { total: number };
@@ -46,6 +48,8 @@ export function AdminDashboard() {
 		queryKey: ["dashboard"],
 		queryFn: () => APIService.dashboard.get(),
 	});
+	const { plan, is_internal } = usePlan();
+	const gate = (feature: Parameters<typeof canAccess>[2]) => canAccess(plan, is_internal, feature);
 
 	if (isLoading || !data) {
 		return (
@@ -76,10 +80,11 @@ export function AdminDashboard() {
 				/>
 				<StatCard
 					label="Reports"
-					value={data.tasks.completed}
+					value={gate("performance") ? data.tasks.completed : "—"}
 					subtext="tasks completed"
 					icon={BarChart2}
 					href="/dashboard/performance"
+					locked={!gate("performance")}
 				/>
 				<StatCard
 					label="Ticket Requests"
@@ -95,7 +100,7 @@ export function AdminDashboard() {
 				<div className="lg:col-span-2" style={{ minHeight: "220px" }}>
 					<WeeklyBarsChart days={data.weekly_days} title="Team Activity This Week" />
 				</div>
-				<TeamActivityWidget users={data.time.clocked_in_users} />
+				{gate("time_manager") && <TeamActivityWidget users={data.time.clocked_in_users} />}
 			</div>
 
 			{/* Row 3 — Recent tasks + Donut + Timer */}
@@ -115,7 +120,7 @@ export function AdminDashboard() {
 			</div>
 
 			{/* Row 4 — Workload chart */}
-			<WorkloadChart />
+			{gate("employees") && <WorkloadChart />}
 		</div>
 	);
 }

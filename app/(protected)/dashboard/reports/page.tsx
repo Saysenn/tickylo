@@ -1,8 +1,19 @@
+import { redirect } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
+import { prisma } from "@/lib/infra/prisma";
+import { canAccess } from "@/lib/utils/plan-gate";
 import { PerformanceTable } from "@/components/dashboard/performance/performance-table";
 
 export const metadata = { title: "Reports" };
 
-export default function ReportsPage() {
+export default async function ReportsPage() {
+	const supabase = await createClient();
+	const { data: { user } } = await supabase.auth.getUser();
+	if (!user) redirect("/login");
+	const orgId = user.app_metadata?.org_id as string | undefined;
+	const org = orgId ? await prisma.organization.findUnique({ where: { id: orgId }, select: { plan: true, is_internal: true } }) : null;
+	if (!org || !canAccess(org.plan, org.is_internal, "reports")) redirect("/dashboard?upgrade=reports");
+
 	return (
 		<div className="w-full space-y-6">
 			<div>

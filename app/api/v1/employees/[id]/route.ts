@@ -5,6 +5,7 @@ import { z } from "zod";
 import { requireAdmin } from "@/lib/auth/require-admin";
 import * as EmployeeService from "@/services/employees.service";
 import { auditLog } from "@/lib/utils/audit";
+import { getOrgForGate, requireFeature } from "@/lib/utils/plan-gate.server";
 
 const updateEmployeeSchema = z.object({
 	name: z.string().min(2).max(100).optional(),
@@ -34,6 +35,12 @@ export async function GET(
 	try {
 		const caller = await requireAdmin();
 		if (!caller) return errorResponse("Forbidden", 403);
+		const orgId = caller.app_metadata?.org_id as string | undefined;
+		if (!orgId) return errorResponse("No organization", 400);
+		const org = await getOrgForGate(orgId);
+		if (!org) return errorResponse("Organization not found", 404);
+		const gate = requireFeature(org, "employees");
+		if (gate) return gate;
 
 		const { id } = await params;
 		const employee = await EmployeeService.getEmployee(id, caller);
@@ -62,6 +69,12 @@ export async function PATCH(
 	try {
 		const caller = await requireAdmin();
 		if (!caller) return errorResponse("Forbidden", 403);
+		const orgId = caller.app_metadata?.org_id as string | undefined;
+		if (!orgId) return errorResponse("No organization", 400);
+		const org = await getOrgForGate(orgId);
+		if (!org) return errorResponse("Organization not found", 404);
+		const gate = requireFeature(org, "employees");
+		if (gate) return gate;
 
 		const { id } = await params;
 		const body = await request.json();
@@ -98,6 +111,12 @@ export async function DELETE(
 	try {
 		const caller = await requireAdmin();
 		if (!caller) return errorResponse("Forbidden", 403);
+		const orgId = caller.app_metadata?.org_id as string | undefined;
+		if (!orgId) return errorResponse("No organization", 400);
+		const org = await getOrgForGate(orgId);
+		if (!org) return errorResponse("Organization not found", 404);
+		const gate = requireFeature(org, "employees");
+		if (gate) return gate;
 
 		const { id } = await params;
 		const snapshot = await EmployeeService.getEmployee(id, caller);

@@ -4,6 +4,7 @@ import { ok, errorResponse } from "@/lib/utils/response";
 import { requireUser } from "@/lib/auth/require-user";
 import { ROLES } from "@/configs/rbac.config";
 import { prisma } from "@/lib/infra/prisma";
+import { getOrgForGate, requireFeature } from "@/lib/utils/plan-gate.server";
 
 const updateSchema = z.object({
 	name:                z.string().min(1).max(100).optional(),
@@ -28,6 +29,12 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 	try {
 		const user = await requireUser();
 		if (!user) return errorResponse("Unauthorized", 401);
+		const orgId = user.app_metadata?.org_id as string | undefined;
+		if (!orgId) return errorResponse("No organization", 400);
+		const org = await getOrgForGate(orgId);
+		if (!org) return errorResponse("Organization not found", 404);
+		const gate = requireFeature(org, "ticket_templates");
+		if (gate) return gate;
 		const { id } = await params;
 		const isAdmin = user.app_metadata?.role === ROLES.ADMIN;
 
@@ -54,6 +61,12 @@ export async function DELETE(_request: NextRequest, { params }: { params: Promis
 	try {
 		const user = await requireUser();
 		if (!user) return errorResponse("Unauthorized", 401);
+		const orgId = user.app_metadata?.org_id as string | undefined;
+		if (!orgId) return errorResponse("No organization", 400);
+		const org = await getOrgForGate(orgId);
+		if (!org) return errorResponse("Organization not found", 404);
+		const gate = requireFeature(org, "ticket_templates");
+		if (gate) return gate;
 		const { id } = await params;
 		const isAdmin = user.app_metadata?.role === ROLES.ADMIN;
 

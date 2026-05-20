@@ -4,6 +4,7 @@ import { ok, errorResponse } from "@/lib/utils/response";
 import { requireUser } from "@/lib/auth/require-user";
 import { ROLES } from "@/configs/rbac.config";
 import { prisma } from "@/lib/infra/prisma";
+import { getOrgForGate, requireFeature } from "@/lib/utils/plan-gate.server";
 
 const createSchema = z.object({
 	name:                z.string().min(1).max(100),
@@ -23,6 +24,10 @@ export async function GET() {
 		if (!user) return errorResponse("Unauthorized", 401);
 		const orgId = user.app_metadata?.org_id as string | undefined;
 		if (!orgId) return errorResponse("No organization", 400);
+		const org = await getOrgForGate(orgId);
+		if (!org) return errorResponse("Organization not found", 404);
+		const gate = requireFeature(org, "ticket_templates");
+		if (gate) return gate;
 
 		// Return shared templates + caller's own personal templates
 		const templates = await prisma.ticketTemplate.findMany({
@@ -46,6 +51,10 @@ export async function POST(request: NextRequest) {
 		if (!user) return errorResponse("Unauthorized", 401);
 		const orgId = user.app_metadata?.org_id as string | undefined;
 		if (!orgId) return errorResponse("No organization", 400);
+		const org = await getOrgForGate(orgId);
+		if (!org) return errorResponse("Organization not found", 404);
+		const gate = requireFeature(org, "ticket_templates");
+		if (gate) return gate;
 
 		const body = await request.json();
 		const parsed = createSchema.safeParse(body);

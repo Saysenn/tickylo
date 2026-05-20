@@ -3,6 +3,7 @@ import { requireAdmin } from "@/lib/auth/require-admin";
 import { prisma } from "@/lib/infra/prisma";
 import { errorResponse, ok } from "@/lib/utils/response";
 import { cached } from "@/lib/infra/cache";
+import { getOrgForGate, requireFeature } from "@/lib/utils/plan-gate.server";
 
 /**
  * GET /api/v1/time/team-summary?from=YYYY-MM-DD&to=YYYY-MM-DD&tz_offset=minutes
@@ -12,6 +13,12 @@ export async function GET(request: NextRequest) {
 	try {
 		const admin = await requireAdmin();
 		if (!admin) return errorResponse("Forbidden", 403);
+		const orgId = (admin.app_metadata?.org_id as string | undefined);
+		if (!orgId) return errorResponse("No organization", 400);
+		const org = await getOrgForGate(orgId);
+		if (!org) return errorResponse("Organization not found", 404);
+		const gate = requireFeature(org, "time_manager");
+		if (gate) return gate;
 
 		const { searchParams } = new URL(request.url);
 		const fromParam = searchParams.get("from");
@@ -46,8 +53,7 @@ export async function GET(request: NextRequest) {
 			return errorResponse("Invalid date range", 400);
 		}
 
-		const orgId = (admin.app_metadata?.org_id as string | undefined) ?? "global";
-		const orgFilter = orgId !== "global" ? { org_id: orgId } : {};
+		const orgFilter = { org_id: orgId };
 		const cacheKey = `team-summary:${orgId}:${fromParam ?? "auto"}:${toParam ?? "auto"}:${tzOffset}:${search}`;
 
 		const payload = await cached(cacheKey, 30, async () => {

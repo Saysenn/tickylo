@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/auth/require-admin";
 import { prisma } from "@/lib/infra/prisma";
+import { canAccess } from "@/lib/utils/plan-gate";
 import { DepartmentsPageClient } from "@/components/dashboard/departments/departments-page-client";
 
 export const metadata = { title: "Departments" };
@@ -14,9 +15,10 @@ export default async function DepartmentsPage() {
 
 	const org = await prisma.organization.findUnique({
 		where: { id: orgId },
-		select: { departments_enabled: true },
+		select: { departments_enabled: true, plan: true, is_internal: true },
 	});
 
+	if (!canAccess(org?.plan ?? "", org?.is_internal ?? false, "departments")) redirect("/dashboard?upgrade=departments");
 	if (!org?.departments_enabled) redirect("/dashboard");
 
 	return (

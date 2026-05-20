@@ -5,6 +5,7 @@ import { z } from "zod";
 import { requireAdmin } from "@/lib/auth/require-admin";
 import * as EmployeeService from "@/services/employees.service";
 import { auditLog } from "@/lib/utils/audit";
+import { getOrgForGate, requireFeature } from "@/lib/utils/plan-gate.server";
 
 const createEmployeeSchema = z.object({
 	name: z.string().min(2).max(100),
@@ -17,6 +18,12 @@ export async function GET(request: NextRequest) {
 	try {
 		const caller = await requireAdmin();
 		if (!caller) return errorResponse("Forbidden", 403);
+		const orgId = caller.app_metadata?.org_id as string | undefined;
+		if (!orgId) return errorResponse("No organization", 400);
+		const org = await getOrgForGate(orgId);
+		if (!org) return errorResponse("Organization not found", 404);
+		const gate = requireFeature(org, "employees");
+		if (gate) return gate;
 
 		const { searchParams } = new URL(request.url);
 		const roleFilterParam = searchParams.get("role_filter");
@@ -40,6 +47,12 @@ export async function POST(request: NextRequest) {
 	try {
 		const caller = await requireAdmin();
 		if (!caller) return errorResponse("Forbidden", 403);
+		const orgId = caller.app_metadata?.org_id as string | undefined;
+		if (!orgId) return errorResponse("No organization", 400);
+		const org = await getOrgForGate(orgId);
+		if (!org) return errorResponse("Organization not found", 404);
+		const gate = requireFeature(org, "employees");
+		if (gate) return gate;
 
 		const body = await request.json();
 		const validated = createEmployeeSchema.safeParse(body);

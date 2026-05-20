@@ -19,6 +19,8 @@ import {
 import { cn } from "@/lib/utils/cn";
 import type { Role } from "@/configs/rbac.config";
 import APIService from "@/lib/infra/api";
+import { usePlan } from "@/providers/org-settings-provider";
+import { canAccess, type Feature } from "@/lib/utils/plan-gate";
 
 interface NavItem {
 	label: string;
@@ -48,22 +50,24 @@ export function Sidebar({ isOpen = false, onClose, role }: SidebarProps) {
 		staleTime: 300_000,
 	});
 	const departmentsEnabled = orgSettings?.departments_enabled ?? false;
+	const { plan, is_internal } = usePlan();
+	const gate = (feature: Feature) => canAccess(plan, is_internal, feature);
 
 	const navGroups: NavGroup[] = [
 		{
 			title: "Overview",
 			items: [
 				{ label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-				{ label: "Team Overview", href: "/dashboard/time-manager", icon: Clock, roles: ["admin"] },
-				{ label: "Reports", href: "/dashboard/reports", icon: BarChart2, roles: ["admin"] },
+				{ label: "Team Overview", href: "/dashboard/time-manager", icon: Clock, roles: ["admin"], hidden: !gate("time_manager") },
+				{ label: "Reports", href: "/dashboard/reports", icon: BarChart2, roles: ["admin"], hidden: !gate("reports") },
 			],
 		},
 		{
 			title: "Management",
 			items: [
-				{ label: "Employees", href: "/dashboard/employees", icon: Users, roles: ["admin"] },
-				{ label: "Departments", href: "/dashboard/departments", icon: Building2, roles: ["admin"], hidden: !departmentsEnabled },
-				{ label: "Requests", href: "/dashboard/ticket-requests", icon: Inbox, roles: ["admin"] },
+				{ label: "Employees", href: "/dashboard/employees", icon: Users, roles: ["admin"], hidden: !gate("employees") },
+				{ label: "Departments", href: "/dashboard/departments", icon: Building2, roles: ["admin"], hidden: !departmentsEnabled || !gate("departments") },
+				{ label: "Requests", href: "/dashboard/ticket-requests", icon: Inbox, roles: ["admin"], hidden: !gate("ticket_requests") },
 			],
 		},
 		{
@@ -77,8 +81,8 @@ export function Sidebar({ isOpen = false, onClose, role }: SidebarProps) {
 		{
 			title: "Logs",
 			items: [
-				{ label: "Time Logs", href: "/dashboard/time-logs", icon: Clock, roles: ["admin"] },
-				{ label: "Ticket Logs", href: "/dashboard/audit-logs", icon: Shield, roles: ["admin"] },
+				{ label: "Time Logs", href: "/dashboard/time-logs", icon: Clock, roles: ["admin"], hidden: !gate("audit_logs") },
+				{ label: "Ticket Logs", href: "/dashboard/audit-logs", icon: Shield, roles: ["admin"], hidden: !gate("audit_logs") },
 			],
 		},
 	];

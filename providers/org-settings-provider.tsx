@@ -6,12 +6,25 @@ import APIService from "@/lib/infra/api";
 
 interface OrgSettings {
 	attachments_enabled: boolean;
+	departments_enabled: boolean;
+	plan: string;
+	is_internal: boolean;
 }
 
-const OrgSettingsContext = createContext<OrgSettings>({ attachments_enabled: true });
+const OrgSettingsContext = createContext<OrgSettings>({
+	attachments_enabled: true,
+	departments_enabled: true,
+	plan: "business",
+	is_internal: false,
+});
 
 export function useOrgSettings() {
 	return useContext(OrgSettingsContext);
+}
+
+export function usePlan() {
+	const { plan, is_internal } = useOrgSettings();
+	return { plan, is_internal };
 }
 
 export function OrgSettingsProvider({ children }: { children: ReactNode }) {
@@ -21,7 +34,12 @@ export function OrgSettingsProvider({ children }: { children: ReactNode }) {
 		staleTime: 60_000,
 	});
 
-	const value: OrgSettings = data ?? { attachments_enabled: true };
+	const value: OrgSettings = data ?? {
+		attachments_enabled: true,
+		departments_enabled: true,
+		plan: "business",
+		is_internal: false,
+	};
 
 	return (
 		<OrgSettingsContext.Provider value={value}>

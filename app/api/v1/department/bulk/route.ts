@@ -3,6 +3,7 @@ import { z } from "zod";
 import { ok, errorResponse } from "@/lib/utils/response";
 import { requireAdmin } from "@/lib/auth/require-admin";
 import * as DepartmentService from "@/services/department.service";
+import { getOrgForGate, requireFeature } from "@/lib/utils/plan-gate.server";
 
 const schema = z.object({
 	action: z.enum(["delete"]),
@@ -14,6 +15,12 @@ export async function POST(request: NextRequest) {
 	try {
 		const admin = await requireAdmin();
 		if (!admin) return errorResponse("Forbidden", 403);
+		const orgId = admin.app_metadata?.org_id as string | undefined;
+		if (!orgId) return errorResponse("No organization", 400);
+		const org = await getOrgForGate(orgId);
+		if (!org) return errorResponse("Organization not found", 404);
+		const gate = requireFeature(org, "departments");
+		if (gate) return gate;
 		const body = await request.json();
 		const validated = schema.safeParse(body);
 		if (!validated.success) return errorResponse(validated.error.issues[0]?.message ?? "Invalid input", 400);

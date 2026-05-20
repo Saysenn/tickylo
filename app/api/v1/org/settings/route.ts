@@ -14,7 +14,7 @@ export async function GET() {
 
 		const org = await prisma.organization.findUnique({
 			where: { id: orgId },
-			select: { attachments_enabled: true, departments_enabled: true, org_join_code: true, name: true },
+			select: { attachments_enabled: true, departments_enabled: true, org_join_code: true, name: true, plan: true, is_internal: true },
 		});
 		if (!org) return errorResponse("Organization not found", 404);
 
@@ -23,6 +23,8 @@ export async function GET() {
 			departments_enabled: org.departments_enabled,
 			org_join_code: org.org_join_code,
 			name: org.name,
+			plan: org.plan,
+			is_internal: org.is_internal,
 		});
 	} catch (e) {
 		console.error("[GET /org/settings]", e);

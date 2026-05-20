@@ -4,6 +4,7 @@ import { ok, errorResponse } from "@/lib/utils/response";
 import { requireAdmin } from "@/lib/auth/require-admin";
 import { ROLES } from "@/configs/rbac.config";
 import * as EmployeeService from "@/services/employees.service";
+import { getOrgForGate, requireFeature } from "@/lib/utils/plan-gate.server";
 
 const schema = z.object({
 	action: z.enum(["delete", "change_role", "assign_department", "remove_department"]),
@@ -16,6 +17,12 @@ export async function POST(request: NextRequest) {
 	try {
 		const admin = await requireAdmin();
 		if (!admin) return errorResponse("Forbidden", 403);
+		const orgId = admin.app_metadata?.org_id as string | undefined;
+		if (!orgId) return errorResponse("No organization", 400);
+		const org = await getOrgForGate(orgId);
+		if (!org) return errorResponse("Organization not found", 404);
+		const gate = requireFeature(org, "bulk_operations");
+		if (gate) return gate;
 		const body = await request.json();
 		const validated = schema.safeParse(body);
 		if (!validated.success) return errorResponse(validated.error.issues[0]?.message ?? "Invalid input", 400);

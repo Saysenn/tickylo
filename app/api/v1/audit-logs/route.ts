@@ -2,11 +2,18 @@ import { NextRequest } from "next/server";
 import { ok, errorResponse } from "@/lib/utils/response";
 import { requireAdminAccess } from "@/lib/auth/require-admin-access";
 import * as AnalyticsService from "@/services/analytics.service";
+import { getOrgForGate, requireFeature } from "@/lib/utils/plan-gate.server";
 
 export async function GET(req: NextRequest) {
 	try {
 		const admin = await requireAdminAccess();
 		if (!admin) return errorResponse("Forbidden", 403);
+		const orgId = admin.app_metadata?.org_id as string | undefined;
+		if (!orgId) return errorResponse("No organization", 400);
+		const org = await getOrgForGate(orgId);
+		if (!org) return errorResponse("Organization not found", 404);
+		const gate = requireFeature(org, "audit_logs");
+		if (gate) return gate;
 
 		const { searchParams } = req.nextUrl;
 		const page = Math.max(1, parseInt(searchParams.get("page") ?? "1", 10));

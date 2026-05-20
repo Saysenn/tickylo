@@ -3,6 +3,7 @@ import { z } from "zod";
 import { ok, errorResponse } from "@/lib/utils/response";
 import { requireAdmin } from "@/lib/auth/require-admin";
 import * as DepartmentService from "@/services/department.service";
+import { getOrgForGate, requireFeature } from "@/lib/utils/plan-gate.server";
 
 const updateSchema = z.object({
 	name: z.string().min(2).max(200).optional(),
@@ -13,6 +14,12 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 	try {
 		const admin = await requireAdmin();
 		if (!admin) return errorResponse("Forbidden", 403);
+		const orgId = admin.app_metadata?.org_id as string | undefined;
+		if (!orgId) return errorResponse("No organization", 400);
+		const org = await getOrgForGate(orgId);
+		if (!org) return errorResponse("Organization not found", 404);
+		const gate = requireFeature(org, "departments");
+		if (gate) return gate;
 		const { id } = await params;
 		const body = await request.json();
 		const validated = updateSchema.safeParse(body);
@@ -30,6 +37,12 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
 	try {
 		const admin = await requireAdmin();
 		if (!admin) return errorResponse("Forbidden", 403);
+		const orgId = admin.app_metadata?.org_id as string | undefined;
+		if (!orgId) return errorResponse("No organization", 400);
+		const org = await getOrgForGate(orgId);
+		if (!org) return errorResponse("Organization not found", 404);
+		const gate = requireFeature(org, "departments");
+		if (gate) return gate;
 		const { id } = await params;
 		const force = new URL(req.url).searchParams.get("force") === "true";
 		const result = await DepartmentService.deleteDepartment(id, admin, force);
