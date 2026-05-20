@@ -28,6 +28,7 @@ import APIService from "@/lib/infra/api";
 import { formatRelativeTime, formatDate, formatTime } from "@/lib/utils/format";
 import { cn } from "@/lib/utils/cn";
 import { Button } from "@/components/ui/button";
+import { Pagination } from "@/components/ui/pagination";
 
 interface Notification {
 	id: string;
@@ -102,6 +103,7 @@ export default function NotificationsPage() {
 	const [tab, setTab] = useState<"all" | "unread">("all");
 	const [typeGroup, setTypeGroup] = useState<string>("");
 	const [page, setPage] = useState(1);
+	const [bulkMode, setBulkMode] = useState(false);
 	const [selected, setSelected] = useState<Set<string>>(new Set());
 
 	const queryKey = ["notifications-page", tab, typeGroup, page];
@@ -117,7 +119,7 @@ export default function NotificationsPage() {
 
 	const invalidate = () => {
 		queryClient.invalidateQueries({ queryKey: ["notifications-page"] });
-		queryClient.invalidateQueries({ queryKey: ["notifications"] }); // bell
+		queryClient.invalidateQueries({ queryKey: ["notifications"] });
 	};
 
 	const { mutate: readAll, isPending: isReadingAll } = useMutation({
@@ -140,6 +142,8 @@ export default function NotificationsPage() {
 		onSuccess: () => { setSelected(new Set()); invalidate(); },
 	});
 
+	const exitBulk = () => { setBulkMode(false); setSelected(new Set()); };
+
 	const isBulkPending = isBulkReading || isBulkDeleting;
 
 	const handleClick = (n: Notification) => {
@@ -152,6 +156,7 @@ export default function NotificationsPage() {
 		setTypeGroup("");
 		setPage(1);
 		setSelected(new Set());
+		setBulkMode(false);
 	};
 
 	const handleTypeGroup = (g: string) => {
@@ -183,27 +188,32 @@ export default function NotificationsPage() {
 		<div className="w-full space-y-5">
 			{/* Page header */}
 			<div className="flex items-center justify-between">
-				<div className="flex items-center gap-2.5">
-					<Bell className="w-5 h-5 text-ink-3" />
-					<h1 className="text-lg font-bold text-ink">Notifications</h1>
-					{unreadCount > 0 && (
-						<span className="text-[11px] font-semibold bg-red-500/15 text-red-600 px-2 py-0.5 rounded-full">
-							{unreadCount} unread
-						</span>
-					)}
+				<div>
+					<h1 className="text-2xl font-bold text-ink">Notifications</h1>
+					<p className="text-ink-3 mt-1 text-sm">Your activity feed and alerts.</p>
 				</div>
-				{unreadCount > 0 && (
+				<div className="flex items-center gap-2">
+					{unreadCount > 0 && (
+						<Button
+							size="sm"
+							variant="outline"
+							className="gap-1.5 text-xs"
+							disabled={isReadingAll}
+							onClick={() => readAll()}
+						>
+							<CheckCheck className="w-3.5 h-3.5" />
+							Mark all read
+						</Button>
+					)}
 					<Button
 						size="sm"
-						variant="outline"
-						className="gap-1.5 text-xs"
-						disabled={isReadingAll}
-						onClick={() => readAll()}
+						variant={bulkMode ? "outline" : "ghost"}
+						className={cn("h-8 text-xs gap-1.5", bulkMode ? "border-mint/40 text-mint" : "text-ink-3")}
+						onClick={() => (bulkMode ? exitBulk() : setBulkMode(true))}
 					>
-						<CheckCheck className="w-3.5 h-3.5" />
-						Mark all read
+						{bulkMode ? "Exit Bulk" : "Bulk"}
 					</Button>
-				)}
+				</div>
 			</div>
 
 			{/* Tabs */}
@@ -248,22 +258,73 @@ export default function NotificationsPage() {
 						{label}
 					</button>
 				))}
+				{pagination && (
+					<span className="ml-auto text-xs text-ink-3">{pagination.total.toLocaleString()} total</span>
+				)}
 			</div>
 
+			{/* Bulk action bar */}
+			{bulkMode && (
+				<div className="flex items-center gap-3 px-4 py-2.5 rounded-xl bg-mint/8 border border-mint/20">
+					<span className="text-xs font-medium text-ink-2">
+						{selected.size} selected
+					</span>
+					<div className="flex items-center gap-2 ml-auto flex-wrap">
+						{selectedUnread.length > 0 && (
+							<Button
+								size="sm"
+								variant="outline"
+								className="h-7 text-xs gap-1.5"
+								disabled={isBulkPending}
+								onClick={() => bulkRead(selectedIds)}
+							>
+								<CheckCheck className="w-3.5 h-3.5" />
+								Mark read
+							</Button>
+						)}
+						<Button
+							size="sm"
+							variant="outline"
+							className="h-7 text-xs gap-1.5 text-destructive border-red-500/30 hover:bg-red-500/10 hover:text-destructive"
+							disabled={isBulkPending}
+							onClick={() => bulkDelete(selectedIds)}
+						>
+							<Trash2 className="w-3.5 h-3.5" />
+							Delete
+						</Button>
+						<Button
+							size="sm"
+							variant="ghost"
+							className="h-7 text-xs text-ink-3"
+							onClick={exitBulk}
+						>
+							Cancel
+						</Button>
+					</div>
+				</div>
+			)}
+
 			{/* List */}
-			<div className="rounded-xl border bg-background overflow-hidden">
-				{/* Select-all header — only shown when there are items */}
+			<div className="rounded-xl border border-border/60 glass overflow-hidden">
+				{/* Select-all header */}
 				{notifications.length > 0 && (
-					<div className="flex items-center gap-3 px-5 py-2.5 border-b bg-accent/20">
-						<input
-							type="checkbox"
-							checked={allSelected}
-							onChange={toggleAll}
-							className="accent-mint cursor-pointer"
-						/>
-						<span className="text-xs text-ink-3">
-							{someSelected ? `${selected.size} selected` : "Select all"}
+					<div className="flex items-center gap-3 px-5 py-2.5 border-b border-border/50 bg-surface/50">
+						{bulkMode && (
+							<input
+								type="checkbox"
+								checked={allSelected}
+								onChange={toggleAll}
+								className="accent-mint cursor-pointer"
+							/>
+						)}
+						<span className="text-[10px] font-semibold tracking-widest uppercase text-ink-3/70">
+							{bulkMode && someSelected ? `${selected.size} selected` : "Notification"}
 						</span>
+						{unreadCount > 0 && (
+							<span className="ml-auto text-[11px] font-semibold bg-red-500/15 text-red-600 px-2 py-0.5 rounded-full">
+								{unreadCount} unread
+							</span>
+						)}
 					</div>
 				)}
 
@@ -274,8 +335,11 @@ export default function NotificationsPage() {
 				) : notifications.length === 0 ? (
 					<div className="flex flex-col items-center justify-center py-16 text-center">
 						<Bell className="w-8 h-8 text-ink-3/30 mb-3" />
-						<p className="text-sm text-ink-3">
+						<p className="text-sm font-medium text-ink-2">
 							{tab === "unread" ? "No unread notifications" : "No notifications yet"}
+						</p>
+						<p className="text-xs text-ink-3 mt-1">
+							{tab === "unread" ? "You're all caught up." : "Activity will appear here."}
 						</p>
 					</div>
 				) : (
@@ -289,13 +353,15 @@ export default function NotificationsPage() {
 							)}
 						>
 							{/* Checkbox */}
-							<input
-								type="checkbox"
-								checked={selected.has(n.id)}
-								onChange={() => toggleOne(n.id)}
-								onClick={(e) => e.stopPropagation()}
-								className="accent-mint cursor-pointer mt-1 shrink-0"
-							/>
+							{bulkMode && (
+								<input
+									type="checkbox"
+									checked={selected.has(n.id)}
+									onChange={() => toggleOne(n.id)}
+									onClick={(e) => e.stopPropagation()}
+									className="accent-mint cursor-pointer mt-1 shrink-0"
+								/>
+							)}
 
 							{/* Clickable content */}
 							<button
@@ -325,71 +391,13 @@ export default function NotificationsPage() {
 				)}
 			</div>
 
-			{/* Pagination */}
-			{pagination && pagination.pages > 1 && (
-				<div className="flex items-center justify-between">
-					<p className="text-xs text-ink-3">
-						Page {pagination.page} of {pagination.pages} · {pagination.total} total
-					</p>
-					<div className="flex gap-2">
-						<Button
-							size="sm"
-							variant="outline"
-							disabled={page <= 1}
-							onClick={() => setPage((p) => p - 1)}
-						>
-							Previous
-						</Button>
-						<Button
-							size="sm"
-							variant="outline"
-							disabled={page >= pagination.pages}
-							onClick={() => setPage((p) => p + 1)}
-						>
-							Next
-						</Button>
-					</div>
-				</div>
-			)}
-
-			{/* Bulk action bar */}
-			{someSelected && (
-				<div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 rounded-xl border bg-background shadow-lg px-4 py-2.5 animate-fade-in">
-					<span className="text-xs font-medium text-ink-3 mr-1">
-						{selected.size} selected
-					</span>
-					{selectedUnread.length > 0 && (
-						<Button
-							size="sm"
-							variant="outline"
-							className="h-7 text-xs gap-1.5"
-							disabled={isBulkPending}
-							onClick={() => bulkRead(selectedIds)}
-						>
-							<CheckCheck className="w-3.5 h-3.5" />
-							Mark read
-						</Button>
-					)}
-					<Button
-						size="sm"
-						variant="outline"
-						className="h-7 text-xs gap-1.5 text-destructive hover:text-destructive"
-						disabled={isBulkPending}
-						onClick={() => bulkDelete(selectedIds)}
-					>
-						<Trash2 className="w-3.5 h-3.5" />
-						Delete
-					</Button>
-					<Button
-						size="sm"
-						variant="ghost"
-						className="h-7 text-xs text-ink-3"
-						onClick={() => setSelected(new Set())}
-					>
-						Cancel
-					</Button>
-				</div>
-			)}
+			<Pagination
+				page={page}
+				totalPages={pagination?.pages ?? 1}
+				onPrev={() => setPage((p) => p - 1)}
+				onNext={() => setPage((p) => p + 1)}
+				onGoTo={setPage}
+			/>
 		</div>
 	);
 }
