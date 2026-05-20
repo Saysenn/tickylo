@@ -3,13 +3,14 @@
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { CreditCard, Users, Shield, Zap, ExternalLink } from "lucide-react";
+import { CreditCard, Users, Shield, Zap, ExternalLink, ArrowUpCircle, ArrowDownCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { formatDate } from "@/lib/utils/format";
 import { cn } from "@/lib/utils/cn";
 import APIService from "@/lib/infra/api";
+import { DowngradeDialog } from "./downgrade-dialog";
 
 type OrgBillingInfo = {
 	plan: string;
@@ -34,6 +35,8 @@ const PLAN_COLORS: Record<string, string> = {
 	internal:   "text-mint bg-mint/10 border-mint/20",
 };
 
+const ENTERPRISE_MIN_SEATS = 26;
+
 export default function SubscriptionPanel({
 	org,
 	activeUsers,
@@ -45,30 +48,45 @@ export default function SubscriptionPanel({
 	hasStripeCustomer: boolean;
 	hasStripeSubscription: boolean;
 }) {
-	const router  = useRouter();
-	const plan    = org.is_internal ? "internal" : org.plan;
+	const router = useRouter();
+	const plan   = org.is_internal ? "internal" : org.plan;
 
-	const [seatCount, setSeatCount] = useState(org.seat_count);
-	const [seatError, setSeatError] = useState<string | null>(null);
-	const [portalError, setPortalError] = useState<string | null>(null);
+	const [seatCount, setSeatCount]       = useState(org.seat_count);
+	const [seatError, setSeatError]       = useState<string | null>(null);
+	const [portalError, setPortalError]   = useState<string | null>(null);
+	const [upgradeError, setUpgradeError] = useState<string | null>(null);
+	const [showDowngrade, setShowDowngrade] = useState(false);
+
+	// Employees excluding admin (used as minimum for seat management)
+	const nonAdminActive = Math.max(0, activeUsers - 1);
 
 	const { mutate: openPortal, isPending: openingPortal } = useMutation({
 		mutationFn: () => APIService.billing.portal(),
-		onSuccess: (res: any) => {
-			window.location.href = res.data.url;
-		},
-		onError: (err: any) => {
+		onSuccess:  (res: any) => { window.location.href = res.data.url; },
+		onError:    (err: any) => {
 			setPortalError(err?.response?.data?.error ?? "Failed to open billing portal. Please try again.");
 		},
 	});
 
 	const { mutate: updateSeats, isPending: updatingSeats } = useMutation({
 		mutationFn: (count: number) => APIService.billing.updateSeats(count),
-		onSuccess: () => { setSeatError(null); router.refresh(); },
-		onError: (err: any) => {
-			setSeatError(err?.response?.data?.error ?? "Failed to update seats");
+		onSuccess:  () => { setSeatError(null); router.refresh(); },
+		onError:    (err: any) => {
+			setSeatError(err?.response?.data?.error ?? "Failed to update seats.");
 		},
 	});
+
+	const { mutate: doUpgrade, isPending: upgrading } = useMutation({
+		mutationFn: () => APIService.billing.upgrade(),
+		onSuccess:  () => { setUpgradeError(null); router.refresh(); },
+		onError:    (err: any) => {
+			setUpgradeError(err?.response?.data?.error ?? "Upgrade failed. Please try again.");
+		},
+	});
+
+	const isOnBusiness    = plan === "business" || plan === "trial";
+	const isOnEnterprise  = plan === "enterprise";
+	const canChangePlan   = hasStripeSubscription && !org.is_internal;
 
 	return (
 		<div className="space-y-6 max-w-2xl">
@@ -116,8 +134,8 @@ export default function SubscriptionPanel({
 										<span className="font-medium text-ink">{org.seat_count}</span> seats used
 									</span>
 								</div>
-								{plan === "enterprise" && (
-									<span className="text-xs text-ink-3">25 seats included</span>
+								{isOnEnterprise && (
+									<span className="text-xs text-ink-3">26 seats minimum</span>
 								)}
 							</div>
 						</>
@@ -125,14 +143,14 @@ export default function SubscriptionPanel({
 				</CardContent>
 			</Card>
 
-			{/* Seat Management (Business only) */}
-			{plan === "business" && !org.is_internal && (
+			{/* Seat Management */}
+			{!org.is_internal && canChangePlan && (
 				<Card>
 					<CardHeader className="pb-3">
 						<CardTitle className="text-sm font-medium text-ink-3 uppercase tracking-wider">Manage Seats</CardTitle>
 					</CardHeader>
 					<CardContent className="space-y-4">
-						{hasStripeSubscription ? (
+						{isOnBusiness ? (
 							<>
 								<p className="text-xs text-ink-3">
 									$4.99/seat/mo · Mid-month changes are prorated automatically.
@@ -165,19 +183,106 @@ export default function SubscriptionPanel({
 										Save Changes
 									</Button>
 								</div>
-								{seatError && (
-									<p className="text-xs text-red-500">{seatError}</p>
-								)}
+								{seatError && <p className="text-xs text-red-500">{seatError}</p>}
 								<p className="text-[11px] text-ink-3">
 									Minimum {activeUsers} seat{activeUsers !== 1 ? "s" : ""} (current active employees).
 									Remove seats before your next billing date to avoid charges.
 								</p>
 							</>
 						) : (
-							<p className="text-sm text-ink-3">
-								No active subscription found. Complete checkout to manage seats.
-							</p>
+							<>
+								<p className="text-xs text-ink-3">
+									26 seats included · Add more at an additional rate.
+								</p>
+								<div className="flex items-center gap-3">
+									<div className="flex items-center gap-2">
+										<button
+											type="button"
+											onClick={() => setSeatCount((c) => Math.max(ENTERPRISE_MIN_SEATS, c - 1))}
+											className="w-8 h-8 rounded border border-border text-ink-3 hover:text-ink hover:bg-accent transition-colors text-lg font-medium"
+										>
+											−
+										</button>
+										<span className="w-12 text-center font-semibold text-ink">{seatCount}</span>
+										<button
+											type="button"
+											onClick={() => setSeatCount((c) => Math.min(500, c + 1))}
+											className="w-8 h-8 rounded border border-border text-ink-3 hover:text-ink hover:bg-accent transition-colors text-lg font-medium"
+										>
+											+
+										</button>
+									</div>
+									<Button
+										size="sm"
+										variant="outline"
+										isLoading={updatingSeats}
+										disabled={seatCount === org.seat_count || updatingSeats || seatCount < ENTERPRISE_MIN_SEATS}
+										onClick={() => updateSeats(seatCount)}
+									>
+										Save Changes
+									</Button>
+								</div>
+								{seatError && <p className="text-xs text-red-500">{seatError}</p>}
+								<p className="text-[11px] text-ink-3">
+									Minimum {ENTERPRISE_MIN_SEATS} seats on Enterprise.
+								</p>
+							</>
 						)}
+					</CardContent>
+				</Card>
+			)}
+
+			{/* No subscription message for seat section */}
+			{!org.is_internal && !canChangePlan && (plan === "business" || plan === "enterprise") && (
+				<Card>
+					<CardContent className="pt-4">
+						<p className="text-sm text-ink-3">No active subscription found. Complete checkout to manage seats.</p>
+					</CardContent>
+				</Card>
+			)}
+
+			{/* Plan Change */}
+			{canChangePlan && (
+				<Card>
+					<CardHeader className="pb-3">
+						<CardTitle className="text-sm font-medium text-ink-3 uppercase tracking-wider">Change Plan</CardTitle>
+					</CardHeader>
+					<CardContent className="space-y-3">
+						{isOnBusiness && (
+							<div className="flex items-center justify-between">
+								<div>
+									<p className="text-sm font-medium text-ink">Upgrade to Enterprise</p>
+									<p className="text-xs text-ink-3 mt-0.5">$100/mo · 26 seats included · Full feature access</p>
+								</div>
+								<Button
+									size="sm"
+									className="gap-1.5 shrink-0"
+									isLoading={upgrading}
+									onClick={() => { setUpgradeError(null); doUpgrade(); }}
+								>
+									<ArrowUpCircle className="w-3.5 h-3.5" />
+									Upgrade
+								</Button>
+							</div>
+						)}
+						{isOnEnterprise && (
+							<div className="flex items-center justify-between">
+								<div>
+									<p className="text-sm font-medium text-ink">Change to Business</p>
+									<p className="text-xs text-ink-3 mt-0.5">$20/mo + $4.99/seat · Choose which seats to keep</p>
+								</div>
+								<Button
+									size="sm"
+									variant="outline"
+									className="gap-1.5 shrink-0 text-red-600 border-red-200 hover:bg-red-50 dark:border-red-900 dark:hover:bg-red-950"
+									onClick={() => setShowDowngrade(true)}
+								>
+									<ArrowDownCircle className="w-3.5 h-3.5" />
+									Downgrade
+								</Button>
+							</div>
+						)}
+						{upgradeError && <p className="text-xs text-red-500">{upgradeError}</p>}
 					</CardContent>
 				</Card>
 			)}
@@ -209,9 +314,7 @@ export default function SubscriptionPanel({
 								<span className="text-xs text-ink-3">No billing account found</span>
 							)}
 						</div>
-						{portalError && (
-							<p className="text-xs text-red-500">{portalError}</p>
-						)}
+						{portalError && <p className="text-xs text-red-500">{portalError}</p>}
 					</CardContent>
 				</Card>
 			)}
@@ -224,6 +327,14 @@ export default function SubscriptionPanel({
 					{org.is_internal && " This account is exempt from billing."}
 				</p>
 			</div>
+
+			{/* Downgrade dialog */}
+			<DowngradeDialog
+				open={showDowngrade}
+				onOpenChange={setShowDowngrade}
+				activeCount={nonAdminActive}
+				onSuccess={() => router.refresh()}
+			/>
 		</div>
 	);
 }

@@ -321,6 +321,10 @@ class APIService {
 		portal: () => axiosService.post(`${apiVersion}/billing/portal`),
 		updateSeats: (seat_count: number) =>
 			axiosService.patch(`${apiVersion}/billing/seats`, { seat_count }),
+		upgrade: () =>
+			axiosService.post(`${apiVersion}/billing/upgrade`, {}),
+		downgrade: (seat_count: number, keep_user_ids?: string[]) =>
+			axiosService.post(`${apiVersion}/billing/downgrade`, { seat_count, keep_user_ids }),
 	};
 
 	// ---------------------------------------------------------------------------

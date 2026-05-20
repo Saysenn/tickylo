@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/auth/require-admin";
 import { prisma } from "@/lib/infra/prisma";
@@ -20,11 +20,19 @@ export async function PATCH(req: NextRequest) {
 		const org = await prisma.organization.findUnique({ where: { id: orgId } });
 		if (!org) return errorResponse("Organization not found", 404);
 
-		if (org.plan !== "business") {
-			return errorResponse("Seat management is only available on the Business plan.", 400);
+		const isEnterprise = org.plan === "enterprise";
+		const isBusiness   = org.plan === "business";
+		if (!isEnterprise && !isBusiness) {
+			return errorResponse("Seat management is only available on paid plans.", 400);
 		}
 
-		if (!org.stripe_subscription_id || !org.stripe_seat_item_id) {
+		if (!org.stripe_subscription_id) {
+			return errorResponse("No active subscription found.", 400);
+		}
+
+		// Enterprise can update seat count directly in DB (no seat line item)
+		// Business requires stripe_seat_item_id to update Stripe
+		if (isBusiness && !org.stripe_seat_item_id) {
 			return errorResponse("Subscription not found. Contact support.", 400);
 		}
 
@@ -33,23 +41,31 @@ export async function PATCH(req: NextRequest) {
 
 		const { seat_count } = body.data;
 
-		// Cannot drop below current active employee count
+		const ENTERPRISE_MIN = 26;
+		const minSeats = isEnterprise ? ENTERPRISE_MIN : 0;
+
+		// Cannot drop below current active employee count or plan minimum
 		const activeUsers = await prisma.user.count({
 			where: { org_id: orgId, deleted_at: null },
 		});
-		if (seat_count < activeUsers) {
+		const effectiveMin = Math.max(activeUsers, minSeats);
+		if (seat_count < effectiveMin) {
 			return errorResponse(
-				`Cannot reduce below ${activeUsers} seats — your current active employee count.`,
+				isEnterprise
+					? `Enterprise plan requires a minimum of ${ENTERPRISE_MIN} seats.`
+					: `Cannot reduce below ${activeUsers} seats — your current active employee count.`,
 				400,
 			);
 		}
 
-		const stripe = getStripe();
-
-		await stripe.subscriptionItems.update(org.stripe_seat_item_id, {
-			quantity:          seat_count,
-			proration_behavior: "create_prorations",
-		});
+		if (isBusiness) {
+			const stripe = getStripe();
+			await stripe.subscriptionItems.update(org.stripe_seat_item_id!, {
+				quantity:           seat_count,
+				proration_behavior: "create_prorations",
+			});
+		}
+		// Enterprise: seat count tracked in DB only (no per-seat Stripe line item)
 
 		await prisma.organization.update({
 			where: { id: orgId },
