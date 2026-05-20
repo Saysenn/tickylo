@@ -29,6 +29,7 @@ export function UserDropdown({ user }: UserDropdownProps) {
 
 	const handleSignOut = async () => {
 		const supabase = createClient();
+		sessionStorage.removeItem("timer_nudge_dismissed");
 		try {
 			const active = await APIService.time.active();
 			if (active?.id) {
