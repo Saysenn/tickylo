@@ -42,6 +42,7 @@ model Organization {
   storage          OrgStorage?
   ticket_templates TicketTemplate[]
   departments      Department[]
+  deletionRequest  OrgDeletionRequest?
 
   @@map("organizations")
 }
@@ -156,6 +157,7 @@ model User {
   shift_start   String?   // personal shift start e.g. "20:00" — overrides org schedule; null = follow org
   shift_end     String?   // personal shift end e.g. "05:00" — overrides org schedule; null = follow org
   deleted_at    DateTime? // soft-delete: set on deletion request, hard-deleted by cron after grace period
+  had_trial     Boolean   @default(false)
 
   // GDPR consent — recorded at registration
   accepted_privacy_at DateTime?
@@ -193,6 +195,34 @@ model User {
   @@index([org_id])
   @@index([department_id])
   @@map("users")
+}
+
+model OrgDeletionRequest {
+  id            String    @id @default(cuid())
+  org_id        String    @unique
+  requested_by  String
+  reason        String?
+  status        String    @default("pending") // pending | approved | rejected
+  reject_reason String?
+  reviewed_at   DateTime?
+  created_at    DateTime  @default(now())
+
+  org Organization @relation(fields: [org_id], references: [id], onDelete: Cascade)
+
+  @@index([status])
+  @@map("org_deletion_requests")
+}
+
+model EmailVerification {
+  id         String   @id @default(cuid())
+  email      String
+  code       String
+  expires_at DateTime
+  used       Boolean  @default(false)
+  created_at DateTime @default(now())
+
+  @@index([email])
+  @@map("email_verifications")
 }
 
 model DeletionRequest {

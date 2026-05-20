@@ -472,12 +472,18 @@ class APIService {
 	// Organization Apply / Join (public)
 	// ---------------------------------------------------------------------------
 	public org = {
-		apply: (data: { company_name: string; admin_name: string; admin_email: string; password: string; reason?: string; accepted_privacy: true; accepted_terms: true }) =>
+		apply: (data: { company_name: string; admin_name: string; admin_email: string; email_code: string; password: string; confirm_password: string; reason?: string; accepted_privacy: true; accepted_terms: true }) =>
 			axiosService.post(`/auth/apply`, data),
+		sendVerificationCode: (email: string) =>
+			axiosService.post(`/auth/verify-email`, { email }),
 		checkJoinCode: (code: string) =>
 			axiosService.get(`/auth/join/check`, { code }),
 		join: (data: { org_join_code: string; name: string; email: string; password: string; accepted_privacy: true; accepted_terms: true }) =>
 			axiosService.post(`/auth/join`, data),
+		deletionRequest: {
+			get:    () => axiosService.get(`${apiVersion}/org/deletion-request`),
+			submit: (reason?: string) => axiosService.post(`${apiVersion}/org/deletion-request`, { reason }),
+		},
 	};
 }
 

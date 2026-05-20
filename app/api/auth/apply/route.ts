@@ -12,6 +12,7 @@ const schema = z.object({
 	company_name:     z.string().min(2).max(100),
 	admin_name:       z.string().min(2).max(100),
 	admin_email:      z.string().email(),
+	email_code:       z.string().length(6),
 	password:         z.string().min(8),
 	confirm_password: z.string().min(8),
 	reason:           z.string().max(1000).optional(),
@@ -31,11 +32,18 @@ export async function POST(request: NextRequest) {
 			return errorResponse(parsed.error.issues[0].message, 400);
 		}
 
-		const { company_name, admin_name, admin_email, password, confirm_password, reason } = parsed.data;
+		const { company_name, admin_name, admin_email, email_code, password, confirm_password, reason } = parsed.data;
 
 		if (password !== confirm_password) {
 			return errorResponse("Passwords do not match.", 400);
 		}
+
+		// Verify email OTP
+		const verification = await prisma.emailVerification.findFirst({
+			where: { email: admin_email, code: email_code, used: false, expires_at: { gt: new Date() } },
+		});
+		if (!verification) return errorResponse("Invalid or expired verification code.", 400);
+		await prisma.emailVerification.update({ where: { id: verification.id }, data: { used: true } });
 
 		if (BLOCKED_EMAILS.includes(admin_email.toLowerCase())) {
 			return errorResponse("This email address cannot be used for company registration.", 403);

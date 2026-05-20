@@ -1,37 +1,108 @@
 "use client";
 
-import { useState } from "react";
-import { Building2, CheckCircle2 } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { Building2, CheckCircle2, Mail, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PasswordInput } from "@/components/ui/password-input";
+import { cn } from "@/lib/utils/cn";
 import APIService from "@/lib/infra/api";
+
+const RESEND_COUNTDOWN = 60;
 
 export function ApplyForm() {
 	const [form, setForm] = useState({
-		company_name: "",
-		admin_name: "",
-		admin_email: "",
-		password: "",
+		company_name:     "",
+		admin_name:       "",
+		admin_email:      "",
+		password:         "",
 		confirm_password: "",
-		reason: "",
+		reason:           "",
 	});
-	const [loading, setLoading] = useState(false);
-	const [error, setError] = useState("");
-	const [submitted, setSubmitted] = useState(false);
+	const [loading, setLoading]               = useState(false);
+	const [error, setError]                   = useState("");
+	const [submitted, setSubmitted]           = useState(false);
 	const [acceptedPrivacy, setAcceptedPrivacy] = useState(false);
-	const [acceptedTerms, setAcceptedTerms] = useState(false);
+	const [acceptedTerms, setAcceptedTerms]   = useState(false);
+
+	// OTP state
+	const [codeSent, setCodeSent]             = useState(false);
+	const [sendingCode, setSendingCode]       = useState(false);
+	const [emailCode, setEmailCode]           = useState("");
+	const [isEmailVerified, setIsEmailVerified] = useState(false);
+	const [codeError, setCodeError]           = useState("");
+	const [countdown, setCountdown]           = useState(0);
+	const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
 	function set(field: string, value: string) {
 		setForm((prev) => ({ ...prev, [field]: value }));
+		// If email changes, reset OTP state
+		if (field === "admin_email") {
+			setCodeSent(false);
+			setEmailCode("");
+			setIsEmailVerified(false);
+			setCodeError("");
+			setCountdown(0);
+			if (timerRef.current) clearInterval(timerRef.current);
+		}
+	}
+
+	useEffect(() => {
+		return () => { if (timerRef.current) clearInterval(timerRef.current); };
+	}, []);
+
+	function startCountdown() {
+		setCountdown(RESEND_COUNTDOWN);
+		timerRef.current = setInterval(() => {
+			setCountdown((c) => {
+				if (c <= 1) { clearInterval(timerRef.current!); return 0; }
+				return c - 1;
+			});
+		}, 1000);
+	}
+
+	async function handleSendCode() {
+		setCodeError("");
+		setSendingCode(true);
+		try {
+			await APIService.org.sendVerificationCode(form.admin_email);
+			setCodeSent(true);
+			setEmailCode("");
+			setIsEmailVerified(false);
+			startCountdown();
+		} catch (err: any) {
+			setCodeError(err?.response?.data?.error ?? "Failed to send code. Try again.");
+		} finally {
+			setSendingCode(false);
+		}
+	}
+
+	function handleCodeChange(val: string) {
+		const digits = val.replace(/\D/g, "").slice(0, 6);
+		setEmailCode(digits);
+		setIsEmailVerified(digits.length === 6);
+		setCodeError("");
+	}
+
+	function handleChangeEmail() {
+		setCodeSent(false);
+		setEmailCode("");
+		setIsEmailVerified(false);
+		setCodeError("");
+		setCountdown(0);
+		if (timerRef.current) clearInterval(timerRef.current);
 	}
 
 	async function handleSubmit(e: React.FormEvent) {
 		e.preventDefault();
 		setError("");
 
+		if (!isEmailVerified) {
+			setError("Please verify your email first.");
+			return;
+		}
 		if (form.password !== form.confirm_password) {
 			setError("Passwords do not match.");
 			return;
@@ -39,14 +110,28 @@ export function ApplyForm() {
 
 		setLoading(true);
 		try {
-			await APIService.org.apply({ ...form, accepted_privacy: true, accepted_terms: true });
+			await APIService.org.apply({
+				...form,
+				email_code:       emailCode,
+				accepted_privacy: true,
+				accepted_terms:   true,
+			});
 			setSubmitted(true);
 		} catch (err: any) {
-			setError(err?.response?.data?.error ?? "Something went wrong. Please try again.");
+			const msg = err?.response?.data?.error ?? "Something went wrong. Please try again.";
+			if (msg.toLowerCase().includes("verification")) {
+				setCodeError(msg);
+				setIsEmailVerified(false);
+				setEmailCode("");
+			} else {
+				setError(msg);
+			}
 		} finally {
 			setLoading(false);
 		}
 	}
+
+	const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.admin_email);
 
 	if (submitted) {
 		return (
@@ -88,29 +173,105 @@ export function ApplyForm() {
 					/>
 				</div>
 
-				<div className="grid grid-cols-2 gap-3">
-					<div className="space-y-1.5">
-						<Label htmlFor="admin_name">Your Name</Label>
-						<Input
-							id="admin_name"
-							placeholder="John Doe"
-							value={form.admin_name}
-							onChange={(e) => set("admin_name", e.target.value)}
-							required
-						/>
-					</div>
-					<div className="space-y-1.5">
-						<Label htmlFor="admin_email">Work Email</Label>
+				<div className="space-y-1.5">
+					<Label htmlFor="admin_name">Your Name</Label>
+					<Input
+						id="admin_name"
+						placeholder="John Doe"
+						value={form.admin_name}
+						onChange={(e) => set("admin_name", e.target.value)}
+						required
+					/>
+				</div>
+
+				{/* Email + Send Code — full width so button has room */}
+				<div className="space-y-1.5">
+					<Label htmlFor="admin_email">Work Email</Label>
+					<div className="flex gap-2">
 						<Input
 							id="admin_email"
 							type="email"
 							placeholder="you@acme.com"
 							value={form.admin_email}
 							onChange={(e) => set("admin_email", e.target.value)}
+							readOnly={codeSent}
+							className={cn("flex-1", codeSent && "bg-accent text-ink-3")}
 							required
 						/>
+						{!codeSent ? (
+							<Button
+								type="button"
+								size="sm"
+								variant="outline"
+								className="shrink-0 px-4"
+								disabled={!isValidEmail || sendingCode}
+								isLoading={sendingCode}
+								onClick={handleSendCode}
+							>
+								Send Code
+							</Button>
+						) : (
+							<Button
+								type="button"
+								size="sm"
+								variant="outline"
+								className="shrink-0 px-4 text-ink-3"
+								onClick={handleChangeEmail}
+							>
+								Change
+							</Button>
+						)}
 					</div>
 				</div>
+
+				{/* OTP input — shown after code sent */}
+				{codeSent && (
+					<div className="space-y-1.5">
+						<div className="flex items-center justify-between">
+							<Label htmlFor="email_code">
+								<span className="flex items-center gap-1.5">
+									<Mail className="w-3.5 h-3.5 text-ink-3" />
+									Verification Code
+								</span>
+							</Label>
+							{isEmailVerified && (
+								<span className="text-xs text-green-600 font-medium">✓ Email verified</span>
+							)}
+						</div>
+						<div className="flex gap-2">
+							<Input
+								id="email_code"
+								placeholder="6-digit code"
+								inputMode="numeric"
+								maxLength={6}
+								value={emailCode}
+								onChange={(e) => handleCodeChange(e.target.value)}
+								className={cn(
+									"tracking-widest text-center font-mono",
+									isEmailVerified && "border-green-500 focus-visible:ring-green-500/20",
+								)}
+							/>
+							<Button
+								type="button"
+								size="sm"
+								variant="outline"
+								className="shrink-0 gap-1.5"
+								disabled={countdown > 0 || sendingCode}
+								isLoading={sendingCode}
+								onClick={handleSendCode}
+							>
+								<RotateCcw className="w-3 h-3" />
+								{countdown > 0 ? `${countdown}s` : "Resend"}
+							</Button>
+						</div>
+						{codeError && (
+							<p className="text-xs text-red-500">{codeError}</p>
+						)}
+						{!isEmailVerified && !codeError && (
+							<p className="text-xs text-ink-3">Check your inbox — code expires in 10 minutes.</p>
+						)}
+					</div>
+				)}
 
 				<div className="space-y-1.5">
 					<Label htmlFor="password">Password</Label>
@@ -158,29 +319,17 @@ export function ApplyForm() {
 
 				<div className="space-y-2.5 pt-1">
 					<label className="flex items-start gap-2.5 cursor-pointer">
-						<Checkbox
-							checked={acceptedPrivacy}
-							onCheckedChange={setAcceptedPrivacy}
-							className="mt-0.5"
-						/>
+						<Checkbox checked={acceptedPrivacy} onCheckedChange={setAcceptedPrivacy} className="mt-0.5" />
 						<span className="text-xs text-ink-3 leading-relaxed">
 							I agree to the{" "}
-							<a href="/privacy" target="_blank" rel="noopener noreferrer" className="text-mint hover:underline">
-								Privacy Policy
-							</a>
+							<a href="/privacy" target="_blank" rel="noopener noreferrer" className="text-mint hover:underline">Privacy Policy</a>
 						</span>
 					</label>
 					<label className="flex items-start gap-2.5 cursor-pointer">
-						<Checkbox
-							checked={acceptedTerms}
-							onCheckedChange={setAcceptedTerms}
-							className="mt-0.5"
-						/>
+						<Checkbox checked={acceptedTerms} onCheckedChange={setAcceptedTerms} className="mt-0.5" />
 						<span className="text-xs text-ink-3 leading-relaxed">
 							I agree to the{" "}
-							<a href="/terms" target="_blank" rel="noopener noreferrer" className="text-mint hover:underline">
-								Terms of Service
-							</a>
+							<a href="/terms" target="_blank" rel="noopener noreferrer" className="text-mint hover:underline">Terms of Service</a>
 						</span>
 					</label>
 				</div>
@@ -189,7 +338,12 @@ export function ApplyForm() {
 					<p className="text-xs text-red-500 bg-red-500/10 px-3 py-2 rounded-lg">{error}</p>
 				)}
 
-				<Button type="submit" className="w-full" isLoading={loading} disabled={!acceptedPrivacy || !acceptedTerms}>
+				<Button
+					type="submit"
+					className="w-full"
+					isLoading={loading}
+					disabled={!acceptedPrivacy || !acceptedTerms || !isEmailVerified}
+				>
 					Submit Application
 				</Button>
 			</form>

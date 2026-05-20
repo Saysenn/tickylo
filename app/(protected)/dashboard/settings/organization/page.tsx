@@ -4,6 +4,7 @@ import { WorkScheduleAdminSection } from "@/components/dashboard/settings/work-s
 import { StorageAdminSection } from "@/components/dashboard/settings/storage-admin-section";
 import { OrgJoinQrSection } from "@/components/dashboard/settings/org-join-qr-section";
 import { DepartmentsAdminSection } from "@/components/dashboard/settings/departments-admin-section";
+import { OrgDeletionSection } from "@/components/dashboard/settings/org-deletion-section";
 
 export const metadata = { title: "Organization · Settings" };
 
@@ -18,6 +19,7 @@ export default async function OrganizationSettingsPage() {
 			<DepartmentsAdminSection />
 			<WorkScheduleAdminSection />
 			<StorageAdminSection />
+			<OrgDeletionSection />
 		</div>
 	);
 }
