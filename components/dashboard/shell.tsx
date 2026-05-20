@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Sidebar } from "./sidebar";
 import { Header } from "./header";
+import { TimerNudgeBanner } from "./timer-nudge-banner";
 import type { UserProfile } from "@/types";
 
 interface DashboardShellProps {
@@ -33,6 +34,7 @@ export function DashboardShell({ user, orgName, children }: DashboardShellProps)
           onMenuClick={() => setSidebarOpen((prev) => !prev)}
           sidebarOpen={sidebarOpen}
         />
+        <TimerNudgeBanner />
         <main className="flex-1 p-5 md:p-7">{children}</main>
       </div>
     </div>

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Settings, LogOut, ChevronDown } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import APIService from "@/lib/infra/api";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -28,6 +29,14 @@ export function UserDropdown({ user }: UserDropdownProps) {
 
 	const handleSignOut = async () => {
 		const supabase = createClient();
+		try {
+			const active = await APIService.time.active();
+			if (active?.id) {
+				await APIService.time.stop(active.id, {});
+			}
+		} catch {
+			// don't block logout if timer stop fails
+		}
 		await supabase.auth.signOut();
 		router.push("/login");
 		router.refresh();
