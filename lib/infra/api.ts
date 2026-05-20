@@ -439,6 +439,16 @@ class APIService {
 	};
 
 	// ---------------------------------------------------------------------------
+	// My Requests (employee — their own ticket requests)
+	// ---------------------------------------------------------------------------
+	public myRequests = {
+		list: (params?: { page?: number; limit?: number; type?: string }) =>
+			axiosService.get(`${apiVersion}/my-requests`, params ?? {}),
+		cancel: (id: string, type: "reopen" | "transfer" | "due_date") =>
+			axiosService.patch(`${apiVersion}/my-requests/${id}/cancel`, { type }),
+	};
+
+	// ---------------------------------------------------------------------------
 	// Super Admin
 	// ---------------------------------------------------------------------------
 	public superAdmin = {

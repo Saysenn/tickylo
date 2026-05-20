@@ -66,9 +66,9 @@ export function EmployeeDashboard() {
 				<StatCard
 					label="My Requests"
 					value={data.ticket_requests.pending}
-					subtext="ticket requests"
+					subtext="pending requests"
 					icon={ClipboardList}
-					href="/dashboard/tickets"
+					href="/dashboard/requests"
 				/>
 			</div>
 

@@ -66,11 +66,12 @@ export async function getDashboard(caller: Caller, dateParam?: string) {
 			recent_tasks: recentTickets,
 		};
 	} else {
-		const [activeEntry, myTicketCounts, myPendingTransfers, myPendingReopen, weeklyEntries, myTickets] = await Promise.all([
+		const [activeEntry, myTicketCounts, myPendingTransfers, myPendingReopen, myPendingDueDates, weeklyEntries, myTickets] = await Promise.all([
 			prisma.timeEntry.findFirst({ where: { user_id: caller.id, end_time: null } }),
 			prisma.ticket.groupBy({ by: ["status"], where: { user_id: caller.id }, _count: { id: true } }),
 			prisma.transferRequest.count({ where: { requested_by: caller.id, status: "pending" } }),
 			prisma.reopenRequest.count({ where: { requested_by: caller.id, status: "pending" } }),
+			prisma.dueDateRequest.count({ where: { requested_by: caller.id, status: "pending" } }),
 			prisma.timeEntry.findMany({ where: { user_id: caller.id, start_time: { gte: sevenDaysAgo, lte: today }, end_time: { not: null } }, select: { start_time: true, end_time: true } }),
 			prisma.ticket.findMany({ where: { user_id: caller.id, status: { in: ["assigned", "in_progress"] } }, orderBy: { updated_at: "desc" }, take: 5 }),
 		]);
@@ -81,7 +82,7 @@ export async function getDashboard(caller: Caller, dateParam?: string) {
 		return {
 			time: { this_week_ms: thisWeekMs, active: activeEntry ? { id: activeEntry.id, start_time: activeEntry.start_time.toISOString(), title: activeEntry.title ?? null } : null },
 			tasks: { assigned: ticketByStatus.assigned ?? 0, in_progress: ticketByStatus.in_progress ?? 0, completed: ticketByStatus.completed ?? 0 },
-			ticket_requests: { pending: myPendingTransfers + myPendingReopen },
+			ticket_requests: { pending: myPendingTransfers + myPendingReopen + myPendingDueDates },
 			weekly_days: buildWeeklyDays(sevenDaysAgo, weeklyEntries),
 			my_tasks: myTickets,
 		};

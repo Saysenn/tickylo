@@ -14,6 +14,7 @@ import {
 	Shield,
 	Inbox,
 	Building2,
+	CalendarDays,
 } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import type { Role } from "@/configs/rbac.config";
@@ -70,6 +71,7 @@ export function Sidebar({ isOpen = false, onClose, role }: SidebarProps) {
 			items: [
 				{ label: "Time Tracker", href: "/dashboard/time-tracker", icon: AlarmClock },
 				{ label: "Tickets", href: "/dashboard/tickets", icon: ClipboardList },
+				{ label: "My Requests", href: "/dashboard/requests", icon: CalendarDays, roles: ["employee", "manager"] },
 			],
 		},
 		{
