@@ -9,7 +9,7 @@ import { TeamActivityWidget } from "./team-activity-widget";
 import { TasksListWidget } from "./tasks-list-widget";
 import { TimerCard } from "./timer-card";
 import { WorkloadChart } from "@/components/dashboard/tasks/workload-chart";
-import { Users, BarChart2, ClipboardList } from "lucide-react";
+import { Users, BarChart2, ClipboardList, Ticket } from "lucide-react";
 
 interface AdminDashboardData {
 	employees: { total: number };
@@ -68,11 +68,11 @@ export function AdminDashboard() {
 					featured
 				/>
 				<StatCard
-					label="Clocked In Now"
-					value={data.time.clocked_in_count}
-					subtext={data.time.clocked_in_count > 0 ? "currently working" : "no one active"}
-					liveIndicator={data.time.clocked_in_count > 0}
-					href="/dashboard/time-manager"
+					label="Open Tickets"
+					value={data.tasks.pending + data.tasks.assigned + data.tasks.in_progress}
+					subtext="not yet completed"
+					icon={Ticket}
+					href="/dashboard/tickets"
 				/>
 				<StatCard
 					label="Reports"
