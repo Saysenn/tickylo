@@ -1,9 +1,11 @@
 "use client";
 
+import { Suspense } from "react";
 import { useAppSelector } from "@/store/hooks";
 import { AdminDashboard } from "@/components/dashboard/dashboard/admin-dashboard";
 import { EmployeeDashboard } from "@/components/dashboard/dashboard/employee-dashboard";
 import { LoginNotices } from "@/components/dashboard/login-notices";
+import { UpgradeModal } from "@/components/dashboard/upgrade-modal";
 
 export default function DashboardPage() {
 	const user = useAppSelector((s) => s.auth.user);
@@ -32,6 +34,7 @@ export default function DashboardPage() {
 				</p>
 			</div>
 
+			<Suspense><UpgradeModal /></Suspense>
 			<LoginNotices />
 
 			{isAdmin ? <AdminDashboard /> : <EmployeeDashboard />}

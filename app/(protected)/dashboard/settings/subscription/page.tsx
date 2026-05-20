@@ -26,6 +26,8 @@ export default async function SubscriptionPage() {
 			next_billing_date: true,
 			had_trial: true,
 			is_internal: true,
+			stripe_customer_id: true,
+			stripe_subscription_id: true,
 		},
 	});
 
@@ -39,6 +41,8 @@ export default async function SubscriptionPage() {
 		<SubscriptionPanel
 			org={org}
 			activeUsers={activeUsers}
+			hasStripeCustomer={!!org.stripe_customer_id}
+			hasStripeSubscription={!!org.stripe_subscription_id}
 		/>
 	);
 }

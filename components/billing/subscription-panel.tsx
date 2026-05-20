@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { CreditCard, Users, Calendar, Shield, Zap, ExternalLink } from "lucide-react";
+import { CreditCard, Users, Shield, Zap, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
@@ -37,20 +37,28 @@ const PLAN_COLORS: Record<string, string> = {
 export default function SubscriptionPanel({
 	org,
 	activeUsers,
+	hasStripeCustomer,
+	hasStripeSubscription,
 }: {
 	org: OrgBillingInfo;
 	activeUsers: number;
+	hasStripeCustomer: boolean;
+	hasStripeSubscription: boolean;
 }) {
 	const router  = useRouter();
 	const plan    = org.is_internal ? "internal" : org.plan;
 
 	const [seatCount, setSeatCount] = useState(org.seat_count);
 	const [seatError, setSeatError] = useState<string | null>(null);
+	const [portalError, setPortalError] = useState<string | null>(null);
 
 	const { mutate: openPortal, isPending: openingPortal } = useMutation({
 		mutationFn: () => APIService.billing.portal(),
 		onSuccess: (res: any) => {
 			window.location.href = res.data.url;
+		},
+		onError: (err: any) => {
+			setPortalError(err?.response?.data?.error ?? "Failed to open billing portal. Please try again.");
 		},
 	});
 
@@ -124,44 +132,52 @@ export default function SubscriptionPanel({
 						<CardTitle className="text-sm font-medium text-ink-3 uppercase tracking-wider">Manage Seats</CardTitle>
 					</CardHeader>
 					<CardContent className="space-y-4">
-						<p className="text-xs text-ink-3">
-							$4.99/seat/mo · Mid-month changes are prorated automatically.
-						</p>
-						<div className="flex items-center gap-3">
-							<div className="flex items-center gap-2">
-								<button
-									type="button"
-									onClick={() => setSeatCount((c) => Math.max(activeUsers, c - 1))}
-									className="w-8 h-8 rounded border border-border text-ink-3 hover:text-ink hover:bg-accent transition-colors text-lg font-medium"
-								>
-									−
-								</button>
-								<span className="w-12 text-center font-semibold text-ink">{seatCount}</span>
-								<button
-									type="button"
-									onClick={() => setSeatCount((c) => Math.min(500, c + 1))}
-									className="w-8 h-8 rounded border border-border text-ink-3 hover:text-ink hover:bg-accent transition-colors text-lg font-medium"
-								>
-									+
-								</button>
-							</div>
-							<Button
-								size="sm"
-								variant="outline"
-								isLoading={updatingSeats}
-								disabled={seatCount === org.seat_count || updatingSeats}
-								onClick={() => updateSeats(seatCount)}
-							>
-								Save Changes
-							</Button>
-						</div>
-						{seatError && (
-							<p className="text-xs text-red-500">{seatError}</p>
+						{hasStripeSubscription ? (
+							<>
+								<p className="text-xs text-ink-3">
+									$4.99/seat/mo · Mid-month changes are prorated automatically.
+								</p>
+								<div className="flex items-center gap-3">
+									<div className="flex items-center gap-2">
+										<button
+											type="button"
+											onClick={() => setSeatCount((c) => Math.max(activeUsers, c - 1))}
+											className="w-8 h-8 rounded border border-border text-ink-3 hover:text-ink hover:bg-accent transition-colors text-lg font-medium"
+										>
+											−
+										</button>
+										<span className="w-12 text-center font-semibold text-ink">{seatCount}</span>
+										<button
+											type="button"
+											onClick={() => setSeatCount((c) => Math.min(500, c + 1))}
+											className="w-8 h-8 rounded border border-border text-ink-3 hover:text-ink hover:bg-accent transition-colors text-lg font-medium"
+										>
+											+
+										</button>
+									</div>
+									<Button
+										size="sm"
+										variant="outline"
+										isLoading={updatingSeats}
+										disabled={seatCount === org.seat_count || updatingSeats}
+										onClick={() => updateSeats(seatCount)}
+									>
+										Save Changes
+									</Button>
+								</div>
+								{seatError && (
+									<p className="text-xs text-red-500">{seatError}</p>
+								)}
+								<p className="text-[11px] text-ink-3">
+									Minimum {activeUsers} seat{activeUsers !== 1 ? "s" : ""} (current active employees).
+									Remove seats before your next billing date to avoid charges.
+								</p>
+							</>
+						) : (
+							<p className="text-sm text-ink-3">
+								No active subscription found. Complete checkout to manage seats.
+							</p>
 						)}
-						<p className="text-[11px] text-ink-3">
-							Minimum {activeUsers} seat{activeUsers !== 1 ? "s" : ""} (current active employees).
-							Remove seats before your next billing date to avoid charges.
-						</p>
 					</CardContent>
 				</Card>
 			)}
@@ -172,23 +188,30 @@ export default function SubscriptionPanel({
 					<CardHeader className="pb-3">
 						<CardTitle className="text-sm font-medium text-ink-3 uppercase tracking-wider">Billing &amp; Invoices</CardTitle>
 					</CardHeader>
-					<CardContent>
+					<CardContent className="space-y-2">
 						<div className="flex items-center justify-between">
 							<div className="flex items-center gap-2.5 text-sm text-ink-3">
 								<CreditCard className="w-4 h-4" />
 								<span>Update payment method, view invoices, cancel subscription</span>
 							</div>
-							<Button
-								size="sm"
-								variant="outline"
-								isLoading={openingPortal}
-								onClick={() => openPortal()}
-								className="gap-1.5 shrink-0"
-							>
-								<ExternalLink className="w-3.5 h-3.5" />
-								Manage Billing
-							</Button>
+							{hasStripeCustomer ? (
+								<Button
+									size="sm"
+									variant="outline"
+									isLoading={openingPortal}
+									onClick={() => { setPortalError(null); openPortal(); }}
+									className="gap-1.5 shrink-0"
+								>
+									<ExternalLink className="w-3.5 h-3.5" />
+									Manage Billing
+								</Button>
+							) : (
+								<span className="text-xs text-ink-3">No billing account found</span>
+							)}
 						</div>
+						{portalError && (
+							<p className="text-xs text-red-500">{portalError}</p>
+						)}
 					</CardContent>
 				</Card>
 			)}
