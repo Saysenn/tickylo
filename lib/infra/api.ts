@@ -466,6 +466,14 @@ class APIService {
 			axiosService.get(`${apiVersion}/super-admin/orgs`),
 		toggleInternal: (orgId: string, is_internal: boolean) =>
 			axiosService.patch(`${apiVersion}/super-admin/orgs/${orgId}`, { is_internal }),
+		getDeletionRequests: () =>
+			axiosService.get(`${apiVersion}/super-admin/deletion-requests`),
+		approveDeletion: (id: string) =>
+			axiosService.post(`${apiVersion}/super-admin/deletion-requests/${id}/approve`, {}),
+		rejectDeletion: (id: string, reason?: string) =>
+			axiosService.post(`${apiVersion}/super-admin/deletion-requests/${id}/reject`, { reason }),
+		getAuditLogs: (params?: Record<string, unknown>) =>
+			axiosService.get(`${apiVersion}/super-admin/audit-logs`, params ?? {}),
 	};
 
 	// ---------------------------------------------------------------------------

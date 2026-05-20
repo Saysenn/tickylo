@@ -234,7 +234,13 @@ function AuditLogRow({ log }: { log: AuditLogEntry }) {
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
-export function AuditLogsTable() {
+export function AuditLogsTable({
+	fetchFn,
+	queryKey = "audit-logs",
+}: {
+	fetchFn?: (params: Record<string, unknown>) => Promise<AuditLogsResponse>;
+	queryKey?: string;
+}) {
 	const [page, setPage] = useState(1);
 	const [action, setAction] = useState("all");
 	const [entityType, setEntityType] = useState("all");
@@ -250,9 +256,12 @@ export function AuditLogsTable() {
 		to: to || undefined,
 	};
 
+	const defaultFetch = (p: Record<string, unknown>) =>
+		APIService.auditLogs.list(p) as Promise<AuditLogsResponse>;
+
 	const { data, isLoading } = useQuery<AuditLogsResponse>({
-		queryKey: ["audit-logs", params],
-		queryFn: () => APIService.auditLogs.list(params) as Promise<AuditLogsResponse>,
+		queryKey: [queryKey, params],
+		queryFn: () => (fetchFn ?? defaultFetch)(params),
 	});
 
 	const hasFilters = action !== "all" || entityType !== "all" || !!from || !!to;

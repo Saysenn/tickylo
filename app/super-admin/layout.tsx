@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import SuperAdminHeader from "@/components/super-admin/header";
+import { SuperAdminSidebar } from "@/components/super-admin/sidebar";
+import { SuperAdminTopbar } from "@/components/super-admin/topbar";
 import AppProvider from "@/providers/app-provider";
 
 export default async function SuperAdminLayout({ children }: { children: React.ReactNode }) {
@@ -13,9 +14,12 @@ export default async function SuperAdminLayout({ children }: { children: React.R
 
 	return (
 		<AppProvider>
-			<div className="min-h-screen bg-background">
-				<SuperAdminHeader email={user.email ?? ""} />
-				<main className="max-w-6xl mx-auto px-6 py-8">{children}</main>
+			<div className="flex min-h-screen bg-background">
+				<SuperAdminSidebar />
+				<div className="flex flex-col flex-1 min-w-0">
+					<SuperAdminTopbar email={user.email ?? ""} />
+					<main className="flex-1 p-7">{children}</main>
+				</div>
 			</div>
 		</AppProvider>
 	);
