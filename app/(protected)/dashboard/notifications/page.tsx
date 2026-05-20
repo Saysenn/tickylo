@@ -12,6 +12,7 @@ import {
 	MessageSquare,
 	Info,
 	CheckCheck,
+	CheckSquare,
 	Trash2,
 	Play,
 	Pencil,
@@ -192,28 +193,18 @@ export default function NotificationsPage() {
 					<h1 className="text-2xl font-bold text-ink">Notifications</h1>
 					<p className="text-ink-3 mt-1 text-sm">Your activity feed and alerts.</p>
 				</div>
-				<div className="flex items-center gap-2">
-					{unreadCount > 0 && (
-						<Button
-							size="sm"
-							variant="outline"
-							className="gap-1.5 text-xs"
-							disabled={isReadingAll}
-							onClick={() => readAll()}
-						>
-							<CheckCheck className="w-3.5 h-3.5" />
-							Mark all read
-						</Button>
-					)}
+				{unreadCount > 0 && (
 					<Button
 						size="sm"
-						variant={bulkMode ? "outline" : "ghost"}
-						className={cn("h-8 text-xs gap-1.5", bulkMode ? "border-mint/40 text-mint" : "text-ink-3")}
-						onClick={() => (bulkMode ? exitBulk() : setBulkMode(true))}
+						variant="outline"
+						className="gap-1.5 text-xs"
+						disabled={isReadingAll}
+						onClick={() => readAll()}
 					>
-						{bulkMode ? "Exit Bulk" : "Bulk"}
+						<CheckCheck className="w-3.5 h-3.5" />
+						Mark all read
 					</Button>
-				</div>
+				)}
 			</div>
 
 			{/* Tabs */}
@@ -258,9 +249,20 @@ export default function NotificationsPage() {
 						{label}
 					</button>
 				))}
-				{pagination && (
-					<span className="ml-auto text-xs text-ink-3">{pagination.total.toLocaleString()} total</span>
-				)}
+				<div className="ml-auto flex items-center gap-3">
+					{pagination && (
+						<span className="text-xs text-ink-3">{pagination.total.toLocaleString()} total</span>
+					)}
+					<Button
+						size="sm"
+						variant={bulkMode ? "outline" : "ghost"}
+						className={cn("h-7 text-xs gap-1.5", bulkMode ? "border-mint/40 text-mint" : "text-ink-3")}
+						onClick={() => (bulkMode ? exitBulk() : setBulkMode(true))}
+					>
+						<CheckSquare className="w-3.5 h-3.5" />
+						{bulkMode ? "Exit Bulk" : "Bulk"}
+					</Button>
+				</div>
 			</div>
 
 			{/* Bulk action bar */}
