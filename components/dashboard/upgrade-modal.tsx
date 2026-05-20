@@ -27,7 +27,7 @@ const FEATURE_META: Partial<Record<Feature, FeatureMeta>> = {
 	work_schedule:    { label: "Work Schedule", description: "Configure shift hours and timer caps.", plan: "business" },
 	attachments:      { label: "Attachments", description: "Attach files to tickets.", plan: "business" },
 	time_manager:     { label: "Team Overview", description: "View time analytics across your whole team.", plan: "business" },
-	audit_logs:       { label: "Time & Ticket Logs", description: "Immutable audit trail of all org activity.", plan: "enterprise" },
+	audit_logs:       { label: "Time & Ticket Logs", description: "Immutable audit trail of all org activity.", plan: "business" },
 	reports:          { label: "Reports", description: "Task completion rates and productivity metrics.", plan: "enterprise" },
 	performance:      { label: "Performance Tracking", description: "Per-employee performance reports.", plan: "enterprise" },
 	csv_export:       { label: "CSV / PDF Export", description: "Export your data in bulk.", plan: "enterprise" },

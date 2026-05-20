@@ -54,7 +54,7 @@ const FEATURE_PLANS: Record<Feature, string[]> = {
 	ticket_templates: ["business", "enterprise"],
 	work_schedule:    ["business", "enterprise"],
 	attachments:      ["business", "enterprise"],
-	audit_logs:       ["enterprise"],
+	audit_logs:       ["business", "enterprise"],
 	time_manager:     ["business", "enterprise"],
 	reports:          ["enterprise"],
 	performance:      ["enterprise"],
