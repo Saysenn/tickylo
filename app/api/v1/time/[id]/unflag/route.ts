@@ -3,6 +3,7 @@ import { ok, errorResponse } from "@/lib/utils/response";
 import { requireAdmin } from "@/lib/auth/require-admin";
 import { prisma } from "@/lib/infra/prisma";
 import { auditLog } from "@/lib/utils/audit";
+import { createNotification } from "@/lib/utils/create-notification";
 
 export async function POST(
 	_request: NextRequest,
@@ -32,6 +33,17 @@ export async function POST(
 			before: { flagged: true },
 			after:  { flagged: false, reviewed_by_admin: true },
 		});
+
+		if (entry.user_id) {
+			createNotification({
+				user_id: entry.user_id,
+				org_id:  entry.org_id ?? undefined,
+				type:    "time_entry_reviewed",
+				title:   "Time entry reviewed",
+				body:    `A flagged time entry${entry.title ? ` "${entry.title}"` : ""} has been reviewed and cleared by an admin.`,
+				link:    "/dashboard/time-tracker",
+			}).catch(() => {});
+		}
 
 		return ok({ unflagged: true });
 	} catch (err: any) {

@@ -248,6 +248,16 @@ export async function updateEmployee(id: string, admin: Caller, data: UpdateEmpl
 	if (name || role) {
 		const { error } = await supabaseAdmin.auth.admin.updateUserById(id, updatePayload);
 		if (error) throw Object.assign(new Error(error.message), { status: 400 });
+		if (role) {
+			createNotification({
+				user_id: id,
+				org_id: orgId,
+				type: "role_changed",
+				title: "Your role has been updated",
+				body: `Your account role has been changed to ${role}.`,
+				link: "/dashboard/settings/profile",
+			}).catch(() => {});
+		}
 	}
 
 	const metaUpdate: Record<string, string | number | Date | null> = {};
@@ -351,6 +361,16 @@ export async function bulkEmployeeAction(
 
 	if (action === "remove_department") {
 		await prisma.user.updateMany({ where: { ...withOrg(orgId), id: { in: ids } }, data: { department_id: null } });
+		prisma.notification.createMany({
+			data: ids.map((uid) => ({
+				user_id: uid,
+				org_id: orgId ?? null,
+				type: "department_assigned",
+				title: "You've been removed from a department",
+				body: "You have been removed from your department.",
+				link: "/dashboard/settings/profile",
+			})),
+		}).catch(() => {});
 		return { succeeded: ids, failed: [] };
 	}
 
@@ -366,6 +386,14 @@ export async function bulkEmployeeAction(
 				if (error) { failed.push(id); continue; }
 				await prisma.user.update({ where: { id }, data: { role } });
 				auditLog({ org_id: orgId, actor_id: admin.id, actor_role: ROLES.ADMIN, action: "UPDATE", entity_type: "employee", entity_id: id, after: { role } });
+				createNotification({
+					user_id: id,
+					org_id: orgId,
+					type: "role_changed",
+					title: "Your role has been updated",
+					body: `Your account role has been changed to ${role}.`,
+					link: "/dashboard/settings/profile",
+				}).catch(() => {});
 			}
 			succeeded.push(id);
 		} catch {
