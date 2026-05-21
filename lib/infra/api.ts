@@ -122,6 +122,10 @@ class APIService {
 			role?: string,
 			department_id?: string | null,
 		) => axiosService.post(`${apiVersion}/employees/bulk`, { action, ids, role, department_id }),
+		listDeactivated: () =>
+			axiosService.get(`${apiVersion}/employees/deactivated`),
+		reactivate: (id: string) =>
+			axiosService.post(`${apiVersion}/employees/${id}/reactivate`, {}),
 	};
 
 	// ---------------------------------------------------------------------------

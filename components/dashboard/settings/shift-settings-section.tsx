@@ -4,7 +4,13 @@ import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Clock } from "lucide-react";
 import APIService from "@/lib/infra/api";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import {
+	Card,
+	CardContent,
+	CardHeader,
+	CardTitle,
+	CardDescription,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,7 +20,7 @@ interface UserMe {
 	shift_end: string | null;
 }
 
-export function ShiftSettingsSection() {
+export function ShiftSettingsSection({ isAdmin = false }: { isAdmin?: boolean }) {
 	const queryClient = useQueryClient();
 
 	const { data } = useQuery<UserMe>({
@@ -24,9 +30,9 @@ export function ShiftSettingsSection() {
 	});
 
 	const [shiftStart, setShiftStart] = useState("");
-	const [shiftEnd,   setShiftEnd]   = useState("");
+	const [shiftEnd, setShiftEnd] = useState("");
 	const [success, setSuccess] = useState(false);
-	const [error, setError]     = useState("");
+	const [error, setError] = useState("");
 
 	useEffect(() => {
 		if (data) {
@@ -36,10 +42,8 @@ export function ShiftSettingsSection() {
 	}, [data]);
 
 	const { mutate, isPending } = useMutation({
-		mutationFn: () => APIService.users.updateShift(
-			shiftStart || null,
-			shiftEnd   || null,
-		),
+		mutationFn: () =>
+			APIService.users.updateShift(shiftStart || null, shiftEnd || null),
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ["user-me-shift"] });
 			setSuccess(true);
@@ -59,9 +63,11 @@ export function ShiftSettingsSection() {
 						<Clock className="w-3.5 h-3.5 text-ink-2" />
 					</div>
 					<div>
-						<CardTitle className="text-sm">My Shift Hours</CardTitle>
+						<CardTitle className="text-sm">{isAdmin ? "Default Shift Hours" : "My Shift Hours"}</CardTitle>
 						<CardDescription className="text-xs">
-							Set your preferred shift. Leave blank to follow the organization's default schedule.
+							{isAdmin
+								? "Set the organization's default shift. All employees without a personal shift will follow this schedule."
+								: "Set your preferred shift. Leave blank to follow the organization's default schedule."}
 						</CardDescription>
 					</div>
 				</div>
@@ -91,15 +97,18 @@ export function ShiftSettingsSection() {
 
 				{isOvernightPreview && (
 					<p className="text-[11px] text-mint">
-						Overnight shift detected — your timer will auto-close at {shiftEnd} the next day.
+						Overnight shift detected — your timer will auto-close at {shiftEnd}{" "}
+						the next day.
 					</p>
 				)}
 
 				<p className="text-[11px] text-ink-3">
-					Your active timer will be automatically stopped at your shift end. If both fields are blank, the org-wide schedule applies.
+					{isAdmin
+						? "Employees' active timers will be automatically stopped at shift end. Individual shift overrides take priority."
+						: "Your active timer will be automatically stopped at your shift end. If both fields are blank, the org-wide schedule applies."}
 				</p>
 
-				{error   && <p className="text-xs text-destructive">{error}</p>}
+				{error && <p className="text-xs text-destructive">{error}</p>}
 				{success && <p className="text-xs text-mint">Shift saved.</p>}
 
 				<div className="flex items-center gap-3">
@@ -111,7 +120,10 @@ export function ShiftSettingsSection() {
 							size="sm"
 							variant="ghost"
 							className="text-ink-3 text-xs"
-							onClick={() => { setShiftStart(""); setShiftEnd(""); }}
+							onClick={() => {
+								setShiftStart("");
+								setShiftEnd("");
+							}}
 						>
 							Clear (use org default)
 						</Button>

@@ -60,7 +60,7 @@ export async function listEmployees(
 		? { OR: [{ department_id }, { managed_departments: { some: { id: department_id } } }] }
 		: {};
 
-	const where = { ...withOrg(orgId), ...roleFilter, ...searchFilter, ...deptFilter };
+	const where = { ...withOrg(orgId), deleted_at: null, ...roleFilter, ...searchFilter, ...deptFilter };
 
 	const [orgUsers, total] = await Promise.all([
 		prisma.user.findMany({
@@ -418,5 +418,52 @@ export async function deleteEmployee(id: string, admin: Caller) {
 		action: "DELETE",
 		entity_type: "employee",
 		entity_id: id,
+	});
+}
+
+// ─── Deactivated ──────────────────────────────────────────────────────────────
+
+export async function listDeactivatedEmployees(admin: Caller) {
+	const orgId = admin.app_metadata?.org_id as string | undefined;
+
+	const users = await prisma.user.findMany({
+		where: { org_id: orgId, deleted_at: { not: null }, role: { in: [ROLES.EMPLOYEE, ROLES.MANAGER] } },
+		select: { id: true, email: true, name: true, avatar_url: true, role: true, deleted_at: true },
+		orderBy: { deleted_at: "desc" },
+	});
+
+	return users;
+}
+
+export async function reactivateEmployee(id: string, admin: Caller) {
+	const orgId = admin.app_metadata?.org_id as string | undefined;
+
+	const user = await prisma.user.findFirst({
+		where: { id, org_id: orgId, deleted_at: { not: null } },
+	});
+	if (!user) throw Object.assign(new Error("Employee not found or already active"), { status: 404 });
+
+	// Check seat availability
+	const org = await prisma.organization.findUnique({ where: { id: orgId }, select: { seat_count: true } });
+	const activeCount = await prisma.user.count({ where: { org_id: orgId, deleted_at: null } });
+	if (org && activeCount >= org.seat_count) {
+		throw Object.assign(new Error("No seats available. Add more seats before reactivating."), { status: 400 });
+	}
+
+	await prisma.user.update({ where: { id }, data: { deleted_at: null } });
+
+	const supabaseAdmin = createAdminClient();
+	await supabaseAdmin.auth.admin.updateUserById(id, {
+		app_metadata: { org_id: orgId, role: user.role },
+	});
+
+	auditLog({
+		org_id: orgId,
+		actor_id: admin.id,
+		actor_role: ROLES.ADMIN,
+		action: "UPDATE",
+		entity_type: "employee",
+		entity_id: id,
+		after: { reactivated: true },
 	});
 }

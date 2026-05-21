@@ -4,6 +4,7 @@ import { requireAdmin } from "@/lib/auth/require-admin";
 import { prisma } from "@/lib/infra/prisma";
 import { errorResponse, ok } from "@/lib/utils/response";
 import { getStripe, STRIPE_PRICES } from "@/configs/stripe.config";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 const bodySchema = z.object({
 	seat_count:    z.number().int().min(1).max(500),
@@ -53,14 +54,29 @@ export async function POST(req: NextRequest) {
 				return errorResponse("One or more selected employees are invalid.", 400);
 			}
 			// Deactivate employees not in keep_user_ids (excluding admin)
-			await prisma.user.updateMany({
+			const toDeactivate = await prisma.user.findMany({
 				where: {
 					org_id:     orgId,
 					deleted_at: null,
 					id: { notIn: [...keep_user_ids, admin.id] },
 				},
-				data: { deleted_at: new Date() },
+				select: { id: true },
 			});
+
+			await prisma.user.updateMany({
+				where: { id: { in: toDeactivate.map((u) => u.id) } },
+				data:  { deleted_at: new Date() },
+			});
+
+			// Revoke Supabase session so they can't log in immediately
+			const supabaseAdmin = createAdminClient();
+			await Promise.allSettled(
+				toDeactivate.map((u) =>
+					supabaseAdmin.auth.admin.updateUserById(u.id, {
+						app_metadata: { org_id: null, role: null },
+					}),
+				),
+			);
 		}
 
 		const stripe = getStripe();

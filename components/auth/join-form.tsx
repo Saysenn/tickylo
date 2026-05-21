@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Users, CheckCircle2, ArrowRight } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { Users, CheckCircle2, ArrowRight, QrCode } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -19,6 +19,8 @@ export function JoinForm({ initialCode }: { initialCode?: string }) {
 	const [error, setError] = useState("");
 	const [acceptedPrivacy, setAcceptedPrivacy] = useState(false);
 	const [acceptedTerms, setAcceptedTerms] = useState(false);
+	const [qrError, setQrError] = useState("");
+	const fileRef = useRef<HTMLInputElement>(null);
 
 	useEffect(() => {
 		if (initialCode) {
@@ -30,6 +32,32 @@ export function JoinForm({ initialCode }: { initialCode?: string }) {
 
 	function setField(field: string, value: string) {
 		setForm((prev) => ({ ...prev, [field]: value }));
+	}
+
+	async function handleQrUpload(e: React.ChangeEvent<HTMLInputElement>) {
+		const file = e.target.files?.[0];
+		if (!file) return;
+		setQrError("");
+		try {
+			const jsQR = (await import("jsqr")).default;
+			const bitmap = await createImageBitmap(file);
+			const canvas = document.createElement("canvas");
+			canvas.width  = bitmap.width;
+			canvas.height = bitmap.height;
+			const ctx = canvas.getContext("2d")!;
+			ctx.drawImage(bitmap, 0, 0);
+			const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+			const result = jsQR(imageData.data, imageData.width, imageData.height);
+			if (!result) { setQrError("No QR code found in this image. Try another."); return; }
+			// QR value may be a URL like /join?code=XXXX or just the raw code
+			const match = result.data.match(/[?&]code=([^&]+)/);
+			const extracted = match ? match[1] : result.data;
+			setCode(extracted);
+		} catch {
+			setQrError("Failed to read QR code. Try uploading a clearer image.");
+		} finally {
+			if (fileRef.current) fileRef.current.value = "";
+		}
 	}
 
 	async function checkCode(e: React.FormEvent) {
@@ -96,9 +124,29 @@ export function JoinForm({ initialCode }: { initialCode?: string }) {
 							id="code"
 							placeholder="Ask your admin for this code"
 							value={code}
-							onChange={(e) => setCode(e.target.value)}
+							onChange={(e) => { setCode(e.target.value); setQrError(""); }}
 							required
 						/>
+					</div>
+
+					{/* QR upload */}
+					<div>
+						<input
+							ref={fileRef}
+							type="file"
+							accept="image/*"
+							className="hidden"
+							onChange={handleQrUpload}
+						/>
+						<button
+							type="button"
+							onClick={() => fileRef.current?.click()}
+							className="flex items-center gap-1.5 text-xs text-ink-3/60 hover:text-ink-3 transition-colors"
+						>
+							<QrCode className="w-3.5 h-3.5" />
+							Or upload a QR code image
+						</button>
+						{qrError && <p className="text-xs text-red-500 mt-1">{qrError}</p>}
 					</div>
 
 					{error && (
