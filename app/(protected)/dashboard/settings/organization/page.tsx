@@ -17,6 +17,7 @@ const TABS = [
 	{ key: "departments", label: "Departments" },
 	{ key: "schedule",    label: "Schedule" },
 	{ key: "storage",     label: "Storage" },
+	{ key: "extension",   label: "Extension" },
 	{ key: "members",     label: "Deactivated" },
 ];
 
@@ -38,7 +39,8 @@ export default async function OrganizationSettingsPage({
 			</Suspense>
 
 			<div className="space-y-5">
-				{tab === "details"     && <><OrgJoinQrSection /><ExtensionAdminSection /><OrgDeletionSection /></>}
+				{tab === "details"     && <><OrgJoinQrSection /><OrgDeletionSection /></>}
+				{tab === "extension"   && <ExtensionAdminSection />}
 				{tab === "departments" && <DepartmentsAdminSection />}
 				{tab === "schedule"    && <WorkScheduleAdminSection />}
 				{tab === "storage"     && <StorageAdminSection />}
