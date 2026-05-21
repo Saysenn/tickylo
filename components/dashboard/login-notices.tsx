@@ -14,6 +14,8 @@ interface Notice {
 	message: string;
 	href: string;
 	linkLabel: string;
+	adminMessage?: string;
+	adminLinkLabel?: string;
 	variant?: "warning" | "info";
 }
 
@@ -29,6 +31,8 @@ interface NoticeRule {
 	message: string;
 	href: string;
 	linkLabel: string;
+	adminMessage?: string;
+	adminLinkLabel?: string;
 	variant?: "warning" | "info";
 	/** Return true when this notice should be shown */
 	when: (ctx: NoticeContext) => boolean;
@@ -66,6 +70,8 @@ const NOTICE_RULES: NoticeRule[] = [
 		message: "Your admin has enabled the Tickworks browser extension. Install it to clock in/out from any tab.",
 		href: "https://chrome.google.com/webstore/detail/tickworks",
 		linkLabel: "Install Extension →",
+		adminMessage: "The browser extension is enabled for your organisation. Employees can install it to clock in/out from any tab.",
+		adminLinkLabel: "Manage Extension →",
 		variant: "info",
 		when: ({ orgSettings }) => !!(orgSettings?.extension_enabled),
 	},
@@ -73,7 +79,7 @@ const NOTICE_RULES: NoticeRule[] = [
 
 // ─── Banner component ─────────────────────────────────────────────────────────
 
-function NoticeBanner({ notice }: { notice: Notice }) {
+function NoticeBanner({ notice, isAdmin }: { notice: Notice; isAdmin: boolean }) {
 	const storageKey = `notice_dismissed_${notice.id}`;
 	const [dismissed, setDismissed] = useState(false);
 	const useLocal = notice.id === "extension_available";
@@ -104,18 +110,18 @@ function NoticeBanner({ notice }: { notice: Notice }) {
 				: <AlertTriangle className="w-4 h-4 text-warning shrink-0 mt-0.5" />
 			}
 			<p className="text-xs text-ink flex-1">
-				{notice.message}{" "}
+				{(isAdmin && notice.adminMessage) ? notice.adminMessage : notice.message}{" "}
 				<Link
-					href={notice.href}
-					target={notice.href.startsWith("http") ? "_blank" : undefined}
-					rel={notice.href.startsWith("http") ? "noopener noreferrer" : undefined}
+					href={(isAdmin && notice.adminMessage) ? "/dashboard/settings/organization?tab=extension" : notice.href}
+					target={notice.href.startsWith("http") && !(isAdmin && notice.adminMessage) ? "_blank" : undefined}
+					rel={notice.href.startsWith("http") && !(isAdmin && notice.adminMessage) ? "noopener noreferrer" : undefined}
 					className={`font-semibold underline underline-offset-2 ${
 						isInfo
 							? "text-info hover:text-info/80"
 							: "text-warning-fg hover:text-warning"
 					}`}
 				>
-					{notice.linkLabel}
+					{(isAdmin && notice.adminLinkLabel) ? notice.adminLinkLabel : notice.linkLabel}
 				</Link>
 			</p>
 			<button
@@ -167,7 +173,7 @@ export function LoginNotices() {
 	return (
 		<div className="space-y-2 mb-5">
 			{active.map((rule) => (
-				<NoticeBanner key={rule.id} notice={rule} />
+				<NoticeBanner key={rule.id} notice={rule} isAdmin={isAdmin} />
 			))}
 		</div>
 	);
