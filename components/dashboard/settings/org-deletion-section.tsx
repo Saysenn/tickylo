@@ -48,6 +48,11 @@ export function OrgDeletionSection() {
 	const orgName = orgSettings?.name ?? "";
 	const nameMatches = confirmName.trim() === orgName.trim();
 
+	const { mutate: cancel, isPending: cancelling } = useMutation({
+		mutationFn: () => APIService.org.deletionRequest.cancel(),
+		onSuccess: () => queryClient.invalidateQueries({ queryKey: ["org-deletion-request"] }),
+	});
+
 	const { mutate: submit, isPending } = useMutation({
 		mutationFn: () => APIService.org.deletionRequest.submit(reason.trim() || undefined),
 		onSuccess: () => {
@@ -82,10 +87,21 @@ export function OrgDeletionSection() {
 	// Pending
 	if (request?.status === "pending") {
 		return (
-			<div className="rounded-xl border border-amber-400/40 bg-amber-50/60 dark:bg-amber-900/10 p-5 space-y-2">
-				<div className="flex items-center gap-2 text-amber-600 dark:text-amber-400">
-					<Clock className="w-4 h-4 shrink-0" />
-					<p className="text-sm font-semibold">Deletion request pending review</p>
+			<div className="rounded-xl border border-amber-400/40 bg-amber-50/60 dark:bg-amber-900/10 p-5 space-y-3">
+				<div className="flex items-start justify-between gap-3">
+					<div className="flex items-center gap-2 text-amber-600 dark:text-amber-400">
+						<Clock className="w-4 h-4 shrink-0" />
+						<p className="text-sm font-semibold">Deletion request pending review</p>
+					</div>
+					<Button
+						size="sm"
+						variant="outline"
+						className="h-7 text-xs shrink-0 text-red-600 border-red-300 hover:bg-red-50 dark:border-red-800 dark:hover:bg-red-950"
+						isLoading={cancelling}
+						onClick={() => cancel()}
+					>
+						Cancel Request
+					</Button>
 				</div>
 				<p className="text-xs text-ink-3">
 					Your request to delete this organization is awaiting super admin review. You will be notified once a decision is made.

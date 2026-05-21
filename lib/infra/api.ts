@@ -495,6 +495,7 @@ class APIService {
 		deletionRequest: {
 			get:    () => axiosService.get(`${apiVersion}/org/deletion-request`),
 			submit: (reason?: string) => axiosService.post(`${apiVersion}/org/deletion-request`, { reason }),
+			cancel: () => axiosService.delete(`${apiVersion}/org/deletion-request`),
 		},
 	};
 }

@@ -28,6 +28,28 @@ export async function GET() {
 	}
 }
 
+export async function DELETE() {
+	try {
+		const admin = await requireAdmin();
+		if (!admin) return errorResponse("Forbidden", 403);
+
+		const orgId = admin.app_metadata?.org_id as string | undefined;
+		if (!orgId) return errorResponse("No organization", 400);
+
+		const existing = await prisma.orgDeletionRequest.findUnique({ where: { org_id: orgId } });
+		if (!existing || existing.status !== "pending") {
+			return errorResponse("No pending deletion request to cancel.", 400);
+		}
+
+		await prisma.orgDeletionRequest.delete({ where: { org_id: orgId } });
+
+		return ok({ cancelled: true });
+	} catch (err: any) {
+		console.error("[org/deletion-request:DELETE]", err);
+		return errorResponse("Internal server error", 500);
+	}
+}
+
 export async function POST(req: NextRequest) {
 	try {
 		const admin = await requireAdmin();
