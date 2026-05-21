@@ -4,15 +4,10 @@ import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/infra/prisma";
 import { canAccess } from "@/lib/utils/plan-gate";
 import { EmployeesTable } from "@/components/dashboard/employees/employees-table";
-import { EmployeesPageTabs } from "@/components/dashboard/employees/employees-page-tabs";
 
 export const metadata = { title: "Employees" };
 
-export default async function EmployeesPage({
-	searchParams,
-}: {
-	searchParams: Promise<{ tab?: string }>;
-}) {
+export default async function EmployeesPage() {
 	const supabase = await createClient();
 	const { data: { user } } = await supabase.auth.getUser();
 	if (!user) redirect("/login");
@@ -22,16 +17,11 @@ export default async function EmployeesPage({
 	const org = orgId
 		? await prisma.organization.findUnique({
 				where:  { id: orgId },
-				select: { plan: true, is_internal: true, seat_count: true },
+				select: { plan: true, is_internal: true },
 		  })
 		: null;
 
 	if (!org || !canAccess(org.plan, org.is_internal, "employees")) redirect("/dashboard?upgrade=employees");
-
-	const [{ tab = "active" }, activeCount] = await Promise.all([
-		searchParams,
-		prisma.user.count({ where: { org_id: orgId, deleted_at: null, role: { in: ["employee", "manager"] } } }),
-	]);
 
 	return (
 		<div className="space-y-6">
@@ -42,17 +32,9 @@ export default async function EmployeesPage({
 				</p>
 			</div>
 
-			<EmployeesPageTabs
-				activeTab={tab}
-				seatCount={org.seat_count}
-				activeCount={activeCount}
-			>
-				{tab === "active" ? (
-					<Suspense>
-						<EmployeesTable />
-					</Suspense>
-				) : null}
-			</EmployeesPageTabs>
+			<Suspense>
+				<EmployeesTable />
+			</Suspense>
 		</div>
 	);
 }
