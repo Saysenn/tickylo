@@ -2,7 +2,6 @@ import Link from "next/link";
 import {
 	BarChart2,
 	BrainCircuit,
-	Star,
 	Clock,
 	Shield,
 	Zap,
@@ -13,7 +12,8 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import Header from "@/components/header";
 import Footer from "@/components/footer";
-import ReviewsTicker from "@/components/reviews-ticker";
+import ReviewsMarquee from "@/components/reviews-marquee";
+import TrustBar from "@/components/trust-bar";
 
 const features = [
 	{
@@ -165,31 +165,13 @@ export default async function HomePage() {
 					</div>
 				</section>
 
+				<TrustBar />
+
 				<Separator className="max-w-3xl mx-auto" />
 
 				{/* Testimonials */}
 				<section className="relative z-10 max-w-4xl mx-auto px-4 py-20">
-					<div className="text-center mb-12">
-						<p className="text-xs text-ink-3 tracking-widest uppercase mb-3">
-							Early feedback
-						</p>
-						<h2 className="text-3xl font-bold text-ink tracking-tight mb-3">
-							What agencies are saying
-						</h2>
-						<div className="flex items-center justify-center gap-1">
-							{Array.from({ length: 5 }).map((_, i) => (
-								<Star
-									key={i}
-									className="w-4 h-4 fill-warning text-warning"
-								/>
-							))}
-							<span className="text-sm text-ink-3 ml-2">
-								from our early users
-							</span>
-						</div>
-					</div>
-
-					<ReviewsTicker />
+					<ReviewsMarquee />
 				</section>
 
 				{/* CTA section */}

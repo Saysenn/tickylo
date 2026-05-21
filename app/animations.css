@@ -19,3 +19,16 @@
 .animate-marquee:hover {
   animation-play-state: paused;
 }
+
+@keyframes marquee-up {
+  from { transform: translateY(0); }
+  to   { transform: translateY(-50%); }
+}
+
+.animate-marquee-up {
+  animation: marquee-up 30s linear infinite;
+}
+
+.animate-marquee-up-slow {
+  animation: marquee-up 42s linear infinite;
+}
