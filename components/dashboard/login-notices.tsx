@@ -78,11 +78,11 @@ function NoticeBanner({ notice }: { notice: Notice }) {
 	if (dismissed) return null;
 
 	return (
-		<div className="flex items-start gap-3 rounded-lg border border-amber-500/40 bg-amber-50 dark:bg-amber-500/15 px-4 py-3">
-			<AlertTriangle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+		<div className="flex items-start gap-3 rounded-lg border border-warning/40 bg-warning/5 dark:bg-warning/15 px-4 py-3">
+			<AlertTriangle className="w-4 h-4 text-warning shrink-0 mt-0.5" />
 			<p className="text-xs text-ink flex-1">
 				{notice.message}{" "}
-				<Link href={notice.href} className="font-semibold text-amber-600 underline underline-offset-2 hover:text-amber-500">
+				<Link href={notice.href} className="font-semibold text-warning-fg underline underline-offset-2 hover:text-warning">
 					{notice.linkLabel}
 				</Link>
 			</p>

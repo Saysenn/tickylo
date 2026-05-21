@@ -8,8 +8,8 @@ import { cn } from "@/lib/utils/cn";
 
 const LEAVE_STATUS_STYLES: Record<string, string> = {
 	pending:   "bg-yellow-500/15 text-yellow-700 border-yellow-500/20",
-	approved:  "bg-green-500/15 text-green-700 border-green-500/20",
-	rejected:  "bg-red-500/15 text-red-700 border-red-500/20",
+	approved:  "bg-success/15 text-success-fg border-success/20",
+	rejected:  "bg-destructive/15 text-destructive border-destructive/20",
 	cancelled: "bg-accent text-ink-3 border-border/40",
 };
 
@@ -17,7 +17,7 @@ const TASK_STATUS_STYLES: Record<string, string> = {
 	pending:     "bg-accent text-ink-3 border-border/40",
 	assigned:    "bg-mint/10 text-mint border-mint/20",
 	in_progress: "bg-yellow-500/15 text-yellow-700 border-yellow-500/20",
-	completed:   "bg-green-500/15 text-green-700 border-green-500/20",
+	completed:   "bg-success/15 text-success-fg border-success/20",
 };
 
 export function TeamActivityCards() {

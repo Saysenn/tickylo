@@ -136,7 +136,7 @@ export function EmployeePickerModal({
 												? "bg-mint/15 text-mint"
 												: activeCount <= 3
 													? "bg-yellow-500/10 text-yellow-600"
-													: "bg-red-500/10 text-red-600",
+													: "bg-destructive/10 text-destructive",
 										)}>
 											{activeCount} active
 										</span>

@@ -120,7 +120,7 @@ function getSystemEventMeta(body: string): { icon: React.ReactNode; dotClass: st
 	const lower = body.toLowerCase();
 	if (lower.includes("reassigned")) return { icon: <AlertCircle className="w-3.5 h-3.5" />, dotClass: "bg-orange-400", labelClass: "text-orange-600" };
 	if (lower.includes("requested to transfer")) return { icon: <ArrowRightLeft className="w-3.5 h-3.5" />, dotClass: "bg-purple-400", labelClass: "text-purple-600" };
-	return { icon: <Info className="w-3.5 h-3.5" />, dotClass: "bg-blue-400", labelClass: "text-blue-600" };
+	return { icon: <Info className="w-3.5 h-3.5" />, dotClass: "bg-info", labelClass: "text-info-fg" };
 }
 
 export function TaskThread({ taskId, taskCreatedBy, view, readOnly = false }: TaskThreadProps) {
@@ -301,7 +301,7 @@ export function TaskThread({ taskId, taskCreatedBy, view, readOnly = false }: Ta
 												type="button"
 												onClick={() => clearAll()}
 												disabled={isClearing}
-												className="ml-auto flex items-center gap-1 text-[10px] text-ink-3/50 hover:text-red-500 transition-colors disabled:opacity-50"
+												className="ml-auto flex items-center gap-1 text-[10px] text-ink-3/50 hover:text-destructive transition-colors disabled:opacity-50"
 											>
 												<Eraser className="w-2.5 h-2.5" />
 												Clear all
@@ -323,7 +323,7 @@ export function TaskThread({ taskId, taskCreatedBy, view, readOnly = false }: Ta
 											<button
 												type="button"
 												onClick={() => deleteComment(c.id)}
-												className="absolute top-1.5 right-1.5 p-1 rounded opacity-0 group-hover:opacity-100 transition-opacity text-ink-3 hover:text-red-500 hover:bg-red-500/10"
+												className="absolute top-1.5 right-1.5 p-1 rounded opacity-0 group-hover:opacity-100 transition-opacity text-ink-3 hover:text-destructive hover:bg-destructive/10"
 												aria-label="Delete comment"
 											>
 												<Trash2 className="w-3 h-3" />
@@ -348,7 +348,7 @@ export function TaskThread({ taskId, taskCreatedBy, view, readOnly = false }: Ta
 						</div>
 					)}
 					{error && <p className="text-xs text-destructive mb-2">{error}</p>}
-					{storageWarning && <p className="text-xs text-amber-600 mb-2">{storageWarning}</p>}
+					{storageWarning && <p className="text-xs text-warning-fg mb-2">{storageWarning}</p>}
 					<div className="flex items-start gap-2.5">
 						<div className="w-6 h-6 rounded-full bg-mint/20 flex items-center justify-center text-[9px] font-bold text-mint shrink-0 mt-2">
 							{formatInitials(user?.name ?? null, user?.email ?? "")}

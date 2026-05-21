@@ -54,8 +54,8 @@ export function DeactivatedEmployeesSection() {
 		<Card>
 			<CardHeader>
 				<div className="flex items-center gap-3">
-					<div className="w-8 h-8 rounded-lg bg-red-500/10 flex items-center justify-center shrink-0">
-						<UserX className="w-3.5 h-3.5 text-red-500" />
+					<div className="w-8 h-8 rounded-lg bg-destructive/10 flex items-center justify-center shrink-0">
+						<UserX className="w-3.5 h-3.5 text-destructive" />
 					</div>
 					<div>
 						<CardTitle className="text-sm">Deactivated Employees</CardTitle>
@@ -82,8 +82,8 @@ export function DeactivatedEmployeesSection() {
 								{" "}— you can reactivate up to {availableSeats} employee{availableSeats !== 1 ? "s" : ""}.
 							</p>
 						) : (
-							<div className="rounded-lg border border-amber-400/30 bg-amber-50/60 dark:bg-amber-900/10 px-3 py-2">
-								<p className="text-xs text-amber-700 dark:text-amber-400">
+							<div className="rounded-lg border border-warning/30 bg-warning/5 dark:bg-warning/10 px-3 py-2">
+								<p className="text-xs text-warning-fg dark:text-warning">
 									No seats available. Add more seats in{" "}
 									<span className="font-medium">Subscription</span> before reactivating.
 								</p>

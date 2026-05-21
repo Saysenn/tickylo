@@ -53,7 +53,7 @@ export function LinksEditor({ links, onChange, disabled }: LinksEditorProps) {
 						type="button"
 						onClick={() => remove(i)}
 						disabled={disabled}
-						className="p-1 rounded text-ink-3/50 hover:text-red-500 hover:bg-red-500/10 transition-colors disabled:opacity-40"
+						className="p-1 rounded text-ink-3/50 hover:text-destructive hover:bg-destructive/10 transition-colors disabled:opacity-40"
 						aria-label="Remove link"
 					>
 						<X className="w-3.5 h-3.5" />

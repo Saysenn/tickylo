@@ -63,9 +63,9 @@ const TYPE_STYLES: Record<RequestType, string> = {
 };
 
 const STATUS_STYLES: Record<string, string> = {
-	pending: "bg-amber-500/15 text-amber-600 border-amber-500/30",
+	pending: "bg-warning/15 text-warning-fg border-warning/30",
 	approved: "bg-mint/15 text-mint border-mint/30",
-	rejected: "bg-red-500/15 text-red-500 border-red-500/30",
+	rejected: "bg-destructive/15 text-destructive border-destructive/30",
 	cancelled: "bg-ink-3/15 text-ink-3 border-ink-3/30",
 };
 
@@ -112,7 +112,7 @@ function RequestRow({ req, onWithdraw, isWithdrawing }: {
 				<span className="block truncate">{details()}</span>
 				{req.reason && <span className="block text-[10px] text-ink-3/70 truncate mt-0.5">{req.reason}</span>}
 				{req.status === "rejected" && req.reject_reason && (
-					<span className="block text-[10px] text-red-500/80 truncate mt-0.5">Reason: {req.reject_reason}</span>
+					<span className="block text-[10px] text-destructive/80 truncate mt-0.5">Reason: {req.reject_reason}</span>
 				)}
 			</td>
 
@@ -139,7 +139,7 @@ function RequestRow({ req, onWithdraw, isWithdrawing }: {
 							<span className="text-[10px] text-ink-3 whitespace-nowrap">Withdraw?</span>
 							<Button
 								size="sm"
-								className="h-6 px-2 text-[10px] bg-red-500 hover:bg-red-600 text-white"
+								className="h-6 px-2 text-[10px] bg-destructive hover:bg-destructive/90 text-white"
 								isLoading={isWithdrawing}
 								onClick={() => onWithdraw(req.id, req.type)}
 							>
@@ -159,7 +159,7 @@ function RequestRow({ req, onWithdraw, isWithdrawing }: {
 						<Button
 							size="sm"
 							variant="ghost"
-							className="h-7 px-2.5 text-xs text-red-500 hover:bg-red-500/10 gap-1"
+							className="h-7 px-2.5 text-xs text-destructive hover:bg-destructive/10 gap-1"
 							onClick={() => setConfirming(true)}
 						>
 							<X className="w-3 h-3" />

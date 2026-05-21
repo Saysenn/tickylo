@@ -187,7 +187,7 @@ function RequestRow({
 						{req.type === "transfer" ? (
 							<Button
 								size="sm" variant="ghost"
-								className="h-7 px-2.5 text-xs text-sky-700 hover:bg-sky-500/10 gap-1"
+								className="h-7 px-2.5 text-xs text-info-fg hover:bg-info/10 gap-1"
 								onClick={() => setReassignOpen(true)}
 							>
 								<Users className="w-3 h-3" /> Reassign
@@ -195,7 +195,7 @@ function RequestRow({
 						) : (
 							<Button
 								size="sm" variant="ghost"
-								className="h-7 px-2.5 text-xs text-green-700 hover:bg-green-500/10 hover:text-green-800 gap-1"
+								className="h-7 px-2.5 text-xs text-success-fg hover:bg-success/10 hover:text-success-fg gap-1"
 								disabled={approveMutation.isPending} isLoading={approveMutation.isPending}
 								onClick={() => approveMutation.mutate()}
 							>
@@ -204,7 +204,7 @@ function RequestRow({
 						)}
 						<Button
 							size="sm" variant="ghost"
-							className="h-7 px-2.5 text-xs text-red-600 hover:bg-red-500/10 hover:text-red-700 gap-1"
+							className="h-7 px-2.5 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive gap-1"
 							disabled={rejectMutation.isPending} isLoading={rejectMutation.isPending}
 							onClick={() => rejectMutation.mutate()}
 						>
@@ -362,7 +362,7 @@ export function TicketRequestsTable() {
 						{bulkApprovable > 0 && (
 							<Button
 								size="sm" variant="outline"
-								className="h-7 text-xs text-green-700 border-green-500/30 hover:bg-green-500/10 gap-1"
+								className="h-7 text-xs text-success-fg border-success/30 hover:bg-success/10 gap-1"
 								disabled={bulkApproveMutation.isPending} isLoading={bulkApproveMutation.isPending}
 								onClick={() => bulkApproveMutation.mutate()}
 							>
@@ -371,7 +371,7 @@ export function TicketRequestsTable() {
 						)}
 						<Button
 							size="sm" variant="outline"
-							className="h-7 text-xs text-red-600 border-red-500/30 hover:bg-red-500/10 gap-1"
+							className="h-7 text-xs text-destructive border-destructive/30 hover:bg-destructive/10 gap-1"
 							disabled={bulkRejectMutation.isPending} isLoading={bulkRejectMutation.isPending}
 							onClick={() => bulkRejectMutation.mutate()}
 						>

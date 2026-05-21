@@ -126,7 +126,7 @@ export function ApplicationsTable({
 												<Button
 													size="sm"
 													variant="ghost"
-													className="h-7 gap-1.5 text-green-600 hover:text-green-600 hover:bg-green-500/10"
+													className="h-7 gap-1.5 text-success-fg hover:text-success-fg hover:bg-success/10"
 													isLoading={approving}
 													onClick={() => approve(app.id)}
 												>
@@ -136,7 +136,7 @@ export function ApplicationsTable({
 												<Button
 													size="sm"
 													variant="ghost"
-													className="h-7 gap-1.5 text-red-500 hover:text-red-500 hover:bg-red-500/10"
+													className="h-7 gap-1.5 text-destructive hover:text-destructive hover:bg-destructive/10"
 													onClick={() => setRejectTarget(app)}
 												>
 													<XCircle className="w-3.5 h-3.5" />
@@ -167,7 +167,7 @@ export function ApplicationsTable({
 						)}
 						<div className="space-y-1.5">
 							<label className="text-xs font-medium text-ink-3 uppercase tracking-wider">
-								Reason <span className="text-red-500">*</span>
+								Reason <span className="text-destructive">*</span>
 							</label>
 							<textarea
 								className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-ink placeholder:text-ink-3 focus:outline-none focus:ring-1 focus:ring-mint resize-none"

@@ -131,7 +131,7 @@ function DiffPanel({ before, after }: { before?: Record<string, unknown> | null;
 						{allKeys.map((k) => (
 							<div key={k} className="flex gap-2 text-xs font-mono">
 								<span className="text-ink-3 shrink-0">{k}:</span>
-								<span className={cn("break-all", changed(before[k], (after ?? {})[k]) ? "text-red-500" : "text-ink-2")}>
+								<span className={cn("break-all", changed(before[k], (after ?? {})[k]) ? "text-destructive" : "text-ink-2")}>
 									{before[k] === null || before[k] === undefined ? <em className="text-ink-3/50">null</em> : formatValue(before[k])}
 								</span>
 							</div>
@@ -146,7 +146,7 @@ function DiffPanel({ before, after }: { before?: Record<string, unknown> | null;
 						{allKeys.map((k) => (
 							<div key={k} className="flex gap-2 text-xs font-mono">
 								<span className="text-ink-3 shrink-0">{k}:</span>
-								<span className={cn("break-all", changed((before ?? {})[k], after[k]) ? "text-emerald-600" : "text-ink-2")}>
+								<span className={cn("break-all", changed((before ?? {})[k], after[k]) ? "text-success-fg" : "text-ink-2")}>
 									{after[k] === null || after[k] === undefined ? <em className="text-ink-3/50">null</em> : formatValue(after[k])}
 								</span>
 							</div>

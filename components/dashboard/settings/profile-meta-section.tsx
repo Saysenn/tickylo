@@ -433,7 +433,7 @@ export function ProfileMetaSection() {
 											<Building2 className="w-3.5 h-3.5 text-ink-3" />
 											<p className="font-medium text-ink">{meta.department.name}</p>
 											{meta.is_department_manager && (
-												<Badge variant="outline" className="text-[10px] bg-amber-500/10 text-amber-700 border-amber-500/20">
+												<Badge variant="outline" className="text-[10px] bg-warning/10 text-warning-fg border-warning/20">
 													Manager
 												</Badge>
 											)}
@@ -500,7 +500,7 @@ export function ProfileMetaSection() {
 						{downloadMsg && <p className="text-sm text-ink-3">{downloadMsg}</p>}
 					</div>
 					{deletionMsg && (
-						<p className={`text-sm ${deletionMsg.type === "success" ? "text-green-600" : "text-destructive"}`}>
+						<p className={`text-sm ${deletionMsg.type === "success" ? "text-success-fg" : "text-destructive"}`}>
 							{deletionMsg.text}
 						</p>
 					)}

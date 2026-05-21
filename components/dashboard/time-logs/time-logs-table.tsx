@@ -242,7 +242,7 @@ export function TimeLogsTable() {
 												</span>
 											)}
 											{entry.flagged && (
-												<span className="text-[10px] font-medium text-red-600 bg-red-500/10 border border-red-500/20 px-1.5 py-0.5 rounded">
+												<span className="text-[10px] font-medium text-destructive bg-destructive/10 border border-destructive/20 px-1.5 py-0.5 rounded">
 													Flagged
 												</span>
 											)}

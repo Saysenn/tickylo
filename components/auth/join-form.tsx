@@ -146,11 +146,11 @@ export function JoinForm({ initialCode }: { initialCode?: string }) {
 							<QrCode className="w-3.5 h-3.5" />
 							Or upload a QR code image
 						</button>
-						{qrError && <p className="text-xs text-red-500 mt-1">{qrError}</p>}
+						{qrError && <p className="text-xs text-destructive mt-1">{qrError}</p>}
 					</div>
 
 					{error && (
-						<p className="text-xs text-red-500 bg-red-500/10 px-3 py-2 rounded-lg">{error}</p>
+						<p className="text-xs text-destructive bg-destructive/10 px-3 py-2 rounded-lg">{error}</p>
 					)}
 
 					<Button type="submit" className="w-full gap-2" isLoading={loading}>
@@ -229,7 +229,7 @@ export function JoinForm({ initialCode }: { initialCode?: string }) {
 					</div>
 
 					{error && (
-						<p className="text-xs text-red-500 bg-red-500/10 px-3 py-2 rounded-lg">{error}</p>
+						<p className="text-xs text-destructive bg-destructive/10 px-3 py-2 rounded-lg">{error}</p>
 					)}
 
 					<div className="flex gap-2">

@@ -101,7 +101,7 @@ export function TwoFactorVerifyForm() {
 			<form onSubmit={handleVerify}>
 				<CardContent className="space-y-5 pt-4">
 					{error && (
-						<div className="p-3 text-sm text-red-700 bg-red-50 border border-red-100 rounded-xl">
+						<div className="p-3 text-sm text-destructive bg-destructive/5 border border-destructive/20 rounded-xl">
 							{error}
 						</div>
 					)}

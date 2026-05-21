@@ -24,8 +24,8 @@ import type { LeaveRequest, LeaveRequestPage } from "./types";
 
 const STATUS_STYLES: Record<string, string> = {
 	pending: "bg-yellow-500/15 text-yellow-700 border-yellow-500/20",
-	approved: "bg-green-500/15 text-green-700 border-green-500/20",
-	rejected: "bg-red-500/15 text-red-700 border-red-500/20",
+	approved: "bg-success/15 text-success-fg border-success/20",
+	rejected: "bg-destructive/15 text-destructive border-destructive/20",
 	cancelled: "bg-accent text-ink-3 border-border/40",
 };
 
@@ -381,7 +381,7 @@ export function RequestsTable() {
 														<Button
 															size="sm"
 															variant="outline"
-															className="h-7 text-xs text-green-700 border-green-500/30 hover:bg-green-500/10"
+															className="h-7 text-xs text-success-fg border-success/30 hover:bg-success/10"
 															disabled={isApproving}
 															onClick={() => handleApprove(req)}
 														>

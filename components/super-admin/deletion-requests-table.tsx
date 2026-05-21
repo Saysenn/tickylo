@@ -130,8 +130,8 @@ export function DeletionRequestsTable({
 								<tr key={req.id} className="hover:bg-accent/30 transition-colors">
 									<td className="px-4 py-3.5">
 										<div className="flex items-center gap-2">
-											<div className="w-7 h-7 rounded-lg bg-red-500/10 flex items-center justify-center shrink-0">
-												<Building2 className="w-3.5 h-3.5 text-red-500" />
+											<div className="w-7 h-7 rounded-lg bg-destructive/10 flex items-center justify-center shrink-0">
+												<Building2 className="w-3.5 h-3.5 text-destructive" />
 											</div>
 											<div>
 												<p className="font-medium text-ink text-sm">{req.org.name}</p>
@@ -168,7 +168,7 @@ export function DeletionRequestsTable({
 												<Button
 													size="sm"
 													variant="ghost"
-													className="h-7 gap-1.5 text-green-600 hover:text-green-600 hover:bg-green-500/10"
+													className="h-7 gap-1.5 text-success-fg hover:text-success-fg hover:bg-success/10"
 													onClick={() => setApproveTarget(req)}
 												>
 													<CheckCircle2 className="w-3.5 h-3.5" />
@@ -177,7 +177,7 @@ export function DeletionRequestsTable({
 												<Button
 													size="sm"
 													variant="ghost"
-													className="h-7 gap-1.5 text-red-500 hover:text-red-500 hover:bg-red-500/10"
+													className="h-7 gap-1.5 text-destructive hover:text-destructive hover:bg-destructive/10"
 													onClick={() => setRejectTarget(req)}
 												>
 													<XCircle className="w-3.5 h-3.5" />
@@ -197,7 +197,7 @@ export function DeletionRequestsTable({
 			<DialogRoot open={!!approveTarget} onOpenChange={(open) => !open && setApproveTarget(null)}>
 				<DialogContent className="max-w-md">
 					<DialogHeader>
-						<DialogTitle className="flex items-center gap-2 text-red-600">
+						<DialogTitle className="flex items-center gap-2 text-destructive">
 							<AlertTriangle className="w-4 h-4" />
 							Approve Deletion
 						</DialogTitle>
@@ -205,7 +205,7 @@ export function DeletionRequestsTable({
 					<div className="space-y-4 pt-2">
 						{approveTarget && (
 							<>
-								<div className="rounded-lg border border-red-500/20 bg-red-500/5 p-4 space-y-1.5">
+								<div className="rounded-lg border border-destructive/20 bg-destructive/5 p-4 space-y-1.5">
 									<p className="text-sm font-semibold text-ink">{approveTarget.org.name}</p>
 									<p className="text-xs text-ink-3">Plan: <span className="capitalize font-medium">{approveTarget.org.plan}</span> · {approveTarget.org.seat_count} seats</p>
 								</div>
@@ -216,7 +216,7 @@ export function DeletionRequestsTable({
 										<li>Revoke all team members' access</li>
 										<li>Mark the org as cancelled</li>
 									</ul>
-									<p className="text-amber-600 font-medium">This cannot be undone.</p>
+									<p className="text-warning-fg font-medium">This cannot be undone.</p>
 								</div>
 							</>
 						)}

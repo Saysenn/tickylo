@@ -65,16 +65,16 @@ export function FlaggedEntriesPanel() {
 					return (
 						<div
 							key={entry.id}
-							className="rounded-lg border border-amber-500/20 bg-amber-500/5 px-4 py-3 flex items-start justify-between gap-4"
+							className="rounded-lg border border-warning/20 bg-warning/5 px-4 py-3 flex items-start justify-between gap-4"
 						>
 							<div className="space-y-1 min-w-0">
 								<div className="flex items-center gap-2 flex-wrap">
-									<Flag className="w-3 h-3 text-amber-500 shrink-0" />
+									<Flag className="w-3 h-3 text-warning shrink-0" />
 									<span className="text-xs font-semibold text-ink truncate">
 										{entry.user?.name ?? entry.user?.email ?? entry.user_id}
 									</span>
 									{entry.auto_closed && (
-										<span className="text-[10px] bg-amber-500/15 text-amber-600 px-1.5 py-0.5 rounded font-medium">
+										<span className="text-[10px] bg-warning/15 text-warning-fg px-1.5 py-0.5 rounded font-medium">
 											auto-closed
 										</span>
 									)}

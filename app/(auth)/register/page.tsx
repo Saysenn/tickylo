@@ -51,8 +51,8 @@ export default function RegisterPage() {
 							href="/join"
 							className="group relative flex flex-col items-center gap-4 rounded-xl border border-border/60 hover:border-mint/50 bg-accent/30 hover:bg-mint/5 p-6 transition-all text-center"
 						>
-							<div className="w-12 h-12 rounded-xl bg-blue-500/15 group-hover:bg-blue-500/25 flex items-center justify-center transition-colors">
-								<Users className="w-6 h-6 text-blue-500" />
+							<div className="w-12 h-12 rounded-xl bg-info/15 group-hover:bg-info/25 flex items-center justify-center transition-colors">
+								<Users className="w-6 h-6 text-info" />
 							</div>
 							<div>
 								<p className="font-semibold text-ink text-sm">Join My Team</p>

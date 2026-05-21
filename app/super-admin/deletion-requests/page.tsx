@@ -28,7 +28,7 @@ export default async function DeletionRequestsPage({
 				<div className="flex items-center gap-3">
 					<h1 className="text-2xl font-bold text-ink">Deletion Requests</h1>
 					{pendingCount > 0 && (
-						<span className="text-xs font-bold bg-red-500/15 text-red-600 px-2 py-0.5 rounded-full">
+						<span className="text-xs font-bold bg-destructive/15 text-destructive px-2 py-0.5 rounded-full">
 							{pendingCount} pending
 						</span>
 					)}

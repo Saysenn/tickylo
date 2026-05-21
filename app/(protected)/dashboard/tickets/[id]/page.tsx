@@ -412,7 +412,7 @@ export default function TicketDetailPage() {
 					{ticket.title}
 				</h1>
 				{isAdmin && pendingActions.length > 0 && (
-					<Badge variant="outline" className="shrink-0 text-xs bg-amber-500/10 text-amber-700 border-amber-500/30 gap-1">
+					<Badge variant="outline" className="shrink-0 text-xs bg-warning/10 text-warning-fg border-warning/30 gap-1">
 						<Clock className="w-3 h-3" />
 						{pendingActions.length} pending {pendingActions.length === 1 ? "action" : "actions"}
 					</Badge>
@@ -424,7 +424,7 @@ export default function TicketDetailPage() {
 							<>
 								<Button
 									size="sm" variant="ghost"
-									className="h-7 gap-1.5 text-xs text-green-600 hover:bg-green-500/10 hover:text-green-700"
+									className="h-7 gap-1.5 text-xs text-success-fg hover:bg-success/10 hover:text-success-fg"
 									disabled={isApproving} isLoading={isApproving}
 									onClick={() => approveTicket()}
 								>
@@ -461,7 +461,7 @@ export default function TicketDetailPage() {
 										{["on_hold", "stale"].includes(ticket.status) && (
 											<Button
 												size="sm" variant="ghost"
-												className="h-7 gap-1.5 text-xs text-green-600 hover:bg-green-500/10 hover:text-green-700"
+												className="h-7 gap-1.5 text-xs text-success-fg hover:bg-success/10 hover:text-success-fg"
 												disabled={isAdminReopening} isLoading={isAdminReopening}
 												onClick={() => adminReopenTask()}
 											>
@@ -519,7 +519,7 @@ export default function TicketDetailPage() {
 									</Badge>
 								)}
 								{isOverdue && (
-									<Badge variant="outline" className="text-xs bg-red-500/10 text-red-600 border-red-500/20">
+									<Badge variant="outline" className="text-xs bg-destructive/10 text-destructive border-destructive/20">
 										Overdue
 									</Badge>
 								)}
@@ -609,13 +609,13 @@ export default function TicketDetailPage() {
 
 					{/* Pending Actions card — admin only, scalable: add new action types below */}
 					{isAdmin && pendingActions.length > 0 && (
-						<div className="rounded-xl border border-amber-500/25 bg-amber-500/5 divide-y divide-amber-500/15">
+						<div className="rounded-xl border border-warning/25 bg-warning/5 divide-y divide-warning/15">
 							<div className="px-5 py-3 flex items-center gap-2">
-								<Clock className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-								<p className="text-[10px] font-semibold text-amber-700 uppercase tracking-widest">
+								<Clock className="w-3.5 h-3.5 text-warning-fg shrink-0" />
+								<p className="text-[10px] font-semibold text-warning-fg uppercase tracking-widest">
 									Pending Actions
 								</p>
-								<span className="ml-auto text-[10px] font-bold text-amber-700 bg-amber-500/15 px-1.5 py-0.5 rounded-full">
+								<span className="ml-auto text-[10px] font-bold text-warning-fg bg-warning/15 px-1.5 py-0.5 rounded-full">
 									{pendingActions.length}
 								</span>
 							</div>
@@ -624,17 +624,17 @@ export default function TicketDetailPage() {
 							{hasPendingDDRequest && dueDateRequest && (
 								<div className="px-5 py-4 space-y-2">
 									<div className="flex items-center gap-1.5">
-										<Calendar className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-										<span className="text-xs font-semibold text-amber-700">Due date change request</span>
+										<Calendar className="w-3.5 h-3.5 text-warning-fg shrink-0" />
+										<span className="text-xs font-semibold text-warning-fg">Due date change request</span>
 									</div>
-									<p className="text-xs text-amber-700/80 pl-5">
+									<p className="text-xs text-warning-fg/80 pl-5">
 										Requesting: <span className="font-medium">{formatDueDate(dueDateRequest.requested_date)}</span>
 										{dueDateRequest.reason && <> &mdash; &ldquo;{dueDateRequest.reason}&rdquo;</>}
 									</p>
 									<div className="flex gap-2 pl-5 pt-0.5">
 										<Button
 											size="sm" variant="ghost"
-											className="h-7 px-3 text-xs text-green-700 hover:bg-green-500/10 hover:text-green-800"
+											className="h-7 px-3 text-xs text-success-fg hover:bg-success/10 hover:text-success-fg"
 											disabled={isApprovingDDRequest} isLoading={isApprovingDDRequest}
 											onClick={() => approveDueDateRequest()}
 										>
@@ -642,7 +642,7 @@ export default function TicketDetailPage() {
 										</Button>
 										<Button
 											size="sm" variant="ghost"
-											className="h-7 px-3 text-xs text-red-600 hover:bg-red-500/10 hover:text-red-700"
+											className="h-7 px-3 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive"
 											onClick={() => setDdRejectOpen(true)}
 										>
 											<X className="w-3.5 h-3.5 mr-1" /> Reject
@@ -655,16 +655,16 @@ export default function TicketDetailPage() {
 							{hasPendingReopenRequest && (
 								<div className="px-5 py-4 space-y-2">
 									<div className="flex items-center gap-1.5">
-										<RotateCcw className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-										<span className="text-xs font-semibold text-amber-700">Reopen request</span>
+										<RotateCcw className="w-3.5 h-3.5 text-warning-fg shrink-0" />
+										<span className="text-xs font-semibold text-warning-fg">Reopen request</span>
 									</div>
-									<p className="text-xs text-amber-700/80 pl-5">
+									<p className="text-xs text-warning-fg/80 pl-5">
 										The assignee wants this ticket reopened from <span className="font-medium capitalize">{ticket.status.replace("_", " ")}</span>.
 									</p>
 									<div className="flex gap-2 pl-5 pt-0.5">
 										<Button
 											size="sm" variant="ghost"
-											className="h-7 px-3 text-xs text-green-700 hover:bg-green-500/10 hover:text-green-800"
+											className="h-7 px-3 text-xs text-success-fg hover:bg-success/10 hover:text-success-fg"
 											disabled={isApprovingReopen} isLoading={isApprovingReopen}
 											onClick={() => approveReopenRequest()}
 										>
@@ -672,7 +672,7 @@ export default function TicketDetailPage() {
 										</Button>
 										<Button
 											size="sm" variant="ghost"
-											className="h-7 px-3 text-xs text-red-600 hover:bg-red-500/10 hover:text-red-700"
+											className="h-7 px-3 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive"
 											disabled={isRejectingReopen} isLoading={isRejectingReopen}
 											onClick={() => rejectReopenRequest(undefined)}
 										>
@@ -686,10 +686,10 @@ export default function TicketDetailPage() {
 							{hasPendingTransferRequest && transferRequest && (
 								<div className="px-5 py-4 space-y-2">
 									<div className="flex items-center gap-1.5">
-										<ArrowRightLeft className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-										<span className="text-xs font-semibold text-amber-700">Transfer request</span>
+										<ArrowRightLeft className="w-3.5 h-3.5 text-warning-fg shrink-0" />
+										<span className="text-xs font-semibold text-warning-fg">Transfer request</span>
 									</div>
-									<p className="text-xs text-amber-700/80 pl-5">
+									<p className="text-xs text-warning-fg/80 pl-5">
 										{transferRequest.targetEmployee
 											? <>Requested to <span className="font-medium">{transferRequest.targetEmployee.name ?? transferRequest.targetEmployee.email}</span> — confirm or pick someone else.</>
 											: "No specific target — pick who to reassign to."}
@@ -697,7 +697,7 @@ export default function TicketDetailPage() {
 									<div className="flex gap-2 pl-5 pt-0.5">
 										<Button
 											size="sm" variant="ghost"
-											className="h-7 px-3 text-xs text-green-700 hover:bg-green-500/10 hover:text-green-800"
+											className="h-7 px-3 text-xs text-success-fg hover:bg-success/10 hover:text-success-fg"
 											onClick={() => {
 												setTransferAssignTo(transferRequest.requested_to ?? "");
 												setTransferReassignOpen(true);
@@ -707,7 +707,7 @@ export default function TicketDetailPage() {
 										</Button>
 										<Button
 											size="sm" variant="ghost"
-											className="h-7 px-3 text-xs text-red-600 hover:bg-red-500/10 hover:text-red-700"
+											className="h-7 px-3 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive"
 											disabled={isRejectingTransfer} isLoading={isRejectingTransfer}
 											onClick={() => rejectTransferRequest(undefined)}
 										>
@@ -751,18 +751,18 @@ export default function TicketDetailPage() {
 												className="text-sm text-ink bg-transparent border-0 focus:outline-none focus:ring-0 p-0 cursor-pointer"
 											/>
 											{hasPendingDDRequest && (
-												<p className="flex items-center gap-1 text-[10px] text-amber-600 font-medium mt-1">
+												<p className="flex items-center gap-1 text-[10px] text-warning-fg font-medium mt-1">
 													<Clock className="w-3 h-3 shrink-0" /> Change requested
 												</p>
 											)}
 										</div>
 									) : isAssignee && (ticket as any).assignee_permission === "editor" ? (
 										<div className="space-y-1">
-											<span className={cn("font-medium", isOverdue ? "text-red-600" : "text-ink")}>
+											<span className={cn("font-medium", isOverdue ? "text-destructive" : "text-ink")}>
 												{ticket.due_date ? formatDueDate(ticket.due_date) : <span className="text-ink-3 font-normal italic">Not set</span>}
 											</span>
 											{hasPendingDDRequest ? (
-												<p className="flex items-center gap-1 text-[10px] text-amber-600 font-medium">
+												<p className="flex items-center gap-1 text-[10px] text-warning-fg font-medium">
 													<Clock className="w-3 h-3 shrink-0" /> Request pending…
 												</p>
 											) : (
@@ -776,7 +776,7 @@ export default function TicketDetailPage() {
 											)}
 										</div>
 									) : ticket.due_date ? (
-										<span className={cn("font-medium", isOverdue ? "text-red-600" : "text-ink")}>{formatDueDate(ticket.due_date)}</span>
+										<span className={cn("font-medium", isOverdue ? "text-destructive" : "text-ink")}>{formatDueDate(ticket.due_date)}</span>
 									) : (
 										<span className="text-ink-3 italic">Not set</span>
 									)}
@@ -804,7 +804,7 @@ export default function TicketDetailPage() {
 								{ticket.assignee && (
 									<MetaRow icon={User} label="Assignee access">
 										<span className={cn("text-xs font-medium capitalize",
-											(ticket as any).assignee_permission === "viewer" ? "text-amber-600" : "text-green-600"
+											(ticket as any).assignee_permission === "viewer" ? "text-warning-fg" : "text-success-fg"
 										)}>
 											{(ticket as any).assignee_permission === "viewer" ? "Viewer" : "Editor"}
 										</span>
@@ -852,7 +852,7 @@ export default function TicketDetailPage() {
 								)}
 								{ticket.completed_at && (
 									<MetaRow icon={CheckSquare} label="Resolved">
-										<span className="text-green-600 font-medium">{formatDate(ticket.completed_at)}</span>
+										<span className="text-success-fg font-medium">{formatDate(ticket.completed_at)}</span>
 									</MetaRow>
 								)}
 							</div>
@@ -1010,7 +1010,7 @@ export default function TicketDetailPage() {
 							{/* Stale — only show request reopen */}
 							{isStale && isAssignee && (
 								hasPendingReopenRequest ? (
-									<p className="flex items-center justify-center gap-1.5 text-xs text-amber-600 font-medium py-1">
+									<p className="flex items-center justify-center gap-1.5 text-xs text-warning-fg font-medium py-1">
 										<Clock className="w-3.5 h-3.5 shrink-0" /> Reopen request pending…
 									</p>
 								) : (
@@ -1042,7 +1042,7 @@ export default function TicketDetailPage() {
 								<>
 									<Button
 										size="sm"
-										className="w-full bg-green-600 hover:bg-green-700 text-white"
+										className="w-full bg-success hover:bg-success/90 text-success-foreground"
 										disabled={isCompleting || isStoppingTimer} isLoading={isCompleting || isStoppingTimer}
 										onClick={handleComplete}
 									>
@@ -1067,7 +1067,7 @@ export default function TicketDetailPage() {
 							{ticket.status === "completed" && isAssignee && (
 								<Button
 									size="sm" variant="outline"
-									className="w-full gap-2 text-amber-600 border-amber-500/30 hover:bg-amber-500/10"
+									className="w-full gap-2 text-warning-fg border-warning/30 hover:bg-warning/10"
 									disabled={isReopening} isLoading={isReopening}
 									onClick={() => reopenTask()}
 								>
@@ -1077,7 +1077,7 @@ export default function TicketDetailPage() {
 							)}
 							{canTransfer && (
 								hasPendingTransferRequest ? (
-									<p className="flex items-center justify-center gap-1.5 text-xs text-amber-600 font-medium py-1">
+									<p className="flex items-center justify-center gap-1.5 text-xs text-warning-fg font-medium py-1">
 										<Clock className="w-3.5 h-3.5 shrink-0" /> Transfer request pending…
 									</p>
 								) : (

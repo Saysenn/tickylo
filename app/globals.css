@@ -40,7 +40,7 @@
   }
 }
 
-/* ─── Raw mint tokens (for glass + custom utilities) ─────────────────── */
+/* ─── Raw tokens ─────────────────────────────────────────────────────── */
 :root {
   --mint:          #80ED99;
   --mint-hover:    #68E586;
@@ -51,6 +51,18 @@
   --ink:           #0D1F14;
   --ink-2:         #3A5E4A;
   --ink-3:         #7A9E88;
+
+  /* warning — amber */
+  --warning:       #F59E0B;
+  --warning-fg:    #92400E;
+
+  /* success — green */
+  --success:       #16A34A;
+  --success-fg:    #166534;
+
+  /* info — blue */
+  --info:          #3B82F6;
+  --info-fg:       #1E40AF;
 
   --surface:       rgba(255, 255, 255, 0.84);
   --surface-2:     rgba(255, 255, 255, 0.60);
@@ -90,6 +102,14 @@
   --color-ink:          var(--ink);
   --color-ink-2:        var(--ink-2);
   --color-ink-3:        var(--ink-3);
+
+  /* semantic state tokens */
+  --color-warning:      var(--warning);
+  --color-warning-fg:   var(--warning-fg);
+  --color-success:      var(--success);
+  --color-success-fg:   var(--success-fg);
+  --color-info:         var(--info);
+  --color-info-fg:      var(--info-fg);
 
   --font-sans:          var(--font-geist-sans);
   --font-mono:          var(--font-geist-mono);

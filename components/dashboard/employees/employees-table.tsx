@@ -323,7 +323,7 @@ export function EmployeesTable() {
 						)}
 						<Button
 							size="sm" variant="outline"
-							className="h-7 text-xs gap-1.5 text-destructive border-red-500/30 hover:bg-red-500/10 hover:text-destructive"
+							className="h-7 text-xs gap-1.5 text-destructive border-destructive/30 hover:bg-destructive/10 hover:text-destructive"
 							disabled={isBulkPending || selectedIds.size === 0}
 							onClick={() => bulkAction({ action: "delete" })}
 						>
@@ -434,7 +434,7 @@ export function EmployeesTable() {
 													<div className="flex items-center gap-1.5">
 														<span className="text-xs text-ink-3">{employee.department.name}</span>
 														{employee.is_department_manager && (
-															<Badge variant="outline" className="text-[10px] bg-amber-500/10 text-amber-700 border-amber-500/20">
+															<Badge variant="outline" className="text-[10px] bg-warning/10 text-warning-fg border-warning/20">
 																Manager
 															</Badge>
 														)}

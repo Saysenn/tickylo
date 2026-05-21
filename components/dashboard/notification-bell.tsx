@@ -55,35 +55,35 @@ function notificationIcon(type: string) {
 		case "transfer_requested":
 			return <ArrowRightLeft className="w-3.5 h-3.5 text-purple-500" />;
 		case "task_completed":
-			return <CheckCircle2 className="w-3.5 h-3.5 text-green-500" />;
+			return <CheckCircle2 className="w-3.5 h-3.5 text-success" />;
 		case "task_claimed":
-			return <ClipboardList className="w-3.5 h-3.5 text-blue-500" />;
+			return <ClipboardList className="w-3.5 h-3.5 text-info" />;
 		case "comment_added":
 			return <MessageSquare className="w-3.5 h-3.5 text-yellow-500" />;
 		case "task_available":
 			return <ClipboardList className="w-3.5 h-3.5 text-mint" />;
 		case "task_started":
-			return <Play className="w-3.5 h-3.5 text-blue-500" />;
+			return <Play className="w-3.5 h-3.5 text-info" />;
 		case "task_updated":
 			return <Pencil className="w-3.5 h-3.5 text-yellow-500" />;
 		case "task_deleted":
-			return <Trash2 className="w-3.5 h-3.5 text-red-500" />;
+			return <Trash2 className="w-3.5 h-3.5 text-destructive" />;
 		case "leave_requested":
 			return <CalendarClock className="w-3.5 h-3.5 text-purple-500" />;
 		case "leave_approved":
-			return <CalendarCheck className="w-3.5 h-3.5 text-green-500" />;
+			return <CalendarCheck className="w-3.5 h-3.5 text-success" />;
 		case "leave_rejected":
-			return <CalendarX className="w-3.5 h-3.5 text-red-500" />;
+			return <CalendarX className="w-3.5 h-3.5 text-destructive" />;
 		case "time_clock_in":
 			return <LogIn className="w-3.5 h-3.5 text-mint" />;
 		case "time_clock_out":
-			return <LogOut className="w-3.5 h-3.5 text-blue-500" />;
+			return <LogOut className="w-3.5 h-3.5 text-info" />;
 		case "comment_mention":
 			return <AtSign className="w-3.5 h-3.5 text-purple-500" />;
 		case "due_date_reminder":
 			return <AlertTriangle className="w-3.5 h-3.5 text-yellow-500" />;
 		case "priority_escalated":
-			return <AlertTriangle className="w-3.5 h-3.5 text-red-500" />;
+			return <AlertTriangle className="w-3.5 h-3.5 text-destructive" />;
 		case "timer_auto_closed":
 			return <LogOut className="w-3.5 h-3.5 text-orange-500" />;
 		case "task_watched":
@@ -135,7 +135,7 @@ export function NotificationBell() {
 				>
 					<Bell className="w-4 h-4 text-ink-2" />
 					{unreadCount > 0 && (
-						<span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-red-500 ring-2 ring-background" />
+						<span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-destructive ring-2 ring-background" />
 					)}
 				</button>
 			</DropdownMenuTrigger>
@@ -150,7 +150,7 @@ export function NotificationBell() {
 					<div className="flex items-center gap-2">
 						<span className="text-sm font-semibold text-ink">Notifications</span>
 						{unreadCount > 0 && (
-							<span className="text-[10px] font-semibold bg-red-500/15 text-red-600 px-1.5 py-0.5 rounded-full">
+							<span className="text-[10px] font-semibold bg-destructive/15 text-destructive px-1.5 py-0.5 rounded-full">
 								{unreadCount}
 							</span>
 						)}

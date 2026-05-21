@@ -106,7 +106,7 @@ export function TaskSubtasks({ taskId, enabled = true }: TaskSubtasksProps) {
 							<button
 								type="button"
 								onClick={() => removeSubtask(s.id)}
-								className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded text-ink-3 hover:text-red-500 hover:bg-red-500/10"
+								className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded text-ink-3 hover:text-destructive hover:bg-destructive/10"
 								aria-label="Remove subtask"
 							>
 								<Trash2 className="w-3 h-3" />

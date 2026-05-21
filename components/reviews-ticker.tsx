@@ -69,7 +69,7 @@ export default function ReviewsTicker() {
             {/* Stars */}
             <div className="flex items-center gap-0.5">
               {Array.from({ length: review.rating }).map((_, s) => (
-                <Star key={s} className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                <Star key={s} className="w-3.5 h-3.5 fill-warning text-warning" />
               ))}
             </div>
 

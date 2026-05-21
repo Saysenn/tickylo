@@ -136,9 +136,9 @@ export function DowngradeDialog({ open, onOpenChange, activeCount, onSuccess }: 
 							</div>
 
 							{needsPicker && (
-								<div className="flex items-start gap-2.5 bg-amber-500/8 border border-amber-500/20 rounded-xl p-3">
-									<AlertTriangle className="w-4 h-4 text-amber-500 mt-0.5 shrink-0" />
-									<p className="text-xs text-amber-700 dark:text-amber-400">
+								<div className="flex items-start gap-2.5 bg-warning/8 border border-warning/20 rounded-xl p-3">
+									<AlertTriangle className="w-4 h-4 text-warning mt-0.5 shrink-0" />
+									<p className="text-xs text-warning-fg dark:text-warning">
 										You have <strong>{activeCount}</strong> active employees but only <strong>{seatCount}</strong> seat{seatCount !== 1 ? "s" : ""}. You'll need to choose which <strong>{seatCount}</strong> to keep — the rest will be deactivated.
 									</p>
 								</div>
@@ -209,7 +209,7 @@ export function DowngradeDialog({ open, onOpenChange, activeCount, onSuccess }: 
 								})}
 							</div>
 
-							{error && <p className="text-xs text-red-500">{error}</p>}
+							{error && <p className="text-xs text-destructive">{error}</p>}
 
 							<div className="flex gap-2">
 								<Button variant="outline" className="flex-1" onClick={() => { setStep("seats"); setError(null); }}>Back</Button>
@@ -243,21 +243,21 @@ export function DowngradeDialog({ open, onOpenChange, activeCount, onSuccess }: 
 								{deactivateCount > 0 && (
 									<div className="flex items-center justify-between px-4 py-3">
 										<span className="text-sm text-ink-3">Employees deactivated</span>
-										<span className="text-sm font-semibold text-red-500">{deactivateCount}</span>
+										<span className="text-sm font-semibold text-destructive">{deactivateCount}</span>
 									</div>
 								)}
 							</div>
 
 							{deactivateCount > 0 && (
-								<div className="flex items-start gap-2.5 bg-red-500/8 border border-red-500/20 rounded-xl p-3">
-									<UserMinus className="w-4 h-4 text-red-500 mt-0.5 shrink-0" />
-									<p className="text-xs text-red-600 dark:text-red-400">
+								<div className="flex items-start gap-2.5 bg-destructive/8 border border-destructive/20 rounded-xl p-3">
+									<UserMinus className="w-4 h-4 text-destructive mt-0.5 shrink-0" />
+									<p className="text-xs text-destructive dark:text-destructive/80">
 										{deactivateCount} employee{deactivateCount !== 1 ? "s" : ""} will lose access immediately. This cannot be undone without re-inviting them.
 									</p>
 								</div>
 							)}
 
-							{error && <p className="text-xs text-red-500">{error}</p>}
+							{error && <p className="text-xs text-destructive">{error}</p>}
 
 							<div className="flex gap-2">
 								<Button
@@ -268,7 +268,7 @@ export function DowngradeDialog({ open, onOpenChange, activeCount, onSuccess }: 
 									Back
 								</Button>
 								<Button
-									className="flex-1 bg-red-600 hover:bg-red-700"
+									className="flex-1 bg-destructive hover:bg-destructive/90"
 									isLoading={isPending}
 									onClick={() => doDowngrade()}
 								>

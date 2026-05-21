@@ -87,16 +87,16 @@ export function OrgDeletionSection() {
 	// Pending
 	if (request?.status === "pending") {
 		return (
-			<div className="rounded-xl border border-amber-400/40 bg-amber-50/60 dark:bg-amber-900/10 p-5 space-y-3">
+			<div className="rounded-xl border border-warning/40 bg-warning/5 dark:bg-warning/10 p-5 space-y-3">
 				<div className="flex items-start justify-between gap-3">
-					<div className="flex items-center gap-2 text-amber-600 dark:text-amber-400">
+					<div className="flex items-center gap-2 text-warning-fg dark:text-warning">
 						<Clock className="w-4 h-4 shrink-0" />
 						<p className="text-sm font-semibold">Deletion request pending review</p>
 					</div>
 					<Button
 						size="sm"
 						variant="outline"
-						className="h-7 text-xs shrink-0 text-red-600 border-red-300 hover:bg-red-50 dark:border-red-800 dark:hover:bg-red-950"
+						className="h-7 text-xs shrink-0 text-destructive border-destructive/30 hover:bg-destructive/5 dark:border-destructive/40 dark:hover:bg-destructive/10"
 						isLoading={cancelling}
 						onClick={() => cancel()}
 					>
@@ -139,9 +139,9 @@ export function OrgDeletionSection() {
 				</div>
 			)}
 
-			<div className="flex items-start gap-2 rounded-lg bg-amber-50/80 dark:bg-amber-900/10 border border-amber-200/60 dark:border-amber-800/40 p-3">
-				<AlertTriangle className="w-3.5 h-3.5 text-amber-500 shrink-0 mt-0.5" />
-				<p className="text-[11px] text-amber-700 dark:text-amber-400 leading-relaxed">
+			<div className="flex items-start gap-2 rounded-lg bg-warning/5 dark:bg-warning/10 border border-warning/30 dark:border-warning/20 p-3">
+				<AlertTriangle className="w-3.5 h-3.5 text-warning shrink-0 mt-0.5" />
+				<p className="text-[11px] text-warning-fg dark:text-warning leading-relaxed">
 					This action is irreversible. All data, tickets, and employee access will be permanently lost after a 30-day grace period. Your subscription will be cancelled immediately.
 				</p>
 			</div>

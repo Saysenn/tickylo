@@ -235,7 +235,7 @@ export function ApplyForm() {
 								</span>
 							</Label>
 							{isEmailVerified && (
-								<span className="text-xs text-green-600 font-medium">✓ Email verified</span>
+								<span className="text-xs text-success-fg font-medium">✓ Email verified</span>
 							)}
 						</div>
 						<div className="flex gap-2">
@@ -248,7 +248,7 @@ export function ApplyForm() {
 								onChange={(e) => handleCodeChange(e.target.value)}
 								className={cn(
 									"tracking-widest text-center font-mono",
-									isEmailVerified && "border-green-500 focus-visible:ring-green-500/20",
+									isEmailVerified && "border-success/60 focus-visible:ring-success/20",
 								)}
 							/>
 							<Button
@@ -265,7 +265,7 @@ export function ApplyForm() {
 							</Button>
 						</div>
 						{codeError && (
-							<p className="text-xs text-red-500">{codeError}</p>
+							<p className="text-xs text-destructive">{codeError}</p>
 						)}
 						{!isEmailVerified && !codeError && (
 							<p className="text-xs text-ink-3">Check your inbox — code expires in 10 minutes.</p>
@@ -296,7 +296,7 @@ export function ApplyForm() {
 						minLength={8}
 					/>
 					{form.confirm_password.length > 0 && (
-						<p className={`text-xs ${form.password === form.confirm_password ? "text-green-600" : "text-red-500"}`}>
+						<p className={`text-xs ${form.password === form.confirm_password ? "text-success-fg" : "text-destructive"}`}>
 							{form.password === form.confirm_password ? "✓ Passwords match" : "✗ Passwords do not match"}
 						</p>
 					)}
@@ -320,7 +320,7 @@ export function ApplyForm() {
 				</div>
 
 				{error && (
-					<p className="text-xs text-red-500 bg-red-500/10 px-3 py-2 rounded-lg">{error}</p>
+					<p className="text-xs text-destructive bg-destructive/10 px-3 py-2 rounded-lg">{error}</p>
 				)}
 
 				<Button

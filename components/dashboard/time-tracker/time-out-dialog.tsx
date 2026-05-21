@@ -87,7 +87,7 @@ export function TimeOutDialog({ open, isPending, isTask, defaultTitle, onConfirm
             onClick={handleConfirm}
             isLoading={isPending}
             className={isTask
-              ? "bg-green-600 hover:bg-green-700 text-white"
+              ? "bg-success hover:bg-success/90 text-success-foreground"
               : "bg-destructive/90 hover:bg-destructive text-white"
             }
           >

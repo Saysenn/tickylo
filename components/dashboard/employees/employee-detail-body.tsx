@@ -460,7 +460,7 @@ export function EmployeeDetailBody({
 											) : managerBadge ? (
 												<div className="flex items-center gap-1.5 min-w-0">
 													<span className="text-xs text-ink truncate">{value}</span>
-													<Badge variant="outline" className="text-[10px] bg-amber-500/10 text-amber-700 border-amber-500/20 shrink-0">
+													<Badge variant="outline" className="text-[10px] bg-warning/10 text-warning-fg border-warning/20 shrink-0">
 														Manager
 													</Badge>
 												</div>

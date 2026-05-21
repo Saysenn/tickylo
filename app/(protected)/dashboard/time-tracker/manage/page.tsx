@@ -335,7 +335,7 @@ export default function ManageTimePage() {
 															maxLength={200}
 															className="flex-1 h-7 rounded border border-mint/50 bg-background px-2 text-xs focus:outline-none focus:ring-1 focus:ring-mint" />
 														<button type="button" onClick={() => saveEdit(entry.id)} disabled={isUpdating}
-															className="p-1 rounded text-green-600 hover:bg-green-500/10">
+															className="p-1 rounded text-success-fg hover:bg-success/10">
 															<Check className="w-3.5 h-3.5" />
 														</button>
 														<button type="button" onClick={() => setEditingId(null)}

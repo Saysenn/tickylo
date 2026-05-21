@@ -29,8 +29,8 @@ const PLAN_LABELS: Record<string, string> = {
 };
 
 const PLAN_COLORS: Record<string, string> = {
-	trial:      "text-amber-600 bg-amber-500/10 border-amber-500/20",
-	business:   "text-blue-600 bg-blue-500/10 border-blue-500/20",
+	trial:      "text-warning-fg bg-warning/10 border-warning/20",
+	business:   "text-info-fg bg-info/10 border-info/20",
 	enterprise: "text-purple-600 bg-purple-500/10 border-purple-500/20",
 	internal:   "text-mint bg-mint/10 border-mint/20",
 };
@@ -107,7 +107,7 @@ export default function SubscriptionPanel({
 							<div>
 								<p className="font-semibold text-ink">{PLAN_LABELS[plan] ?? plan}</p>
 								{org.trial_ends_at && plan === "trial" && (
-									<p className="text-xs text-amber-600 mt-0.5">
+									<p className="text-xs text-warning-fg mt-0.5">
 										Trial ends {formatDate(org.trial_ends_at.toISOString())} — card charged automatically after
 									</p>
 								)}
@@ -183,7 +183,7 @@ export default function SubscriptionPanel({
 										Save Changes
 									</Button>
 								</div>
-								{seatError && <p className="text-xs text-red-500">{seatError}</p>}
+								{seatError && <p className="text-xs text-destructive">{seatError}</p>}
 								<p className="text-[11px] text-ink-3">
 									Minimum {activeUsers} seat{activeUsers !== 1 ? "s" : ""} (current active employees).
 									Remove seats before your next billing date to avoid charges.
@@ -222,7 +222,7 @@ export default function SubscriptionPanel({
 										Save Changes
 									</Button>
 								</div>
-								{seatError && <p className="text-xs text-red-500">{seatError}</p>}
+								{seatError && <p className="text-xs text-destructive">{seatError}</p>}
 								<p className="text-[11px] text-ink-3">
 									Minimum {ENTERPRISE_MIN_SEATS} seats on Enterprise.
 								</p>
@@ -274,7 +274,7 @@ export default function SubscriptionPanel({
 								<Button
 									size="sm"
 									variant="outline"
-									className="gap-1.5 shrink-0 text-red-600 border-red-200 hover:bg-red-50 dark:border-red-900 dark:hover:bg-red-950"
+									className="gap-1.5 shrink-0 text-destructive border-destructive/30 hover:bg-destructive/5 dark:border-destructive/40 dark:hover:bg-destructive/10"
 									onClick={() => setShowDowngrade(true)}
 								>
 									<ArrowDownCircle className="w-3.5 h-3.5" />
@@ -282,7 +282,7 @@ export default function SubscriptionPanel({
 								</Button>
 							</div>
 						)}
-						{upgradeError && <p className="text-xs text-red-500">{upgradeError}</p>}
+						{upgradeError && <p className="text-xs text-destructive">{upgradeError}</p>}
 					</CardContent>
 				</Card>
 			)}
@@ -314,7 +314,7 @@ export default function SubscriptionPanel({
 								<span className="text-xs text-ink-3">No billing account found</span>
 							)}
 						</div>
-						{portalError && <p className="text-xs text-red-500">{portalError}</p>}
+						{portalError && <p className="text-xs text-destructive">{portalError}</p>}
 					</CardContent>
 				</Card>
 			)}

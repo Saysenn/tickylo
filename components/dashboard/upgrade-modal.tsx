@@ -179,7 +179,7 @@ export function UpgradeModal() {
 						</Button>
 					</div>
 					{portalError && (
-						<p className="text-center text-xs text-red-500 mt-2">{portalError}</p>
+						<p className="text-center text-xs text-destructive mt-2">{portalError}</p>
 					)}
 
 					<p className="text-center text-[11px] text-ink-3 mt-4">

@@ -355,7 +355,7 @@ const { mutateAsync: claimTask, isPending: isClaiming } = useMutation({
 							className={cn(
 								"h-8 px-3 rounded-md border text-xs font-medium transition-colors",
 								dueFilter === "overdue"
-									? "bg-red-500/10 border-red-500/30 text-red-600"
+									? "bg-destructive/10 border-destructive/30 text-destructive"
 									: "border-border bg-background text-ink-3 hover:text-ink hover:border-border/80",
 							)}
 						>
@@ -397,7 +397,7 @@ const { mutateAsync: claimTask, isPending: isClaiming } = useMutation({
 						)}
 						<Button
 							size="sm" variant="outline"
-							className="h-7 text-xs gap-1.5 text-green-700 border-green-500/30 hover:bg-green-500/10"
+							className="h-7 text-xs gap-1.5 text-success-fg border-success/30 hover:bg-success/10"
 							disabled={isBulkPending || selectedIds.size === 0}
 							onClick={() => bulkAction({ action: "complete" })}
 						>
@@ -407,7 +407,7 @@ const { mutateAsync: claimTask, isPending: isClaiming } = useMutation({
 						{isAdmin && (
 							<Button
 								size="sm" variant="outline"
-								className="h-7 text-xs gap-1.5 text-destructive border-red-500/30 hover:bg-red-500/10 hover:text-destructive"
+								className="h-7 text-xs gap-1.5 text-destructive border-destructive/30 hover:bg-destructive/10 hover:text-destructive"
 								disabled={isBulkPending || selectedIds.size === 0}
 								onClick={() => bulkAction({ action: "delete" })}
 							>
@@ -535,7 +535,7 @@ const { mutateAsync: claimTask, isPending: isClaiming } = useMutation({
 												</p>
 												{isAdmin && (task.pending_actions?.length ?? 0) > 0 && (
 													<span title={`${task.pending_actions!.length} pending action${task.pending_actions!.length > 1 ? "s" : ""}`}>
-														<Clock className="w-3 h-3 text-amber-500 shrink-0" />
+														<Clock className="w-3 h-3 text-warning shrink-0" />
 													</span>
 												)}
 											</div>
@@ -577,11 +577,11 @@ const { mutateAsync: claimTask, isPending: isClaiming } = useMutation({
 										<td className="px-4 py-2 hidden md:table-cell whitespace-nowrap">
 											{task.due_date ? (
 												<div className="flex flex-col gap-0.5">
-													<span className={cn("text-xs whitespace-nowrap", task.status !== "completed" && new Date(task.due_date) < new Date() ? "text-red-600 font-medium" : "text-ink-3")}>
+													<span className={cn("text-xs whitespace-nowrap", task.status !== "completed" && new Date(task.due_date) < new Date() ? "text-destructive font-medium" : "text-ink-3")}>
 														{formatDueDate(task.due_date)}
 													</span>
 													{task.status !== "completed" && new Date(task.due_date) < new Date() && (
-														<Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 bg-red-500/10 text-red-600 border-red-500/20 w-fit">
+														<Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 bg-destructive/10 text-destructive border-destructive/20 w-fit">
 															Overdue
 														</Badge>
 													)}
@@ -628,7 +628,7 @@ const { mutateAsync: claimTask, isPending: isClaiming } = useMutation({
 													task.user_id === user?.id && (
 														<Button
 															size="sm"
-															className="h-7 text-xs bg-green-600 hover:bg-green-700 text-white"
+															className="h-7 text-xs bg-success hover:bg-success/90 text-success-foreground"
 															disabled={isCompleting || isStopping}
 															onClick={() => handleCompleteClick(task)}
 														>

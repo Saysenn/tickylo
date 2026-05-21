@@ -79,16 +79,16 @@ export default async function SuperAdminDashboard() {
 					label="Total Users"
 					value={userCount}
 					sub="across all orgs"
-					iconBg="bg-blue-500/10"
-					iconColor="text-blue-500"
+					iconBg="bg-info/10"
+					iconColor="text-info"
 				/>
 				<StatCard
 					icon={Clock}
 					label="Pending Applications"
 					value={pendingApplications}
 					sub={pendingApplications === 0 ? "all clear" : "need review"}
-					iconBg={pendingApplications > 0 ? "bg-amber-500/10" : "bg-accent"}
-					iconColor={pendingApplications > 0 ? "text-amber-500" : "text-ink-3"}
+					iconBg={pendingApplications > 0 ? "bg-warning/10" : "bg-accent"}
+					iconColor={pendingApplications > 0 ? "text-warning" : "text-ink-3"}
 					alert={pendingApplications > 0}
 					href="/super-admin/applications"
 				/>
@@ -97,8 +97,8 @@ export default async function SuperAdminDashboard() {
 					label="Deletion Requests"
 					value={pendingDeletions}
 					sub={pendingDeletions === 0 ? "all clear" : "need action"}
-					iconBg={pendingDeletions > 0 ? "bg-red-500/10" : "bg-accent"}
-					iconColor={pendingDeletions > 0 ? "text-red-500" : "text-ink-3"}
+					iconBg={pendingDeletions > 0 ? "bg-destructive/10" : "bg-accent"}
+					iconColor={pendingDeletions > 0 ? "text-destructive" : "text-ink-3"}
 					alert={pendingDeletions > 0}
 					href="/super-admin/deletion-requests"
 				/>
@@ -202,7 +202,7 @@ export default async function SuperAdminDashboard() {
 								</div>
 								<div className="flex items-center gap-1.5">
 									{badge !== null && (
-										<span className="text-[10px] font-bold bg-amber-500/15 text-amber-600 px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
+										<span className="text-[10px] font-bold bg-warning/15 text-warning-fg px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
 											{badge}
 										</span>
 									)}
@@ -216,7 +216,7 @@ export default async function SuperAdminDashboard() {
 					{recentDeletions.length > 0 && (
 						<div className="glass rounded-xl overflow-hidden">
 							<div className="px-4 py-3 border-b border-border/60 flex items-center gap-2">
-								<AlertTriangle className="w-3.5 h-3.5 text-red-500" />
+								<AlertTriangle className="w-3.5 h-3.5 text-destructive" />
 								<h3 className="text-xs font-semibold text-ink">Pending Deletions</h3>
 							</div>
 							<div className="divide-y divide-border/40">
@@ -271,13 +271,13 @@ function StatCard({
 		<div className={cn(
 			"glass rounded-xl p-5 space-y-3 transition-colors",
 			href && "hover:bg-accent/60 cursor-pointer",
-			alert && "border-amber-500/20",
+			alert && "border-warning/20",
 		)}>
 			<div className="flex items-center justify-between">
 				<div className={cn("w-8 h-8 rounded-lg flex items-center justify-center", iconBg)}>
 					<Icon className={cn("w-4 h-4", iconColor)} />
 				</div>
-				{alert && <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />}
+				{alert && <AlertTriangle className="w-3.5 h-3.5 text-warning" />}
 				{!alert && value === 0 && <CheckCircle2 className="w-3.5 h-3.5 text-mint/60" />}
 			</div>
 			<div>
@@ -309,18 +309,18 @@ function AlertBanner({
 }) {
 	const colors = {
 		amber: {
-			border: "border-amber-500/30",
-			bg:     "bg-amber-500/5",
-			icon:   "text-amber-500",
-			title:  "text-amber-700 dark:text-amber-400",
-			cta:    "bg-amber-500/15 text-amber-700 hover:bg-amber-500/25 dark:text-amber-400",
+			border: "border-warning/30",
+			bg:     "bg-warning/5",
+			icon:   "text-warning",
+			title:  "text-warning-fg dark:text-warning",
+			cta:    "bg-warning/15 text-warning-fg hover:bg-warning/25 dark:text-warning",
 		},
 		red: {
-			border: "border-red-500/30",
-			bg:     "bg-red-500/5",
-			icon:   "text-red-500",
-			title:  "text-red-700 dark:text-red-400",
-			cta:    "bg-red-500/15 text-red-700 hover:bg-red-500/25 dark:text-red-400",
+			border: "border-destructive/30",
+			bg:     "bg-destructive/5",
+			icon:   "text-destructive",
+			title:  "text-destructive dark:text-destructive/80",
+			cta:    "bg-destructive/15 text-destructive hover:bg-destructive/25 dark:text-destructive/80",
 		},
 	}[color];
 

@@ -57,29 +57,29 @@ function notificationIcon(type: string) {
 		case "transfer_requested":
 			return <ArrowRightLeft className="w-4 h-4 text-purple-500" />;
 		case "task_completed":
-			return <CheckCircle2 className="w-4 h-4 text-green-500" />;
+			return <CheckCircle2 className="w-4 h-4 text-success" />;
 		case "task_claimed":
-			return <ClipboardList className="w-4 h-4 text-blue-500" />;
+			return <ClipboardList className="w-4 h-4 text-info" />;
 		case "comment_added":
 			return <MessageSquare className="w-4 h-4 text-yellow-500" />;
 		case "task_available":
 			return <ClipboardList className="w-4 h-4 text-mint" />;
 		case "task_started":
-			return <Play className="w-4 h-4 text-blue-500" />;
+			return <Play className="w-4 h-4 text-info" />;
 		case "task_updated":
 			return <Pencil className="w-4 h-4 text-yellow-500" />;
 		case "task_deleted":
-			return <Trash2 className="w-4 h-4 text-red-500" />;
+			return <Trash2 className="w-4 h-4 text-destructive" />;
 		case "leave_requested":
 			return <CalendarClock className="w-4 h-4 text-purple-500" />;
 		case "leave_approved":
-			return <CalendarCheck className="w-4 h-4 text-green-500" />;
+			return <CalendarCheck className="w-4 h-4 text-success" />;
 		case "leave_rejected":
-			return <CalendarX className="w-4 h-4 text-red-500" />;
+			return <CalendarX className="w-4 h-4 text-destructive" />;
 		case "time_clock_in":
 			return <LogIn className="w-4 h-4 text-mint" />;
 		case "time_clock_out":
-			return <LogOut className="w-4 h-4 text-blue-500" />;
+			return <LogOut className="w-4 h-4 text-info" />;
 		case "comment_mention":
 			return <AtSign className="w-4 h-4 text-purple-500" />;
 		case "due_date_reminder":
@@ -89,9 +89,9 @@ function notificationIcon(type: string) {
 		case "ticket_needs_approval":
 			return <ClipboardList className="w-4 h-4 text-purple-500" />;
 		case "ticket_approved":
-			return <CheckCircle2 className="w-4 h-4 text-green-500" />;
+			return <CheckCircle2 className="w-4 h-4 text-success" />;
 		case "ticket_rejected":
-			return <CalendarX className="w-4 h-4 text-red-500" />;
+			return <CalendarX className="w-4 h-4 text-destructive" />;
 		default:
 			return <Info className="w-4 h-4 text-ink-3" />;
 	}
@@ -287,7 +287,7 @@ export default function NotificationsPage() {
 						<Button
 							size="sm"
 							variant="outline"
-							className="h-7 text-xs gap-1.5 text-destructive border-red-500/30 hover:bg-red-500/10 hover:text-destructive"
+							className="h-7 text-xs gap-1.5 text-destructive border-destructive/30 hover:bg-destructive/10 hover:text-destructive"
 							disabled={isBulkPending}
 							onClick={() => bulkDelete(selectedIds)}
 						>
@@ -323,7 +323,7 @@ export default function NotificationsPage() {
 							{bulkMode && someSelected ? `${selected.size} selected` : "Notification"}
 						</span>
 						{unreadCount > 0 && (
-							<span className="ml-auto text-[11px] font-semibold bg-red-500/15 text-red-600 px-2 py-0.5 rounded-full">
+							<span className="ml-auto text-[11px] font-semibold bg-destructive/15 text-destructive px-2 py-0.5 rounded-full">
 								{unreadCount} unread
 							</span>
 						)}

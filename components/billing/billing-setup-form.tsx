@@ -245,7 +245,7 @@ function SetupForm({ orgName, hadTrial }: Props) {
 			)}
 
 			{hadTrial && (
-				<div className="rounded-lg bg-amber-500/10 border border-amber-500/20 px-4 py-3">
+				<div className="rounded-lg bg-warning/10 border border-warning/20 px-4 py-3">
 					<p className="text-sm font-medium text-ink">No second trial</p>
 					<p className="text-xs text-ink-3 mt-0.5">
 						You've previously used a trial on this account. Your card will be charged immediately upon setup.
@@ -267,8 +267,8 @@ function SetupForm({ orgName, hadTrial }: Props) {
 			</div>
 
 			{error && (
-				<div className="rounded-lg bg-red-500/10 border border-red-500/20 px-4 py-3">
-					<p className="text-sm text-red-600">{error}</p>
+				<div className="rounded-lg bg-destructive/10 border border-destructive/20 px-4 py-3">
+					<p className="text-sm text-destructive">{error}</p>
 				</div>
 			)}
 

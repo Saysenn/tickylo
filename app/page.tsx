@@ -180,7 +180,7 @@ export default async function HomePage() {
 							{Array.from({ length: 5 }).map((_, i) => (
 								<Star
 									key={i}
-									className="w-4 h-4 fill-amber-400 text-amber-400"
+									className="w-4 h-4 fill-warning text-warning"
 								/>
 							))}
 							<span className="text-sm text-ink-3 ml-2">
