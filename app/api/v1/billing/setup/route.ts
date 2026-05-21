@@ -98,7 +98,7 @@ export async function POST(req: NextRequest) {
 				stripe_base_item_id:    baseItemId,
 				stripe_seat_item_id:    seatItemId,
 				plan:                   newPlan,
-				seat_count:             plan === "enterprise" ? 25 : seat_count,
+				seat_count:             newPlan === "trial" ? 11 : plan === "enterprise" ? 26 : seat_count,
 				trial_ends_at:          trialEnd,
 				had_trial:              true,
 			},
