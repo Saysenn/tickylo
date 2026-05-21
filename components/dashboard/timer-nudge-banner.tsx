@@ -1,22 +1,33 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Dialog } from "radix-ui";
 import APIService from "@/lib/infra/api";
-import { Clock, X, Timer } from "lucide-react";
+import { Clock, Timer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { TimeEntry } from "@/components/dashboard/time-tracker/types";
 
-const DISMISS_KEY = "timer_nudge_dismissed";
+const SHOW_AFTER_KEY = "tw_show_after";
+const SNOOZE_MS      = 10 * 60 * 1000; // 10 minutes
+
+function getShowAfter(): number | null {
+	if (typeof window === "undefined") return null;
+	const val = localStorage.getItem(SHOW_AFTER_KEY);
+	return val ? Number(val) : null;
+}
+
+function shouldShow(hasActiveTimer: boolean): boolean {
+	if (hasActiveTimer) return false;
+	const showAfter = getShowAfter();
+	if (showAfter === null) return true;          // first visit — key never set
+	return Date.now() >= showAfter;               // snooze expired
+}
 
 export function TimerNudgeBanner() {
-	const [dismissed, setDismissed] = useState(true);
 	const queryClient = useQueryClient();
-
-	useEffect(() => {
-		setDismissed(!!sessionStorage.getItem(DISMISS_KEY));
-	}, []);
+	const [visible, setVisible] = useState(false);
+	const prevActiveRef = useRef<TimeEntry | null | undefined>(undefined);
 
 	const { data: activeEntry, isLoading } = useQuery<TimeEntry | null>({
 		queryKey: ["time", "active"],
@@ -25,24 +36,54 @@ export function TimerNudgeBanner() {
 		refetchOnWindowFocus: true,
 	});
 
+	// Watch for timer state transitions
+	useEffect(() => {
+		const prev = prevActiveRef.current;
+
+		if (prev !== undefined) {
+			if (prev && !activeEntry) {
+				// Timer just ended → start 10-min countdown
+				localStorage.setItem(SHOW_AFTER_KEY, String(Date.now() + SNOOZE_MS));
+				setVisible(false);
+			}
+			if (!prev && activeEntry) {
+				// Timer just started → remove key, hide
+				localStorage.removeItem(SHOW_AFTER_KEY);
+				setVisible(false);
+			}
+		}
+
+		prevActiveRef.current = activeEntry;
+	}, [activeEntry]);
+
+	// Evaluate visibility every 60s + on mount + when timer changes
+	useEffect(() => {
+		if (isLoading) return;
+
+		const check = () => setVisible(shouldShow(!!activeEntry));
+
+		check();
+		const id = setInterval(check, 60_000);
+		return () => clearInterval(id);
+	}, [activeEntry, isLoading]);
+
 	const { mutate: startTimer, isPending } = useMutation({
 		mutationFn: () => APIService.time.start(),
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ["time", "active"] });
 			queryClient.invalidateQueries({ queryKey: ["dashboard"] });
-			dismiss();
+			localStorage.removeItem(SHOW_AFTER_KEY);
+			setVisible(false);
 		},
 	});
 
-	function dismiss() {
-		sessionStorage.setItem(DISMISS_KEY, "1");
-		setDismissed(true);
+	function snooze() {
+		localStorage.setItem(SHOW_AFTER_KEY, String(Date.now() + SNOOZE_MS));
+		setVisible(false);
 	}
 
-	const open = !isLoading && !dismissed && !activeEntry;
-
 	return (
-		<Dialog.Root open={open}>
+		<Dialog.Root open={visible}>
 			<Dialog.Portal>
 				<Dialog.Overlay className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm data-[state=open]:animate-in data-[state=open]:fade-in-0" />
 				<Dialog.Content
@@ -52,15 +93,6 @@ export function TimerNudgeBanner() {
 				>
 					<Dialog.Title className="sr-only">Clock in reminder</Dialog.Title>
 					<div className="rounded-2xl border bg-background p-6 shadow-xl">
-						{/* Close */}
-						<button
-							onClick={dismiss}
-							className="absolute right-4 top-4 rounded-lg p-1 text-ink-3 hover:text-ink-2 transition-colors"
-							aria-label="Dismiss"
-						>
-							<X className="w-4 h-4" />
-						</button>
-
 						{/* Icon */}
 						<div className="flex items-center justify-center w-14 h-14 rounded-2xl bg-mint/15 border border-mint/25 mx-auto mb-5">
 							<Timer className="w-7 h-7 text-mint" />
@@ -98,10 +130,10 @@ export function TimerNudgeBanner() {
 								Start Timer Now
 							</Button>
 							<button
-								onClick={dismiss}
+								onClick={snooze}
 								className="w-full text-xs text-ink-3 hover:text-ink-2 transition-colors py-1.5"
 							>
-								I'll start it later
+								Remind me in 10 minutes
 							</button>
 						</div>
 					</div>
