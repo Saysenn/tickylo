@@ -4,6 +4,10 @@ All colors in this project flow from a single source of truth: **`app/globals.cs
 
 ---
 
+#F3E7DD bg light
+#CB8347 accent
+#FDF6EB bg lighter
+
 ## Where to Make Changes
 
 ### 1. Shadcn/ui Design Tokens — `app/globals.css` → `:root` inside `@layer base`
@@ -12,26 +16,26 @@ These are the HSL variables consumed by all shadcn/ui components (`Button`, `Car
 
 ```css
 @layer base {
-  :root {
-    --background:          0  0% 100%;   /* page background */
-    --foreground:        142 41%  9%;   /* default text */
+	:root {
+		--background: 0 0% 100%; /* page background */
+		--foreground: 142 41% 9%; /* default text */
 
-    --primary:           138 79% 71%;   /* main brand color (#80ED99 mint) */
-    --primary-foreground: 142 41%  9%;  /* text on primary buttons */
+		--primary: 138 79% 71%; /* main brand color (#80ED99 mint) */
+		--primary-foreground: 142 41% 9%; /* text on primary buttons */
 
-    --secondary:         138 40% 94%;
-    --muted:             138 30% 95%;
-    --muted-foreground:  138 20% 48%;
+		--secondary: 138 40% 94%;
+		--muted: 138 30% 95%;
+		--muted-foreground: 138 20% 48%;
 
-    --accent:            138 50% 90%;
-    --destructive:         0 84% 60%;   /* red for errors/destructive actions */
+		--accent: 138 50% 90%;
+		--destructive: 0 84% 60%; /* red for errors/destructive actions */
 
-    --border:            138 18% 91%;
-    --input:             138 18% 91%;
-    --ring:              138 79% 71%;   /* focus ring color */
+		--border: 138 18% 91%;
+		--input: 138 18% 91%;
+		--ring: 138 79% 71%; /* focus ring color */
 
-    --radius:            0.75rem;       /* border radius scale */
-  }
+		--radius: 0.75rem; /* border radius scale */
+	}
 }
 ```
 
@@ -45,22 +49,22 @@ Raw hex/rgba tokens used for custom utilities like `.glass`, mint buttons, and i
 
 ```css
 :root {
-  /* Mint palette */
-  --mint:          #80ED99;   /* primary brand green */
-  --mint-hover:    #68E586;   /* hover state */
-  --mint-light:    #C4F5D2;
-  --mint-lighter:  #E8F9EE;
-  --mint-subtle:   #F2FDF6;
+	/* Mint palette */
+	--mint: #80ed99; /* primary brand green */
+	--mint-hover: #68e586; /* hover state */
+	--mint-light: #c4f5d2;
+	--mint-lighter: #e8f9ee;
+	--mint-subtle: #f2fdf6;
 
-  /* Ink (dark text) palette */
-  --ink:           #0D1F14;   /* primary text */
-  --ink-2:         #3A5E4A;   /* secondary text */
-  --ink-3:         #7A9E88;   /* muted/placeholder text */
+	/* Ink (dark text) palette */
+	--ink: #0d1f14; /* primary text */
+	--ink-2: #3a5e4a; /* secondary text */
+	--ink-3: #7a9e88; /* muted/placeholder text */
 
-  /* Glassmorphism */
-  --surface:       rgba(255, 255, 255, 0.84);
-  --surface-2:     rgba(255, 255, 255, 0.60);
-  --glass-border:  rgba(128, 237, 153, 0.18);
+	/* Glassmorphism */
+	--surface: rgba(255, 255, 255, 0.84);
+	--surface-2: rgba(255, 255, 255, 0.6);
+	--glass-border: rgba(128, 237, 153, 0.18);
 }
 ```
 
@@ -72,12 +76,12 @@ This block exposes the CSS variables as Tailwind utility classes (e.g., `bg-mint
 
 ```css
 @theme inline {
-  --color-mint:       var(--mint);
-  --color-mint-hover: var(--mint-hover);
-  --color-ink:        var(--ink);
-  --color-ink-2:      var(--ink-2);
-  --color-ink-3:      var(--ink-3);
-  /* ...and all shadcn tokens */
+	--color-mint: var(--mint);
+	--color-mint-hover: var(--mint-hover);
+	--color-ink: var(--ink);
+	--color-ink-2: var(--ink-2);
+	--color-ink-3: var(--ink-3);
+	/* ...and all shadcn tokens */
 }
 ```
 
@@ -114,12 +118,12 @@ To replace mint green (`#80ED99`) with a different brand color:
 
 ## Color Usage in Components
 
-| Token | Tailwind Class | Used For |
-|-------|---------------|----------|
-| `--mint` | `bg-mint`, `text-mint`, `border-mint` | Buttons, icons, accents |
-| `--ink` | `text-ink` | Primary headings/text |
-| `--ink-2` | `text-ink-2` | Secondary text |
-| `--ink-3` | `text-ink-3` | Muted/placeholder text |
-| `--primary` | `bg-primary`, `text-primary` | shadcn/ui components |
-| `--destructive` | `bg-destructive` | Error states, destructive buttons |
-| `--muted-foreground` | `text-muted-foreground` | shadcn/ui muted text |
+| Token                | Tailwind Class                        | Used For                          |
+| -------------------- | ------------------------------------- | --------------------------------- |
+| `--mint`             | `bg-mint`, `text-mint`, `border-mint` | Buttons, icons, accents           |
+| `--ink`              | `text-ink`                            | Primary headings/text             |
+| `--ink-2`            | `text-ink-2`                          | Secondary text                    |
+| `--ink-3`            | `text-ink-3`                          | Muted/placeholder text            |
+| `--primary`          | `bg-primary`, `text-primary`          | shadcn/ui components              |
+| `--destructive`      | `bg-destructive`                      | Error states, destructive buttons |
+| `--muted-foreground` | `text-muted-foreground`               | shadcn/ui muted text              |
