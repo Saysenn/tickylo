@@ -6,4 +6,3 @@
 4. **Email → Ticket** — Inbound webhook → AI parse → ticket (Enterprise).
 5. **AI Ticket Assistance** — Plain text → auto-fill fields + chatbot (Enterprise).
 6. **Browser Extension** — See `docs/BROWSER-EXTENSION-PLAN.md`.
-7. **Trust Signals** — Stripe badge, SSL, GDPR note, social proof on landing page.

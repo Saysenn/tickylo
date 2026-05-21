@@ -14,13 +14,14 @@ export async function GET() {
 
 		const org = await prisma.organization.findUnique({
 			where: { id: orgId },
-			select: { attachments_enabled: true, departments_enabled: true, org_join_code: true, name: true, plan: true, is_internal: true },
+			select: { attachments_enabled: true, departments_enabled: true, extension_enabled: true, org_join_code: true, name: true, plan: true, is_internal: true },
 		});
 		if (!org) return errorResponse("Organization not found", 404);
 
 		return ok({
 			attachments_enabled: org.attachments_enabled,
 			departments_enabled: org.departments_enabled,
+			extension_enabled: org.extension_enabled,
 			org_join_code: org.org_join_code,
 			name: org.name,
 			plan: org.plan,
@@ -35,6 +36,7 @@ export async function GET() {
 const patchSchema = z.object({
 	attachments_enabled: z.boolean().optional(),
 	departments_enabled: z.boolean().optional(),
+	extension_enabled: z.boolean().optional(),
 });
 
 export async function PATCH(req: NextRequest) {
@@ -51,14 +53,15 @@ export async function PATCH(req: NextRequest) {
 		const updateData: Record<string, boolean> = {};
 		if (parsed.data.attachments_enabled !== undefined) updateData.attachments_enabled = parsed.data.attachments_enabled;
 		if (parsed.data.departments_enabled !== undefined) updateData.departments_enabled = parsed.data.departments_enabled;
+		if (parsed.data.extension_enabled !== undefined) updateData.extension_enabled = parsed.data.extension_enabled;
 
 		const org = await prisma.organization.update({
 			where: { id: orgId },
 			data: updateData,
-			select: { attachments_enabled: true, departments_enabled: true },
+			select: { attachments_enabled: true, departments_enabled: true, extension_enabled: true },
 		});
 
-		return ok({ attachments_enabled: org.attachments_enabled, departments_enabled: org.departments_enabled });
+		return ok({ attachments_enabled: org.attachments_enabled, departments_enabled: org.departments_enabled, extension_enabled: org.extension_enabled });
 	} catch (e) {
 		console.error("[PATCH /org/settings]", e);
 		return errorResponse("Internal server error", 500);

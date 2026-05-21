@@ -5,6 +5,7 @@ import { WorkScheduleAdminSection } from "@/components/dashboard/settings/work-s
 import { StorageAdminSection } from "@/components/dashboard/settings/storage-admin-section";
 import { OrgJoinQrSection } from "@/components/dashboard/settings/org-join-qr-section";
 import { DepartmentsAdminSection } from "@/components/dashboard/settings/departments-admin-section";
+import { ExtensionAdminSection } from "@/components/dashboard/settings/extension-admin-section";
 import { DeactivatedEmployeesSection } from "@/components/dashboard/settings/deactivated-employees-section";
 import { OrgDeletionSection } from "@/components/dashboard/settings/org-deletion-section";
 import { SettingsTabNav } from "@/components/dashboard/settings/settings-tab-nav";
@@ -37,7 +38,7 @@ export default async function OrganizationSettingsPage({
 			</Suspense>
 
 			<div className="space-y-5">
-				{tab === "details"     && <><OrgJoinQrSection /><OrgDeletionSection /></>}
+				{tab === "details"     && <><OrgJoinQrSection /><ExtensionAdminSection /><OrgDeletionSection /></>}
 				{tab === "departments" && <DepartmentsAdminSection />}
 				{tab === "schedule"    && <WorkScheduleAdminSection />}
 				{tab === "storage"     && <StorageAdminSection />}

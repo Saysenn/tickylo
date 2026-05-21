@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { AlertTriangle, X } from "lucide-react";
+import { AlertTriangle, Puzzle, X } from "lucide-react";
 import { useAppSelector } from "@/store/hooks";
 import APIService from "@/lib/infra/api";
 import Link from "next/link";
@@ -14,12 +14,14 @@ interface Notice {
 	message: string;
 	href: string;
 	linkLabel: string;
+	variant?: "warning" | "info";
 }
 
 interface NoticeContext {
 	isAdmin: boolean;
 	me: { shift_start: string | null; shift_end: string | null } | null | undefined;
 	schedule: { shift_start: string; shift_end: string; max_timer_hours: number | null } | null | undefined;
+	orgSettings?: { extension_enabled: boolean } | null;
 }
 
 interface NoticeRule {
@@ -27,6 +29,7 @@ interface NoticeRule {
 	message: string;
 	href: string;
 	linkLabel: string;
+	variant?: "warning" | "info";
 	/** Return true when this notice should be shown */
 	when: (ctx: NoticeContext) => boolean;
 }
@@ -58,6 +61,14 @@ const NOTICE_RULES: NoticeRule[] = [
 		linkLabel: "Enable max timer limit →",
 		when: ({ isAdmin, schedule }) => isAdmin && schedule != null && schedule.max_timer_hours == null,
 	},
+	{
+		id: "extension_available",
+		message: "Your admin has enabled the Tickworks browser extension. Install it to clock in/out from any tab.",
+		href: "https://chrome.google.com/webstore/detail/tickworks",
+		linkLabel: "Install Extension →",
+		variant: "info",
+		when: ({ orgSettings }) => !!(orgSettings?.extension_enabled),
+	},
 ];
 
 // ─── Banner component ─────────────────────────────────────────────────────────
@@ -65,24 +76,45 @@ const NOTICE_RULES: NoticeRule[] = [
 function NoticeBanner({ notice }: { notice: Notice }) {
 	const storageKey = `notice_dismissed_${notice.id}`;
 	const [dismissed, setDismissed] = useState(false);
+	const useLocal = notice.id === "extension_available";
 
 	useEffect(() => {
-		if (sessionStorage.getItem(storageKey) === "1") setDismissed(true);
-	}, [storageKey]);
+		const storage = useLocal ? localStorage : sessionStorage;
+		if (storage.getItem(storageKey) === "1") setDismissed(true);
+	}, [storageKey, useLocal]);
 
 	const dismiss = () => {
-		sessionStorage.setItem(storageKey, "1");
+		const storage = useLocal ? localStorage : sessionStorage;
+		storage.setItem(storageKey, "1");
 		setDismissed(true);
 	};
 
 	if (dismissed) return null;
 
+	const isInfo = notice.variant === "info";
+
 	return (
-		<div className="flex items-start gap-3 rounded-lg border border-warning/40 bg-warning/5 dark:bg-warning/15 px-4 py-3">
-			<AlertTriangle className="w-4 h-4 text-warning shrink-0 mt-0.5" />
+		<div className={`flex items-start gap-3 rounded-lg border px-4 py-3 ${
+			isInfo
+				? "border-info/40 bg-info/5 dark:bg-info/15"
+				: "border-warning/40 bg-warning/5 dark:bg-warning/15"
+		}`}>
+			{isInfo
+				? <Puzzle className="w-4 h-4 text-info shrink-0 mt-0.5" />
+				: <AlertTriangle className="w-4 h-4 text-warning shrink-0 mt-0.5" />
+			}
 			<p className="text-xs text-ink flex-1">
 				{notice.message}{" "}
-				<Link href={notice.href} className="font-semibold text-warning-fg underline underline-offset-2 hover:text-warning">
+				<Link
+					href={notice.href}
+					target={notice.href.startsWith("http") ? "_blank" : undefined}
+					rel={notice.href.startsWith("http") ? "noopener noreferrer" : undefined}
+					className={`font-semibold underline underline-offset-2 ${
+						isInfo
+							? "text-info hover:text-info/80"
+							: "text-warning-fg hover:text-warning"
+					}`}
+				>
 					{notice.linkLabel}
 				</Link>
 			</p>
@@ -121,7 +153,13 @@ export function LoginNotices() {
 		enabled: isAdmin,
 	});
 
-	const ctx: NoticeContext = { isAdmin, me, schedule };
+	const { data: orgSettings } = useQuery<{ extension_enabled: boolean }>({
+		queryKey: ["org-settings"],
+		queryFn: () => APIService.orgSettings.get(),
+		staleTime: 300_000,
+	});
+
+	const ctx: NoticeContext = { isAdmin, me, schedule, orgSettings };
 	const active = NOTICE_RULES.filter((rule) => rule.when(ctx));
 
 	if (active.length === 0) return null;

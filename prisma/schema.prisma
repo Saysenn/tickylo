@@ -21,6 +21,7 @@ model Organization {
   org_join_code       String   @unique @default(cuid())
   attachments_enabled Boolean  @default(true)
   departments_enabled Boolean  @default(false)
+  extension_enabled   Boolean  @default(false)
   created_at          DateTime @default(now())
   updated_at          DateTime @updatedAt
 
