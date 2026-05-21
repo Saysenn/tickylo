@@ -54,7 +54,7 @@ export function TimeManagerClient() {
 		queryKey: ["time-team-summary", from, to, committedSearch],
 		queryFn: () => APIService.time.teamSummary(from, to, tzOffset, committedSearch || undefined),
 		enabled: !selectedEmployee,
-		placeholderData: (prev) => prev,
+		placeholderData: (prev: any) => prev,
 		staleTime: 120_000,
 	});
 
