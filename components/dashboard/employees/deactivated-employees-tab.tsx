@@ -1,6 +1,7 @@
 "use client";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
 import { UserX, RotateCcw, Loader2 } from "lucide-react";
 import APIService from "@/lib/infra/api";
 import { Button } from "@/components/ui/button";
@@ -25,6 +26,7 @@ export function DeactivatedEmployeesTab({
 	activeCount: number;
 }) {
 	const queryClient = useQueryClient();
+	const router = useRouter();
 	const availableSeats = seatCount - activeCount;
 
 	const { data, isLoading } = useQuery<{ data: DeactivatedEmployee[] }>({
@@ -39,6 +41,7 @@ export function DeactivatedEmployeesTab({
 			queryClient.invalidateQueries({ queryKey: ["employees-deactivated"] });
 			queryClient.invalidateQueries({ queryKey: ["employees"] });
 			queryClient.invalidateQueries({ queryKey: ["billing-status"] });
+			router.refresh(); // re-runs server component to get fresh seatCount/activeCount
 		},
 	});
 

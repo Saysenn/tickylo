@@ -443,9 +443,11 @@ export async function reactivateEmployee(id: string, admin: Caller) {
 	});
 	if (!user) throw Object.assign(new Error("Employee not found or already active"), { status: 404 });
 
-	// Check seat availability
+	// Check seat availability (count employees/managers only — admin does not consume a seat)
 	const org = await prisma.organization.findUnique({ where: { id: orgId }, select: { seat_count: true } });
-	const activeCount = await prisma.user.count({ where: { org_id: orgId, deleted_at: null } });
+	const activeCount = await prisma.user.count({
+		where: { org_id: orgId, deleted_at: null, role: { in: [ROLES.EMPLOYEE, ROLES.MANAGER] } },
+	});
 	if (org && activeCount >= org.seat_count) {
 		throw Object.assign(new Error("No seats available. Add more seats before reactivating."), { status: 400 });
 	}
