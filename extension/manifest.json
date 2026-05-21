@@ -1,0 +1,27 @@
+{
+  "manifest_version": 3,
+  "name": "Tickworks",
+  "version": "1.0.0",
+  "description": "Clock in/out and manage tickets from any tab.",
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "action": {
+    "default_popup": "src/popup/index.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png"
+    }
+  },
+  "background": {
+    "service_worker": "src/background/sw.ts",
+    "type": "module"
+  },
+  "permissions": ["storage", "alarms", "notifications"],
+  "host_permissions": [
+    "https://tickworks.app/*",
+    "http://localhost:3000/*"
+  ]
+}
