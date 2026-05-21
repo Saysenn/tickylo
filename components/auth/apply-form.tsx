@@ -302,21 +302,6 @@ export function ApplyForm() {
 					)}
 				</div>
 
-				<div className="space-y-1.5">
-					<Label htmlFor="reason">
-						About your company{" "}
-						<span className="text-ink-3 font-normal">(optional)</span>
-					</Label>
-					<textarea
-						id="reason"
-						className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-ink placeholder:text-ink-3 focus:outline-none focus:ring-1 focus:ring-mint resize-none"
-						rows={3}
-						placeholder="Brief description of your company and how you plan to use Tickworks..."
-						value={form.reason}
-						onChange={(e) => set("reason", e.target.value)}
-					/>
-				</div>
-
 				<div className="space-y-2.5 pt-1">
 					<label className="flex items-start gap-2.5 cursor-pointer">
 						<Checkbox checked={acceptedPrivacy} onCheckedChange={setAcceptedPrivacy} className="mt-0.5" />
