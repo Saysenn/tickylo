@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { z } from "zod";
+import { Prisma } from "@/lib/generated/prisma";
 import { ok, errorResponse } from "@/lib/utils/response";
 import { requireUser } from "@/lib/auth/require-user";
 import { ROLES } from "@/configs/rbac.config";
@@ -45,8 +46,10 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 		if (!parsed.success) return errorResponse(parsed.error.issues[0]?.message ?? "Invalid input", 400);
 
 		// Only admin can toggle is_shared
-		const data = { ...parsed.data };
+		const { links, ...rest } = parsed.data;
+		const data: Prisma.TicketTemplateUpdateInput = { ...rest };
 		if (!isAdmin) delete data.is_shared;
+		if (links !== undefined) data.links = links === null ? Prisma.JsonNull : links;
 
 		const updated = await prisma.ticketTemplate.update({ where: { id }, data });
 		return ok(updated);
