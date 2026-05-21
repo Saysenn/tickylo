@@ -14,7 +14,7 @@ export async function GET() {
 
 		const org = await prisma.organization.findUnique({
 			where: { id: orgId },
-			select: { attachments_enabled: true, departments_enabled: true, extension_enabled: true, org_join_code: true, name: true, plan: true, is_internal: true },
+			select: { attachments_enabled: true, departments_enabled: true, extension_enabled: true, admins_can_work_on_tickets: true, include_admins_in_summary: true, org_join_code: true, name: true, plan: true, is_internal: true },
 		});
 		if (!org) return errorResponse("Organization not found", 404);
 
@@ -22,6 +22,8 @@ export async function GET() {
 			attachments_enabled: org.attachments_enabled,
 			departments_enabled: org.departments_enabled,
 			extension_enabled: org.extension_enabled,
+			admins_can_work_on_tickets: org.admins_can_work_on_tickets,
+			include_admins_in_summary: org.include_admins_in_summary,
 			org_join_code: org.org_join_code,
 			name: org.name,
 			plan: org.plan,
@@ -37,6 +39,8 @@ const patchSchema = z.object({
 	attachments_enabled: z.boolean().optional(),
 	departments_enabled: z.boolean().optional(),
 	extension_enabled: z.boolean().optional(),
+	admins_can_work_on_tickets: z.boolean().optional(),
+	include_admins_in_summary: z.boolean().optional(),
 });
 
 export async function PATCH(req: NextRequest) {
@@ -54,14 +58,22 @@ export async function PATCH(req: NextRequest) {
 		if (parsed.data.attachments_enabled !== undefined) updateData.attachments_enabled = parsed.data.attachments_enabled;
 		if (parsed.data.departments_enabled !== undefined) updateData.departments_enabled = parsed.data.departments_enabled;
 		if (parsed.data.extension_enabled !== undefined) updateData.extension_enabled = parsed.data.extension_enabled;
+		if (parsed.data.admins_can_work_on_tickets !== undefined) updateData.admins_can_work_on_tickets = parsed.data.admins_can_work_on_tickets;
+		if (parsed.data.include_admins_in_summary !== undefined) updateData.include_admins_in_summary = parsed.data.include_admins_in_summary;
 
 		const org = await prisma.organization.update({
 			where: { id: orgId },
 			data: updateData,
-			select: { attachments_enabled: true, departments_enabled: true, extension_enabled: true },
+			select: { attachments_enabled: true, departments_enabled: true, extension_enabled: true, admins_can_work_on_tickets: true, include_admins_in_summary: true },
 		});
 
-		return ok({ attachments_enabled: org.attachments_enabled, departments_enabled: org.departments_enabled, extension_enabled: org.extension_enabled });
+		return ok({
+			attachments_enabled: org.attachments_enabled,
+			departments_enabled: org.departments_enabled,
+			extension_enabled: org.extension_enabled,
+			admins_can_work_on_tickets: org.admins_can_work_on_tickets,
+			include_admins_in_summary: org.include_admins_in_summary,
+		});
 	} catch (e) {
 		console.error("[PATCH /org/settings]", e);
 		return errorResponse("Internal server error", 500);

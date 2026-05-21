@@ -4,6 +4,7 @@ import { prisma } from "@/lib/infra/prisma";
 import { errorResponse, ok } from "@/lib/utils/response";
 import { cached } from "@/lib/infra/cache";
 import { getOrgForGate, requireFeature } from "@/lib/utils/plan-gate.server";
+import { ROLES } from "@/configs/rbac.config";
 
 /**
  * GET /api/v1/time/team-summary?from=YYYY-MM-DD&to=YYYY-MM-DD&tz_offset=minutes
@@ -54,12 +55,20 @@ export async function GET(request: NextRequest) {
 		}
 
 		const orgFilter = { org_id: orgId };
-		const cacheKey = `team-summary:${orgId}:${fromParam ?? "auto"}:${toParam ?? "auto"}:${tzOffset}:${search}`;
+		const orgSettings = await prisma.organization.findUnique({
+			where: { id: orgId },
+			select: { include_admins_in_summary: true },
+		});
+		const includeAdmins = orgSettings?.include_admins_in_summary ?? false;
+		const cacheKey = `team-summary:${orgId}:${fromParam ?? "auto"}:${toParam ?? "auto"}:${tzOffset}:${search}:${includeAdmins}`;
 
 		const payload = await cached(cacheKey, 30, async () => {
-			// Fetch all users in the org
+			// Fetch users; exclude admins unless org has include_admins_in_summary enabled
 			const users = await prisma.user.findMany({
-				where: orgFilter,
+				where: {
+					...orgFilter,
+					...(includeAdmins ? {} : { role: { not: ROLES.ADMIN } }),
+				},
 				select: { id: true, name: true, email: true },
 			});
 

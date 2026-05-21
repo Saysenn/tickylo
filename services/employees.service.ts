@@ -35,6 +35,7 @@ export async function listEmployees(
 	search?: string,
 	department_id?: string,
 	role_filter?: "managers",
+	include_admins = false,
 ) {
 	const orgId = admin.app_metadata?.org_id as string | undefined;
 	const perPage = Math.min(100, Math.max(1, limit));
@@ -49,11 +50,9 @@ export async function listEmployees(
 		  }
 		: {};
 
-	// "Managers only" = users who manage a department in this org (relation-based, role-agnostic)
-	// "All employees"  = users with employee or manager role (excludes admins)
 	const roleFilter = role_filter === "managers"
 		? { managed_departments: { some: { org_id: orgId } } }
-		: { role: { in: [ROLES.EMPLOYEE, ROLES.MANAGER] } };
+		: { role: { in: include_admins ? [ROLES.EMPLOYEE, ROLES.MANAGER, ROLES.ADMIN] : [ROLES.EMPLOYEE, ROLES.MANAGER] } };
 
 	// Department filter includes both members (department_id) and the dept's manager
 	const deptFilter = department_id

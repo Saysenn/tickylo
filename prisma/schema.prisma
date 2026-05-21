@@ -19,9 +19,11 @@ model Organization {
   slug                String   @unique
   logo_url            String?
   org_join_code       String   @unique @default(cuid())
-  attachments_enabled Boolean  @default(true)
-  departments_enabled Boolean  @default(false)
-  extension_enabled   Boolean  @default(false)
+  attachments_enabled          Boolean  @default(true)
+  departments_enabled          Boolean  @default(false)
+  extension_enabled            Boolean  @default(false)
+  admins_can_work_on_tickets   Boolean  @default(false)
+  include_admins_in_summary    Boolean  @default(false)
   created_at          DateTime @default(now())
   updated_at          DateTime @updatedAt
 

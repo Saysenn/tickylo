@@ -6,6 +6,7 @@ import { requireAdmin } from "@/lib/auth/require-admin";
 import * as EmployeeService from "@/services/employees.service";
 import { auditLog } from "@/lib/utils/audit";
 import { getOrgForGate, requireFeature } from "@/lib/utils/plan-gate.server";
+import { prisma } from "@/lib/infra/prisma";
 
 const createEmployeeSchema = z.object({
 	name: z.string().min(2).max(100),
@@ -27,6 +28,10 @@ export async function GET(request: NextRequest) {
 
 		const { searchParams } = new URL(request.url);
 		const roleFilterParam = searchParams.get("role_filter");
+		const orgSettings = await prisma.organization.findUnique({
+			where: { id: orgId },
+			select: { admins_can_work_on_tickets: true },
+		});
 		const result = await EmployeeService.listEmployees(
 			caller,
 			parseInt(searchParams.get("page") ?? "1", 10),
@@ -34,6 +39,7 @@ export async function GET(request: NextRequest) {
 			searchParams.get("search") ?? undefined,
 			searchParams.get("department_id") ?? undefined,
 			roleFilterParam === "managers" ? "managers" : undefined,
+			orgSettings?.admins_can_work_on_tickets ?? false,
 		);
 
 		return ok(result);
