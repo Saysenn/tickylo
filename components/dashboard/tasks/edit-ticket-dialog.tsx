@@ -65,6 +65,15 @@ export function EditTicketDialog({ ticket, open, onOpenChange, isEmployee = fals
 	const [assigneePermission, setAssigneePermission] = useState<string>((ticket as any).assignee_permission ?? "editor");
 	const [error,              setError]              = useState("");
 
+	// Always fetch fresh ticket data when the dialog opens so stale list cache
+	// doesn't cause fields like client_id to show outdated values.
+	const { data: freshData } = useQuery({
+		queryKey: ["ticket", ticket.id],
+		queryFn: () => APIService.tasks.get(ticket.id),
+		enabled: open,
+		staleTime: 0,
+	});
+
 	const { data: clientsData } = useQuery({
 		queryKey: ["clients"],
 		queryFn: () => APIService.clients.list(),
@@ -75,25 +84,27 @@ export function EditTicketDialog({ ticket, open, onOpenChange, isEmployee = fals
 
 	useEffect(() => {
 		if (!open) return;
-		setTitle(ticket.title);
-		setDescription(ticket.description ?? "");
-		setTicketType(ticket.ticket_type ?? "internal_task");
-		setStatus(ticket.status);
-		setPriority(ticket.priority ?? "medium");
-		setDueDate(ticket.due_date ? toDatetimeInput(ticket.due_date) : "");
-		setClientId((ticket as any).client_id ?? "");
-		setClientName(ticket.client_name ?? "");
-		setClientComboValue(initClientCombo(ticket));
-		setClientEmail((ticket as any).client_email ?? "");
-		setEstimatedHours(ticket.estimated_hours != null ? String(ticket.estimated_hours) : "");
-		setBillableHours(ticket.billable_hours  != null ? String(ticket.billable_hours)  : "");
-		setImplementationPlan(ticket.implementation_plan ?? "");
-		setRollbackPlan(ticket.rollback_plan ?? "");
-		setLinks(Array.isArray((ticket as any).links) ? (ticket as any).links : []);
-		setSource((ticket as any).source ?? "");
-		setAssigneePermission((ticket as any).assignee_permission ?? "editor");
+		// Prefer freshly fetched data over the (possibly stale) list cache entry
+		const t: any = (freshData as any) ?? ticket;
+		setTitle(t.title);
+		setDescription(t.description ?? "");
+		setTicketType(t.ticket_type ?? "internal_task");
+		setStatus(t.status);
+		setPriority(t.priority ?? "medium");
+		setDueDate(t.due_date ? toDatetimeInput(t.due_date) : "");
+		setClientId(t.client_id ?? "");
+		setClientName(t.client_name ?? "");
+		setClientComboValue(initClientCombo(t));
+		setClientEmail(t.client_email ?? "");
+		setEstimatedHours(t.estimated_hours != null ? String(t.estimated_hours) : "");
+		setBillableHours(t.billable_hours  != null ? String(t.billable_hours)  : "");
+		setImplementationPlan(t.implementation_plan ?? "");
+		setRollbackPlan(t.rollback_plan ?? "");
+		setLinks(Array.isArray(t.links) ? t.links : []);
+		setSource(t.source ?? "");
+		setAssigneePermission(t.assignee_permission ?? "editor");
 		setError("");
-	}, [open, ticket]);
+	}, [open, ticket, freshData]);
 
 	const { mutateAsync: saveTicket, isPending: isSaving } = useMutation({
 		mutationFn: (data: object) => APIService.tasks.update(ticket.id, data),
