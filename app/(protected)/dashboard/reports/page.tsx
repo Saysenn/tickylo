@@ -2,8 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/infra/prisma";
 import { canAccess } from "@/lib/utils/plan-gate";
-import { PerformanceTable } from "@/components/dashboard/performance/performance-table";
-import { InvoiceSection } from "@/components/dashboard/reports/invoice-section";
+import { ReportsTabs } from "@/components/dashboard/reports/reports-tabs";
 
 export const metadata = { title: "Reports" };
 
@@ -24,13 +23,11 @@ export default async function ReportsPage() {
 			<div>
 				<h1 className="text-2xl font-bold text-ink">Reports</h1>
 				<p className="text-ink-3 mt-1 text-sm">
-					Task completion rates, time logged, and employee productivity metrics.
+					Performance analytics and invoice generation.
 				</p>
 			</div>
 
-			<PerformanceTable />
-
-			<InvoiceSection
+			<ReportsTabs
 				orgName={org.name}
 				orgSlug={org.slug}
 				orgLogoUrl={org.logo_url ?? undefined}

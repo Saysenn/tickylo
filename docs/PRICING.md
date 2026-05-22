@@ -22,27 +22,28 @@ Need more than 26 seats? Contact us — [hello@tickworks.app](mailto:hello@tickw
 
 ## Feature Comparison
 
-| Feature                        |      Trial       |     Business     |   Enterprise   |
-| ------------------------------ | :--------------: | :--------------: | :------------: |
-| Ticketing + time tracking      |        ✅        |        ✅        |       ✅       |
-| Dashboard                      |        ✅        |        ✅        |       ✅       |
-| Employees                      |        ✅        |        ✅        |       ✅       |
-| Departments                    |        ✅        |        ✅        |       ✅       |
-| Bulk operations                |        ✅        |        ✅        |       ✅       |
-| Ticket requests                |        ✅        |        ✅        |       ✅       |
-| Ticket templates               |        ✅        |        ✅        |       ✅       |
-| Work schedule config           |        ✅        |        ✅        |       ✅       |
-| File + image attachments       |        ✅        |        ✅        |       ✅       |
-| Audit logs                     |        ✅        |        ✅        |       ✅       |
-| Team overview (time manager)   |        ✅        |        ✅        |       ✅       |
-| Reports                        |        ❌        |        ❌        |       ✅       |
-| Performance analytics          |        ❌        |        ❌        |       ✅       |
-| CSV export                     |        ❌        |        ❌        |       ✅       |
-| AI assistance                  |        ❌        |        ❌        |       ✅       |
-| SMS → ticket                   |        ❌        |        ❌        |       ✅       |
-| Email → ticket                 |        ❌        |        ❌        |       ✅       |
-| **Seats**                      |  **11 + admin**  | **Pay per seat** | **26 + admin** |
-| **Price**                      |    **14 days**   | **$20 + $3.99/seat** | **$100/mo flat** |
+| Feature                      |     Trial      |       Business       |    Enterprise    |
+| ---------------------------- | :------------: | :------------------: | :--------------: |
+| Ticketing + time tracking    |       ✅       |          ✅          |        ✅        |
+| Dashboard                    |       ✅       |          ✅          |        ✅        |
+| Employees                    |       ✅       |          ✅          |        ✅        |
+| Departments                  |       ✅       |          ✅          |        ✅        |
+| Bulk operations              |       ✅       |          ✅          |        ✅        |
+| Ticket requests              |       ✅       |          ✅          |        ✅        |
+| Ticket templates             |       ✅       |          ✅          |        ✅        |
+| Work schedule config         |       ✅       |          ✅          |        ✅        |
+| File + image attachments     |       ✅       |          ✅          |        ✅        |
+| Audit logs                   |       ✅       |          ✅          |        ✅        |
+| Team overview (time manager) |       ✅       |          ✅          |        ✅        |
+| Reports                      |       ❌       |          ❌          |        ✅        |
+| Performance analytics        |       ❌       |          ❌          |        ✅        |
+| CSV export                   |       ❌       |          ❌          |        ✅        |
+| AI assistance                |       ❌       |          ❌          |        ✅        |
+| SMS → ticket                 |       ❌       |          ❌          |        ✅        |
+| Email → ticket               |       ❌       |          ❌          |        ✅        |
+| Invoice + templates          |       ❌       |          ❌          |        ✅        |
+| **Seats**                    | **11 + admin** |   **Pay per seat**   |  **26 + admin**  |
+| **Price**                    |  **14 days**   | **$20 + $3.99/seat** | **$100/mo flat** |
 
 > Trial gets everything Business gets for 14 days, with 11 free seats included.
 
@@ -72,13 +73,13 @@ stripe_seat_item_id     String?
 
 ```ts
 export const STRIPE_PRICES = {
-    business: {
-        base:     { monthly: "price_xxx", annual: "price_xxx" }, // $20/mo
-        per_seat: { monthly: "price_xxx", annual: "price_xxx" }, // $4.99/seat
-    },
-    enterprise: {
-        base:     { monthly: "price_xxx", annual: "price_xxx" }, // $100/mo flat
-    },
+	business: {
+		base: { monthly: "price_xxx", annual: "price_xxx" }, // $20/mo
+		per_seat: { monthly: "price_xxx", annual: "price_xxx" }, // $4.99/seat
+	},
+	enterprise: {
+		base: { monthly: "price_xxx", annual: "price_xxx" }, // $100/mo flat
+	},
 };
 ```
 
@@ -95,10 +96,10 @@ export const STRIPE_PRICES = {
 
 ```ts
 // Business + Enterprise + Trial
-"dashboard" | "employees" | "departments" | "bulk_operations"
-"ticket_requests" | "ticket_templates" | "work_schedule"
-"attachments" | "audit_logs" | "time_manager"
+"dashboard" | "employees" | "departments" | "bulk_operations";
+"ticket_requests" | "ticket_templates" | "work_schedule";
+"attachments" | "audit_logs" | "time_manager";
 
 // Enterprise only
-"reports" | "performance" | "csv_export" | "ai" | "sms_ticket" | "email_ticket"
+"reports" | "performance" | "csv_export" | "ai" | "sms_ticket" | "email_ticket";
 ```
