@@ -94,6 +94,8 @@ export default async function BillingPage() {
 				<a href="/privacy" className="hover:text-ink transition-colors">Privacy Policy</a>
 				<a href="/terms" className="hover:text-ink transition-colors">Terms</a>
 				<a href="mailto:hello@tickworks.app" className="hover:text-ink transition-colors">Contact Support</a>
+				<span className="text-border">·</span>
+				<SignOutButton label="Sign out" />
 			</footer>
 		</div>
 	);
