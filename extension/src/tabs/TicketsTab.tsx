@@ -3,9 +3,9 @@ import { Plus, ArrowLeftRight, RotateCcw, Play, Square, CheckCheck, PauseCircle,
 import {
   getMyTickets, getAvailableTickets, claimTicket,
   updateTicketStatus, startTimer, stopTimer, createTicket,
-  requestTransfer, requestReopen, requestDueDateExtension, getTicket,
+  requestTransfer, requestReopen, requestDueDateExtension, getTicket, getClients,
 } from "../lib/api";
-import type { Ticket, ActiveTimer } from "../lib/api";
+import type { Ticket, ActiveTimer, Client } from "../lib/api";
 import { Storage } from "../lib/storage";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -564,27 +564,54 @@ const TICKET_TYPES = [
   { value: "change",        label: "Change",   prefix: "RFC"  },
 ];
 
+const BUILTIN_CLIENT_OPTIONS = [
+  { value: "",                label: "None" },
+  { value: "__front_office__", label: "Front Office" },
+  { value: "__back_office__",  label: "Back Office" },
+];
+
 function CreateForm({ onClose }: { onClose: () => void }) {
-  const [title, setTitle]       = useState("");
-  const [description, setDesc]  = useState("");
-  const [priority, setPriority] = useState("medium");
-  const [type, setType]         = useState("internal_task");
-  const [dueDate, setDueDate]   = useState("");
-  const [loading, setLoading]   = useState(false);
-  const [error, setError]       = useState("");
+  const [title, setTitle]           = useState("");
+  const [description, setDesc]      = useState("");
+  const [priority, setPriority]     = useState("medium");
+  const [type, setType]             = useState("internal_task");
+  const [dueDate, setDueDate]       = useState("");
+  const [clientValue, setClientVal] = useState("");
+  const [clients, setClients]       = useState<Client[]>([]);
+  const [loading, setLoading]       = useState(false);
+  const [error, setError]           = useState("");
+
+  useEffect(() => {
+    getClients().then((res) => setClients(res.data.filter((c) => !c.deleted_at))).catch(() => {});
+  }, []);
 
   const prefix = TICKET_TYPES.find((t) => t.value === type)?.prefix ?? "TASK";
+
+  const clientOptions = [
+    ...BUILTIN_CLIENT_OPTIONS,
+    ...clients.map((c) => ({ value: c.id, label: c.name })),
+  ];
+
+  function resolveClient(val: string): { client_id: string | null; client_name: string | null } {
+    if (val === "__front_office__") return { client_id: null, client_name: "Front Office" };
+    if (val === "__back_office__")  return { client_id: null, client_name: "Back Office" };
+    if (!val) return { client_id: null, client_name: null };
+    return { client_id: val, client_name: clients.find((c) => c.id === val)?.name ?? null };
+  }
 
   async function handleSubmit() {
     if (!title.trim()) { setError("Title is required"); return; }
     setLoading(true); setError("");
     try {
+      const { client_id, client_name } = resolveClient(clientValue);
       await createTicket({
         title: `${prefix}: ${title.trim()}`,
         description: description.trim() || undefined,
         priority,
         ticket_type: type,
         due_date: dueDate || undefined,
+        client_id,
+        client_name,
       });
       onClose();
     } catch { setError("Failed to create. Try again."); }
@@ -667,6 +694,22 @@ function CreateForm({ onClose }: { onClose: () => void }) {
               </button>
             ))}
           </div>
+        </div>
+
+        {/* Client */}
+        <div>
+          <label className="text-[9px] font-semibold text-gray-400 uppercase tracking-wider block mb-1.5">
+            Client <span className="normal-case font-normal text-gray-300">(optional)</span>
+          </label>
+          <select
+            value={clientValue}
+            onChange={(e) => setClientVal(e.target.value)}
+            className="w-full px-3 py-2 rounded-xl border border-gray-200 text-xs text-ink focus:outline-none focus:border-mint focus:ring-1 focus:ring-mint/30 bg-white"
+          >
+            {clientOptions.map((opt) => (
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
+            ))}
+          </select>
         </div>
 
         {/* Due date */}

@@ -134,4 +134,14 @@ export interface CreateTicketData {
   priority?: string;
   due_date?: string;
   ticket_type?: string;
+  client_id?: string | null;
+  client_name?: string | null;
 }
+
+export interface Client {
+  id: string;
+  name: string;
+  deleted_at: string | null;
+}
+
+export const getClients = () => req<{ data: Client[] }>("/clients");
