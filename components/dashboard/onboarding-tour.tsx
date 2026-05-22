@@ -13,7 +13,7 @@ const ADMIN_STEPS = [
 		element: "#tour-nav-dashboard",
 		popover: {
 			title: "Dashboard",
-			description: "Your home base. See an overview of active tickets, team activity, and time tracked today.",
+			description: "Your home base. KPI cards, team activity, recent tickets, and weekly time summary.",
 			side: "right" as const,
 			align: "start" as const,
 		},
@@ -22,7 +22,7 @@ const ADMIN_STEPS = [
 		element: "#tour-nav-tickets",
 		popover: {
 			title: "Tickets",
-			description: "Create and manage work items for your team. Assign tickets, set priorities, due dates, and track progress.",
+			description: "Create and manage work items. Assign to team members, set priority, due dates, and track progress.",
 			side: "right" as const,
 			align: "start" as const,
 		},
@@ -31,16 +31,16 @@ const ADMIN_STEPS = [
 		element: "#tour-nav-timer",
 		popover: {
 			title: "Time Tracker",
-			description: "Track time spent on tickets. Every entry is linked to a ticket so you always know where hours went.",
+			description: "Log time against tickets. Every entry is linked so you always know where hours went.",
 			side: "right" as const,
 			align: "start" as const,
 		},
 	},
 	{
-		element: "#tour-nav-employees",
+		element: "#tour-nav-team-overview",
 		popover: {
-			title: "Employees",
-			description: "Manage your team members, assign roles, set departments, and monitor workload.",
+			title: "Team Overview",
+			description: "See who's clocked in right now, how many hours each person logged this week, and spot workload imbalances.",
 			side: "right" as const,
 			align: "start" as const,
 		},
@@ -49,8 +49,80 @@ const ADMIN_STEPS = [
 		element: "#tour-nav-reports",
 		popover: {
 			title: "Reports",
-			description: "Export billable hours, ticket summaries, and client invoices to Excel. No manual tallying.",
+			description: "Export billable hours and ticket summaries to Excel. Filter by client, date range, and status.",
 			side: "right" as const,
+			align: "start" as const,
+		},
+	},
+	{
+		element: "#tour-nav-employees",
+		popover: {
+			title: "Employees",
+			description: "Manage your team — roles, departments, shifts, and permissions.",
+			side: "right" as const,
+			align: "start" as const,
+		},
+	},
+	{
+		element: "#tour-nav-departments",
+		popover: {
+			title: "Departments",
+			description: "Group employees into departments. Assign department managers and bulk-assign tickets.",
+			side: "right" as const,
+			align: "start" as const,
+		},
+	},
+	{
+		element: "#tour-nav-requests",
+		popover: {
+			title: "Requests",
+			description: "Approve or reject ticket transfer requests, reopen requests, and due-date extensions from your team.",
+			side: "right" as const,
+			align: "start" as const,
+		},
+	},
+	{
+		element: "#tour-nav-time-logs",
+		popover: {
+			title: "Time Logs",
+			description: "Full audit trail of all time entries across the team. Edit or delete entries if needed.",
+			side: "right" as const,
+			align: "start" as const,
+		},
+	},
+	{
+		element: "#tour-nav-ticket-logs",
+		popover: {
+			title: "Ticket Logs",
+			description: "See every change made to every ticket — who changed what and when.",
+			side: "right" as const,
+			align: "start" as const,
+		},
+	},
+	{
+		element: "#tour-header-timer",
+		popover: {
+			title: "Quick Timer",
+			description: "Start or stop your own timer directly from the header without leaving the current page.",
+			side: "bottom" as const,
+			align: "start" as const,
+		},
+	},
+	{
+		element: "#tour-header-notifications",
+		popover: {
+			title: "Notifications",
+			description: "Get alerted when tickets are assigned, requests need approval, or deadlines are approaching.",
+			side: "bottom" as const,
+			align: "start" as const,
+		},
+	},
+	{
+		element: "#tour-header-profile",
+		popover: {
+			title: "Profile Menu",
+			description: "Access your profile, settings, and sign out.",
+			side: "bottom" as const,
 			align: "start" as const,
 		},
 	},
@@ -61,7 +133,7 @@ const EMPLOYEE_STEPS = [
 		element: "#tour-nav-dashboard",
 		popover: {
 			title: "Dashboard",
-			description: "Your home base. See your active tickets and how much time you've tracked today.",
+			description: "Your personal view — active tickets, hours logged this week, and recent activity.",
 			side: "right" as const,
 			align: "start" as const,
 		},
@@ -70,7 +142,7 @@ const EMPLOYEE_STEPS = [
 		element: "#tour-nav-tickets",
 		popover: {
 			title: "Tickets",
-			description: "View and work on tickets assigned to you. Update status, log progress, and communicate with your team.",
+			description: "View and work on tickets assigned to you. Update status and log your progress.",
 			side: "right" as const,
 			align: "start" as const,
 		},
@@ -79,8 +151,44 @@ const EMPLOYEE_STEPS = [
 		element: "#tour-nav-timer",
 		popover: {
 			title: "Time Tracker",
-			description: "Start a timer when you begin working on a ticket. Your time is automatically logged and linked.",
+			description: "Start a timer when you begin a ticket. Your hours are logged automatically.",
 			side: "right" as const,
+			align: "start" as const,
+		},
+	},
+	{
+		element: "#tour-nav-my-requests",
+		popover: {
+			title: "My Requests",
+			description: "Submit leave requests, transfer requests, and view their approval status.",
+			side: "right" as const,
+			align: "start" as const,
+		},
+	},
+	{
+		element: "#tour-header-timer",
+		popover: {
+			title: "Quick Timer",
+			description: "Start or stop your timer from anywhere in the app.",
+			side: "bottom" as const,
+			align: "start" as const,
+		},
+	},
+	{
+		element: "#tour-header-notifications",
+		popover: {
+			title: "Notifications",
+			description: "Stay updated on ticket assignments and request approvals.",
+			side: "bottom" as const,
+			align: "start" as const,
+		},
+	},
+	{
+		element: "#tour-header-profile",
+		popover: {
+			title: "Profile",
+			description: "Update your details, timezone, and security settings.",
+			side: "bottom" as const,
 			align: "start" as const,
 		},
 	},

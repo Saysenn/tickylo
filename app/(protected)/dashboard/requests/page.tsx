@@ -1,6 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
+import { PageTour } from "@/components/dashboard/page-tour";
+import type { DriveStep } from "driver.js";
+
+const MY_REQUESTS_STEPS: DriveStep[] = [
+	{
+		element: "#tour-my-requests-page",
+		popover: {
+			title: "My Requests",
+			description: "Track your submitted leave and ticket requests. See their status and add notes.",
+		},
+	},
+];
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import APIService from "@/lib/infra/api";
 import { formatDate, formatDateTime } from "@/lib/utils/format";
@@ -203,7 +215,8 @@ export default function RequestsPage() {
 	const rows = data?.data ?? [];
 
 	return (
-		<div className="w-full space-y-6">
+		<div id="tour-my-requests-page" className="w-full space-y-6">
+			<Suspense><PageTour tourKey="my-requests" steps={MY_REQUESTS_STEPS} /></Suspense>
 			<div>
 				<h1 className="text-2xl font-bold text-ink">My Requests</h1>
 				<p className="text-ink-3 mt-1 text-sm">

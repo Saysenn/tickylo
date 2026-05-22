@@ -62,7 +62,7 @@ export function AdminDashboard() {
 	return (
 		<div className="space-y-4">
 			{/* Row 1 — KPI Cards */}
-			<div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+			<div id="tour-dashboard-stats" className="grid grid-cols-2 lg:grid-cols-4 gap-4">
 				<StatCard
 					label="Total Employees"
 					value={data.employees.total}
@@ -116,7 +116,7 @@ export function AdminDashboard() {
 					in_progress={data.tasks.in_progress}
 					completed={data.tasks.completed}
 				/>
-				<TimerCard />
+				<div id="tour-dashboard-timer"><TimerCard /></div>
 			</div>
 
 			{/* Row 4 — Workload chart */}

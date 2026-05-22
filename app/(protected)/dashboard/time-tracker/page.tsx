@@ -1,10 +1,22 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { Settings2 } from "lucide-react";
 import APIService from "@/lib/infra/api";
+import { PageTour } from "@/components/dashboard/page-tour";
+import type { DriveStep } from "driver.js";
+
+const TIME_TRACKER_STEPS: DriveStep[] = [
+	{
+		element: "#tour-time-tracker-page",
+		popover: {
+			title: "Time Tracker",
+			description: "Log and review your work hours. Every time entry can be linked to a specific ticket so nothing goes untracked.",
+		},
+	},
+];
 import { TimeDateRange } from "@/components/dashboard/time-manager/time-date-range";
 import { TimeSummaryCards } from "@/components/dashboard/time-manager/time-summary-cards";
 import { TimeDayBars } from "@/components/dashboard/time-manager/time-day-bars";
@@ -40,7 +52,8 @@ export default function TimeTrackerPage() {
 	});
 
 	return (
-		<div className="relative w-full space-y-6">
+		<div id="tour-time-tracker-page" className="relative w-full space-y-6">
+			<Suspense><PageTour tourKey="time-tracker" steps={TIME_TRACKER_STEPS} /></Suspense>
 			<div
 				className="fixed inset-0 -z-10 pointer-events-none"
 				style={{

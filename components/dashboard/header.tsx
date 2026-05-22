@@ -59,9 +59,9 @@ export function Header({ user, orgName, title, onMenuClick, sidebarOpen = false 
       </div>
 
       <div className="flex items-center gap-2">
-        <TimeTrackerButton />
-        <NotificationBell />
-        <UserDropdown user={user} />
+        <div id="tour-header-timer"><TimeTrackerButton /></div>
+        <div id="tour-header-notifications"><NotificationBell /></div>
+        <div id="tour-header-profile"><UserDropdown user={user} /></div>
       </div>
     </header>
   );

@@ -1,8 +1,21 @@
+import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/auth/require-admin";
 import { prisma } from "@/lib/infra/prisma";
 import { canAccess } from "@/lib/utils/plan-gate";
 import { DepartmentsPageClient } from "@/components/dashboard/departments/departments-page-client";
+import { PageTour } from "@/components/dashboard/page-tour";
+import type { DriveStep } from "driver.js";
+
+const DEPARTMENTS_STEPS: DriveStep[] = [
+	{
+		element: "#tour-departments-page",
+		popover: {
+			title: "Departments",
+			description: "Organise your team into departments. Assign managers and group related employees for easier ticket routing.",
+		},
+	},
+];
 
 export const metadata = { title: "Departments" };
 
@@ -22,7 +35,8 @@ export default async function DepartmentsPage() {
 	if (!org?.departments_enabled) redirect("/dashboard");
 
 	return (
-		<div className="space-y-6">
+		<div id="tour-departments-page" className="space-y-6">
+			<Suspense><PageTour tourKey="departments" steps={DEPARTMENTS_STEPS} /></Suspense>
 			<div>
 				<h1 className="text-xl font-bold text-ink">Departments</h1>
 				<p className="text-sm text-ink-3 mt-0.5">Manage departments, assign managers, and organise your team.</p>

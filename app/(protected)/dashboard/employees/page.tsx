@@ -4,6 +4,18 @@ import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/infra/prisma";
 import { canAccess } from "@/lib/utils/plan-gate";
 import { EmployeesTable } from "@/components/dashboard/employees/employees-table";
+import { PageTour } from "@/components/dashboard/page-tour";
+import type { DriveStep } from "driver.js";
+
+const EMPLOYEES_STEPS: DriveStep[] = [
+	{
+		element: "#tour-employees-page",
+		popover: {
+			title: "Employees",
+			description: "Add team members, manage their roles and departments, approve join requests, and control who has access to what.",
+		},
+	},
+];
 
 export const metadata = { title: "Employees" };
 
@@ -24,7 +36,8 @@ export default async function EmployeesPage() {
 	if (!org || !canAccess(org.plan, org.is_internal, "employees")) redirect("/dashboard?upgrade=employees");
 
 	return (
-		<div className="space-y-6">
+		<div id="tour-employees-page" className="space-y-6">
+			<Suspense><PageTour tourKey="employees" steps={EMPLOYEES_STEPS} /></Suspense>
 			<div>
 				<h1 className="text-2xl font-bold text-ink">Employees</h1>
 				<p className="text-ink-3 mt-1 text-sm">

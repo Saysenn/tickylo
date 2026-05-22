@@ -88,11 +88,17 @@ export function Sidebar({ isOpen = false, onClose, role }: SidebarProps) {
 	];
 
 	const TOUR_IDS: Record<string, string> = {
-		"/dashboard":              "tour-nav-dashboard",
-		"/dashboard/tickets":      "tour-nav-tickets",
-		"/dashboard/time-tracker": "tour-nav-timer",
-		"/dashboard/employees":    "tour-nav-employees",
-		"/dashboard/reports":      "tour-nav-reports",
+		"/dashboard":                  "tour-nav-dashboard",
+		"/dashboard/tickets":          "tour-nav-tickets",
+		"/dashboard/time-tracker":     "tour-nav-timer",
+		"/dashboard/time-manager":     "tour-nav-team-overview",
+		"/dashboard/reports":          "tour-nav-reports",
+		"/dashboard/employees":        "tour-nav-employees",
+		"/dashboard/departments":      "tour-nav-departments",
+		"/dashboard/ticket-requests":  "tour-nav-requests",
+		"/dashboard/requests":         "tour-nav-my-requests",
+		"/dashboard/time-logs":        "tour-nav-time-logs",
+		"/dashboard/audit-logs":       "tour-nav-ticket-logs",
 	};
 
 	const NavLink = ({ label, href, icon: Icon }: NavItem) => {

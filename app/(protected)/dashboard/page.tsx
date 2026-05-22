@@ -6,6 +6,25 @@ import { AdminDashboard } from "@/components/dashboard/dashboard/admin-dashboard
 import { EmployeeDashboard } from "@/components/dashboard/dashboard/employee-dashboard";
 import { LoginNotices } from "@/components/dashboard/login-notices";
 import { UpgradeModal } from "@/components/dashboard/upgrade-modal";
+import { PageTour } from "@/components/dashboard/page-tour";
+import type { DriveStep } from "driver.js";
+
+const DASHBOARD_STEPS: DriveStep[] = [
+	{
+		element: "#tour-dashboard-stats",
+		popover: {
+			title: "KPI Cards",
+			description: "At-a-glance numbers — open tickets, team size, hours logged, and more.",
+		},
+	},
+	{
+		element: "#tour-dashboard-timer",
+		popover: {
+			title: "Your Timer",
+			description: "Your personal timer widget. Start tracking time directly from here.",
+		},
+	},
+];
 
 export default function DashboardPage() {
 	const user = useAppSelector((s) => s.auth.user);
@@ -35,6 +54,7 @@ export default function DashboardPage() {
 			</div>
 
 			<Suspense><UpgradeModal /></Suspense>
+			<Suspense><PageTour tourKey="dashboard" steps={DASHBOARD_STEPS} /></Suspense>
 			<LoginNotices />
 
 			{isAdmin ? <AdminDashboard /> : <EmployeeDashboard />}
