@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
-import { Play, Square, Clock, Check, X } from "lucide-react";
-import { startTimer, stopTimer } from "../lib/api";
-import type { ActiveTimer } from "../lib/api";
+import { Play, Square, Clock, Check, X, ChevronDown, Ticket } from "lucide-react";
+import { startTimer, stopTimer, getMyTickets } from "../lib/api";
+import type { ActiveTimer, Ticket as TicketType } from "../lib/api";
 import { Storage } from "../lib/storage";
 
 function formatElapsed(startTime: string) {
@@ -16,16 +16,32 @@ function formatElapsed(startTime: string) {
 export function TimerTab({
   activeTimer,
   setActiveTimer,
+  userId,
 }: {
   activeTimer: ActiveTimer | null;
   setActiveTimer: (t: ActiveTimer | null) => void;
+  userId: string;
 }) {
-  const [elapsed, setElapsed]     = useState("00:00:00");
-  const [title, setTitle]         = useState("");
-  const [loading, setLoading]     = useState(false);
-  const [error, setError]         = useState("");
-  const [stopping, setStopping]   = useState(false);
-  const [stopTitle, setStopTitle] = useState("");
+  const [elapsed, setElapsed]           = useState("00:00:00");
+  const [title, setTitle]               = useState("");
+  const [loading, setLoading]           = useState(false);
+  const [error, setError]               = useState("");
+  const [stopping, setStopping]         = useState(false);
+  const [stopTitle, setStopTitle]       = useState("");
+  const [linkedTicket, setLinkedTicket] = useState<TicketType | null>(null);
+  const [showPicker, setShowPicker]     = useState(false);
+  const [myTickets, setMyTickets]       = useState<TicketType[]>([]);
+  const [ticketSearch, setTicketSearch] = useState("");
+
+  useEffect(() => {
+    if (!showPicker || myTickets.length > 0) return;
+    getMyTickets().then((r) => {
+      const active = r.data.filter((t) =>
+        t.user_id === userId && ["assigned", "in_progress", "on_hold"].includes(t.status)
+      );
+      setMyTickets(active);
+    }).catch(() => {});
+  }, [showPicker]);
 
   useEffect(() => {
     if (!activeTimer) { setElapsed("00:00:00"); return; }
@@ -57,10 +73,13 @@ export function TimerTab({
   async function handleStart() {
     setLoading(true); setError("");
     try {
-      const entry = await startTimer({ title: title.trim() || undefined });
+      const entry = await startTimer({
+        title: title.trim() || linkedTicket?.title || undefined,
+        ticket_id: linkedTicket?.id || undefined,
+      });
       await Storage.setSession({ entry_id: entry.id, start_time: entry.start_time, title: entry.title });
       setActiveTimer(entry);
-      setTitle("");
+      setTitle(""); setLinkedTicket(null); setShowPicker(false);
     } catch { setError("Failed to start. Try again."); }
     finally { setLoading(false); }
   }
@@ -153,6 +172,11 @@ export function TimerTab({
     );
   }
 
+  // Ticket picker dropdown
+  const filteredTickets = myTickets.filter((t) =>
+    t.title.toLowerCase().includes(ticketSearch.toLowerCase())
+  );
+
   // Idle view
   return (
     <div className="flex flex-col gap-3 px-4 py-5 h-full justify-center">
@@ -164,6 +188,69 @@ export function TimerTab({
         <p className="text-[10px] text-gray-400 mt-0.5">Start tracking your work hours</p>
       </div>
 
+      {/* Link to ticket */}
+      <div>
+        <label className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider block mb-1.5">
+          Link to ticket <span className="normal-case font-normal">(optional)</span>
+        </label>
+        <button
+          onClick={() => setShowPicker(!showPicker)}
+          className="w-full flex items-center justify-between px-3 py-2 rounded-xl border border-gray-200 text-xs transition-colors hover:border-gray-300"
+        >
+          {linkedTicket ? (
+            <span className="text-ink font-medium truncate">{linkedTicket.title}</span>
+          ) : (
+            <span className="text-gray-300">Select a ticket…</span>
+          )}
+          <ChevronDown size={12} className={`text-gray-400 shrink-0 ml-1 transition-transform ${showPicker ? "rotate-180" : ""}`} />
+        </button>
+
+        {showPicker && (
+          <div className="mt-1 rounded-xl border border-gray-200 overflow-hidden">
+            <div className="px-2.5 py-2 border-b border-gray-100">
+              <input
+                autoFocus
+                value={ticketSearch}
+                onChange={(e) => setTicketSearch(e.target.value)}
+                placeholder="Search tickets…"
+                className="w-full text-[11px] text-ink placeholder:text-gray-300 focus:outline-none"
+              />
+            </div>
+            <div className="max-h-36 overflow-y-auto divide-y divide-gray-50">
+              <button
+                onClick={() => { setLinkedTicket(null); setShowPicker(false); setTicketSearch(""); }}
+                className="w-full text-left px-3 py-2 text-[10px] text-gray-400 hover:bg-gray-50 transition-colors"
+              >
+                No ticket
+              </button>
+              {filteredTickets.length === 0 ? (
+                <p className="px-3 py-3 text-[10px] text-gray-300 text-center">No active tickets</p>
+              ) : filteredTickets.map((t) => (
+                <button
+                  key={t.id}
+                  onClick={() => { setLinkedTicket(t); setShowPicker(false); setTicketSearch(""); if (!title) setTitle(t.title); }}
+                  className="w-full text-left px-3 py-2 hover:bg-gray-50 transition-colors"
+                >
+                  <p className="text-[11px] font-medium text-ink leading-snug line-clamp-1">{t.title}</p>
+                  <p className="text-[9px] text-gray-400 mt-0.5 capitalize">{t.status.replace("_", " ")}</p>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {linkedTicket && (
+          <div className="mt-1.5 flex items-center gap-1.5 px-2">
+            <Ticket size={10} className="text-mint shrink-0" />
+            <span className="text-[10px] text-mint font-medium truncate">{linkedTicket.title}</span>
+            <button onClick={() => setLinkedTicket(null)} className="ml-auto text-gray-300 hover:text-gray-500">
+              <X size={10} />
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Title */}
       <div>
         <label className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider block mb-1.5">
           What are you working on? <span className="normal-case font-normal">(optional)</span>
@@ -172,7 +259,7 @@ export function TimerTab({
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleStart()}
-          placeholder="e.g. Fix login bug"
+          placeholder={linkedTicket ? linkedTicket.title : "e.g. Fix login bug"}
           className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-xs text-ink placeholder:text-gray-300 focus:outline-none focus:border-mint focus:ring-1 focus:ring-mint/30"
         />
       </div>

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Plus, ArrowLeftRight, RotateCcw, Play, Square, CheckCheck, PauseCircle, Loader2, ChevronLeft, Clock, UserPlus, CalendarClock, AlertCircle } from "lucide-react";
+import { Plus, ArrowLeftRight, RotateCcw, Play, Square, CheckCheck, PauseCircle, Loader2, ChevronLeft, Clock, UserPlus, CalendarClock, AlertCircle, RefreshCw } from "lucide-react";
 import {
   getMyTickets, getAvailableTickets, claimTicket,
   updateTicketStatus, startTimer, stopTimer, createTicket,
@@ -53,7 +53,11 @@ export function TicketsTab({
   const [view, setView]             = useState<View>("mine");
   const [mineFilter, setMineFilter] = useState<"active" | "all" | "resolved">("active");
   const [tickets, setTickets]       = useState<Ticket[]>([]);
+  const [page, setPage]             = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [loading, setLoading]       = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [acting, setActing]         = useState<string | null>(null);
   const [creating, setCreating]     = useState(false);
   const [selected, setSelected]     = useState<Ticket | null>(null);
@@ -61,27 +65,36 @@ export function TicketsTab({
   const ACTIVE   = new Set(["assigned", "in_progress", "on_hold", "stale"]);
   const RESOLVED = new Set(["completed", "closed", "rejected"]);
 
-  const load = useCallback(async () => {
-    setLoading(true);
+  function applyFilter(data: Ticket[]): Ticket[] {
+    if (view === "available") return data.filter((t) => t.user_id === null);
+    const mine = data.filter((t) => t.user_id === userId);
+    return mineFilter === "active"   ? mine.filter((t) => ACTIVE.has(t.status))
+         : mineFilter === "resolved" ? mine.filter((t) => RESOLVED.has(t.status))
+         : mine;
+  }
+
+  const load = useCallback(async (pageNum = 1, append = false) => {
+    if (!append) setLoading(true); else setLoadingMore(true);
     try {
-      const res = view === "mine" ? await getMyTickets() : await getAvailableTickets(isAdmin);
-      if (view === "mine") {
-        // Always scope to the current user — backend view=assigned may leak for admins
-        const mine = res.data.filter((t) => t.user_id === userId);
-        setTickets(
-          mineFilter === "active"   ? mine.filter((t) => ACTIVE.has(t.status))   :
-          mineFilter === "resolved" ? mine.filter((t) => RESOLVED.has(t.status)) :
-          mine
-        );
-      } else {
-        // Available = unassigned only, regardless of what the API returns for admins (view=all)
-        setTickets(res.data.filter((t) => t.user_id === null));
-      }
-    } catch { setTickets([]); }
-    finally { setLoading(false); }
+      const res = view === "mine"
+        ? await getMyTickets(pageNum)
+        : await getAvailableTickets(isAdmin, pageNum);
+      setTotalPages(res.totalPages);
+      const filtered = applyFilter(res.data);
+      setTickets((prev) => append ? [...prev, ...filtered] : filtered);
+      setPage(pageNum);
+    } catch { if (!append) setTickets([]); }
+    finally { setLoading(false); setLoadingMore(false); }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [view, mineFilter, isAdmin, userId]);
 
-  useEffect(() => { load(); }, [load]);
+  // Reset to page 1 whenever view or filter changes
+  useEffect(() => { setPage(1); setTotalPages(1); load(1, false); }, [load]);
+
+  async function handleRefresh() {
+    setRefreshing(true);
+    await load(1, false).finally(() => setRefreshing(false));
+  }
 
   async function handleClaim(id: string) {
     setActing(id);
@@ -166,6 +179,13 @@ export function TicketsTab({
           ))}
         </div>
         <button
+          onClick={handleRefresh}
+          disabled={refreshing || loading}
+          className="w-7 h-7 rounded-lg border border-gray-200 flex items-center justify-center hover:bg-gray-50 transition-colors shrink-0 disabled:opacity-40"
+        >
+          <RefreshCw size={12} strokeWidth={2} className={`text-gray-500 ${refreshing ? "animate-spin" : ""}`} />
+        </button>
+        <button
           onClick={() => setCreating(true)}
           className="w-7 h-7 rounded-lg bg-mint flex items-center justify-center hover:bg-mint-hover transition-colors shrink-0"
         >
@@ -199,7 +219,9 @@ export function TicketsTab({
         ) : tickets.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-14 text-center px-4">
             <p className="text-xs text-gray-400">
-              {view === "mine" ? "No tickets assigned to you" : "No open tickets available to claim"}
+              {view === "mine"
+                ? mineFilter === "resolved" ? "No resolved tickets" : mineFilter === "active" ? "No active tickets" : "No tickets assigned to you"
+                : "No unassigned tickets available"}
             </p>
           </div>
         ) : (
@@ -217,6 +239,16 @@ export function TicketsTab({
                 onStartTimer={() => handleStartTimer(t)}
               />
             ))}
+            {page < totalPages && (
+              <button
+                onClick={() => load(page + 1, true)}
+                disabled={loadingMore}
+                className="w-full py-3 text-[10px] font-semibold text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-colors flex items-center justify-center gap-1.5"
+              >
+                {loadingMore ? <Loader2 size={12} className="animate-spin" /> : null}
+                {loadingMore ? "Loading…" : "Load more"}
+              </button>
+            )}
           </div>
         )}
       </div>

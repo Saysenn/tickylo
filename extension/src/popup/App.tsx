@@ -75,7 +75,7 @@ export function App() {
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto">
-        {tab === "timer"   && <TimerTab activeTimer={activeTimer} setActiveTimer={setActiveTimer} />}
+        {tab === "timer"   && <TimerTab activeTimer={activeTimer} setActiveTimer={setActiveTimer} userId={me?.id ?? ""} />}
         {tab === "tickets" && <TicketsTab activeTimer={activeTimer} setActiveTimer={setActiveTimer} isAdmin={me?.role === "admin"} userId={me?.id ?? ""} />}
         {tab === "logs"    && <LogsTab activeTimer={activeTimer} isAdmin={me?.role === "admin"} />}
         {tab === "me"      && <MeTab me={me} orgName={orgName} />}
