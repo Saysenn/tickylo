@@ -78,8 +78,23 @@ export async function POST(req: NextRequest) {
 			}
 		}
 
-		// Determine trial — no trial if org previously had one
-		const trialDays = org.had_trial ? 0 : 14;
+		// Determine trial eligibility.
+		// Check cross-org: if this admin email was ever an admin on a different org that already used a trial,
+		// deny the trial — prevents registering a new org just to get another free trial.
+		let hadAnyTrial = org.had_trial;
+		if (!hadAnyTrial && admin.email) {
+			const previousTrialOrg = await prisma.user.findFirst({
+				where: {
+					email: admin.email,
+					role: "admin",
+					org_id: { not: orgId },
+					org: { had_trial: true },
+				},
+				select: { id: true },
+			});
+			if (previousTrialOrg) hadAnyTrial = true;
+		}
+		const trialDays = hadAnyTrial ? 0 : 14;
 
 		const subscription = await stripe.subscriptions.create({
 			customer: customerId,

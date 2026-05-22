@@ -18,12 +18,21 @@ export default async function BillingPage() {
 	const orgId = user.app_metadata?.org_id as string | undefined;
 	if (!orgId) redirect("/pending");
 
-	const org = await prisma.organization.findUnique({
-		where: { id: orgId },
-		select: { name: true, plan: true, had_trial: true, is_internal: true },
-	});
+	const [org, previousTrialOrg] = await Promise.all([
+		prisma.organization.findUnique({
+			where: { id: orgId },
+			select: { name: true, plan: true, had_trial: true, is_internal: true },
+		}),
+		// Cross-org cheat check: did this admin email ever use a trial on another org?
+		user.email ? prisma.user.findFirst({
+			where: { email: user.email, role: "admin", org_id: { not: orgId }, org: { had_trial: true } },
+			select: { id: true },
+		}) : null,
+	]);
 
 	if (!org) redirect("/pending");
+
+	const hadTrial = org.had_trial || !!previousTrialOrg;
 
 	// Already active — redirect to dashboard
 	if (org.is_internal || ["trial", "business", "enterprise"].includes(org.plan)) {
@@ -79,13 +88,13 @@ export default async function BillingPage() {
 							{org.plan === "cancelled" ? "Reactivate your workspace" : "Set up billing to get started"}
 						</h1>
 						<p className="text-ink-3 text-sm">
-							{org.had_trial
+							{hadTrial
 								? "Your previous trial has been used. You'll be charged immediately upon setup."
 								: "Start a 14-day free trial. No charge until the trial ends."}
 						</p>
 					</div>
 
-					<BillingSetupForm orgName={org.name} hadTrial={org.had_trial} />
+					<BillingSetupForm orgName={org.name} hadTrial={hadTrial} />
 				</div>
 			</main>
 
