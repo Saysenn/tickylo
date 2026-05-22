@@ -10,7 +10,6 @@ import { Button } from "@/components/ui/button";
 import type { TimeEntry } from "@/components/dashboard/time-tracker/types";
 
 const SHOW_AFTER_KEY = "tw_show_after";
-const SNOOZE_MS      = 10 * 60 * 1000; // 10 minutes
 
 function getShowAfter(): number | null {
 	if (typeof window === "undefined") return null;
@@ -31,6 +30,13 @@ export function TimerNudgeBanner() {
 	const onboardingDone = useAppSelector((s) => s.auth.user?.onboarding_completed ?? true);
 	const prevActiveRef = useRef<TimeEntry | null | undefined>(undefined);
 
+	const { data: userMe } = useQuery<{ nudge_interval_minutes?: number } | null>({
+		queryKey: ["user-me"],
+		queryFn: () => APIService.users.me(),
+		staleTime: 5 * 60 * 1000,
+	});
+	const snoozeMs = ((userMe?.nudge_interval_minutes ?? 10) * 60 * 1000);
+
 	const { data: activeEntry, isLoading } = useQuery<TimeEntry | null>({
 		queryKey: ["time", "active"],
 		queryFn: () => APIService.time.active(),
@@ -44,8 +50,8 @@ export function TimerNudgeBanner() {
 
 		if (prev !== undefined) {
 			if (prev && !activeEntry) {
-				// Timer just ended → start 10-min countdown
-				localStorage.setItem(SHOW_AFTER_KEY, String(Date.now() + SNOOZE_MS));
+				// Timer just ended → start countdown based on user's interval preference
+				localStorage.setItem(SHOW_AFTER_KEY, String(Date.now() + snoozeMs));
 				setVisible(false);
 			}
 			if (!prev && activeEntry) {
@@ -80,7 +86,7 @@ export function TimerNudgeBanner() {
 	});
 
 	function snooze() {
-		localStorage.setItem(SHOW_AFTER_KEY, String(Date.now() + SNOOZE_MS));
+		localStorage.setItem(SHOW_AFTER_KEY, String(Date.now() + snoozeMs));
 		setVisible(false);
 	}
 
@@ -135,7 +141,7 @@ export function TimerNudgeBanner() {
 								onClick={snooze}
 								className="w-full text-xs text-ink-3 hover:text-ink-2 transition-colors py-1.5"
 							>
-								Remind me in 10 minutes
+								Remind me in {userMe?.nudge_interval_minutes ?? 10} minutes
 							</button>
 						</div>
 					</div>

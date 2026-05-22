@@ -1411,6 +1411,9 @@ function EditTicketDialog({ ticket, open, onOpenChange, onSave, isEmployee = fal
 	});
 	const clientOptions: any[] = (clientsData as any)?.data ?? [];
 
+	const selectedClientRateType = clientOptions.find((c: any) => c.id === clientId)?.rate_type ?? "hourly";
+	const showBillableHours = !clientId || selectedClientRateType === "hourly";
+
 	// Sync all form fields with latest ticket data each time the dialog opens
 	useEffect(() => {
 		if (open) {
@@ -1653,18 +1656,22 @@ function EditTicketDialog({ ticket, open, onOpenChange, onSave, isEmployee = fal
 							</div>
 						</div>
 					)}
-					<div className="grid grid-cols-2 gap-4">
-						{!isEmployee && (
-							<div className="space-y-1.5">
-								<Label htmlFor="edit-est">{optLabel("Est. hours")}</Label>
-								<input id="edit-est" type="number" min="0" step="0.5" value={estimatedHours} onChange={(e) => setEstimatedHours(e.target.value)} placeholder="e.g. 4" className={inputCls} />
-							</div>
-						)}
-						<div className={cn("space-y-1.5", isEmployee && "col-span-2")}>
-							<Label htmlFor="edit-bill">{optLabel("Billable hours")}</Label>
-							<input id="edit-bill" type="number" min="0" step="0.5" value={billableHours} onChange={(e) => setBillableHours(e.target.value)} placeholder="e.g. 4" className={inputCls} />
+					{(!isEmployee || showBillableHours) && (
+						<div className="grid grid-cols-2 gap-4">
+							{!isEmployee && (
+								<div className="space-y-1.5">
+									<Label htmlFor="edit-est">{optLabel("Est. hours")}</Label>
+									<input id="edit-est" type="number" min="0" step="0.5" value={estimatedHours} onChange={(e) => setEstimatedHours(e.target.value)} placeholder="e.g. 4" className={inputCls} />
+								</div>
+							)}
+							{showBillableHours && (
+								<div className={cn("space-y-1.5", isEmployee && "col-span-2")}>
+									<Label htmlFor="edit-bill">{optLabel("Billable hours")}</Label>
+									<input id="edit-bill" type="number" min="0" step="0.5" value={billableHours} onChange={(e) => setBillableHours(e.target.value)} placeholder="e.g. 4" className={inputCls} />
+								</div>
+							)}
 						</div>
-					</div>
+					)}
 
 					{/* ── Plans ── */}
 					<div className="flex items-center gap-3">

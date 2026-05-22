@@ -164,6 +164,7 @@ model User {
   deleted_at    DateTime? // soft-delete: set on deletion request, hard-deleted by cron after grace period
   had_trial              Boolean   @default(false)
   onboarding_completed   Boolean   @default(false)
+  nudge_interval_minutes Int       @default(10)
 
   // GDPR consent — recorded at registration
   accepted_privacy_at DateTime?

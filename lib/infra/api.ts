@@ -30,6 +30,8 @@ class APIService {
 			axiosService.patch(`${apiVersion}/users/me`, { timezone }),
 		updateShift: (shift_start: string | null, shift_end: string | null) =>
 			axiosService.patch(`${apiVersion}/users/me`, { shift_start, shift_end }),
+		updateNudgeInterval: (nudge_interval_minutes: number) =>
+			axiosService.patch(`${apiVersion}/users/me`, { nudge_interval_minutes }),
 		getMeta: () => axiosService.get(`${apiVersion}/users/meta`),
 		updateMeta: (data: {
 			phone?: string;
