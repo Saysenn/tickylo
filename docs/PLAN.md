@@ -5,7 +5,6 @@
 3. **SMS → Ticket** — Twilio inbound → AI parse → ticket (Enterprise).
 4. **Email → Ticket** — Inbound webhook → AI parse → ticket (Enterprise).
 5. **AI Ticket Assistance** — Plain text → auto-fill fields + chatbot (Enterprise).
-6. **Browser Extension** — See `docs/BROWSER-EXTENSION-PLAN.md`.
 
 # one liner flow
 
