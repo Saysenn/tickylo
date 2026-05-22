@@ -15,7 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Combobox } from "@/components/ui/combobox";
 
-const CURRENCIES = ["USD", "EUR", "GBP", "PHP", "AUD", "CAD", "SGD", "JPY", "INR", "MYR", "IDR"];
+const CURRENCIES = ["USD", "EUR", "GBP", "AED", "PHP", "AUD", "CAD", "SGD", "JPY", "INR", "MYR", "IDR"];
 
 const RATE_TYPES = [
 	{ value: "hourly", label: "Hourly rate" },
