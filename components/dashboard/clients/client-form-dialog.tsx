@@ -78,7 +78,6 @@ export interface ClientFormData {
 	rate_type?: RateType;
 	hourly_rate?: number;
 	discount_percent?: number;
-	notes?: string;
 }
 
 interface Client {
@@ -90,7 +89,6 @@ interface Client {
 	rate_type: string;
 	hourly_rate: number;
 	discount_percent: number;
-	notes: string | null;
 }
 
 interface Props {
@@ -111,7 +109,6 @@ export function ClientFormDialog({ mode, client, trigger, onSubmit, isPending }:
 	const [rateType, setRateType] = useState<RateType>("hourly");
 	const [rate, setRate] = useState("");
 	const [discountPercent, setDiscountPercent] = useState("");
-	const [notes, setNotes] = useState("");
 	const [error, setError] = useState("");
 
 	useEffect(() => {
@@ -125,7 +122,6 @@ export function ClientFormDialog({ mode, client, trigger, onSubmit, isPending }:
 			setRateType((client?.rate_type as RateType) ?? "hourly");
 			setRate(client?.hourly_rate != null && client.hourly_rate > 0 ? String(client.hourly_rate) : "");
 			setDiscountPercent(client?.discount_percent != null && client.discount_percent > 0 ? String(client.discount_percent) : "");
-			setNotes(client?.notes ?? "");
 			setError("");
 		}
 	}, [open, client]);
@@ -142,7 +138,6 @@ export function ClientFormDialog({ mode, client, trigger, onSubmit, isPending }:
 				rate_type: rateType,
 				hourly_rate: rateType !== "none" && rate ? parseFloat(rate) : undefined,
 				discount_percent: discountPercent ? parseFloat(discountPercent) : undefined,
-				notes: notes.trim() || undefined,
 			});
 			setOpen(false);
 		} catch (err: any) {
@@ -276,21 +271,6 @@ export function ClientFormDialog({ mode, client, trigger, onSubmit, isPending }:
 							</div>
 						</div>
 					)}
-
-					<div className="space-y-1.5">
-						<Label htmlFor="client-notes">
-							Notes <span className="text-[10px] font-normal text-ink-3/50">optional</span>
-						</Label>
-						<textarea
-							id="client-notes"
-							value={notes}
-							onChange={(e) => setNotes(e.target.value)}
-							placeholder="Any relevant billing notes…"
-							maxLength={2000}
-							rows={3}
-							className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-mint placeholder:text-ink-3/40 resize-none"
-						/>
-					</div>
 
 					{error && <p className="text-sm text-destructive">{error}</p>}
 

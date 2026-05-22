@@ -13,7 +13,6 @@ const updateClientSchema = z.object({
 	rate_type: z.enum(["hourly", "fixed", "none"]).optional(),
 	hourly_rate: z.number().nonnegative().optional(),
 	discount_percent: z.number().min(0).max(100).optional(),
-	notes: z.string().max(2000).optional().nullable(),
 });
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
