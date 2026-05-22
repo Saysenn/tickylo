@@ -8,7 +8,9 @@ import { TicketsTab } from "../tabs/TicketsTab";
 import { LogsTab } from "../tabs/LogsTab";
 import { MeTab } from "../tabs/MeTab";
 
-type Screen = "loading" | "not_logged_in" | "not_enabled" | "app";
+type Screen = "loading" | "not_logged_in" | "billing_locked" | "not_enabled" | "app";
+
+const ACTIVE_PLANS = new Set(["trial", "business", "enterprise"]);
 type Tab = "timer" | "tickets" | "logs" | "me";
 
 const TABS: { key: Tab; label: string; Icon: LucideIcon }[] = [
@@ -33,6 +35,7 @@ export function App() {
           getOrgSettings(),
           getMe(),
         ]);
+        if (!settings.is_internal && !ACTIVE_PLANS.has(settings.plan)) { setScreen("billing_locked"); return; }
         if (!settings.extension_enabled) { setScreen("not_enabled"); return; }
         setActiveTimer(timer);
         setMe(user);
@@ -51,9 +54,10 @@ export function App() {
     init();
   }, []);
 
-  if (screen === "loading")      return <LoadingScreen />;
-  if (screen === "not_logged_in") return <NotLoggedIn />;
-  if (screen === "not_enabled")   return <NotEnabled orgName={orgName} />;
+  if (screen === "loading")        return <LoadingScreen />;
+  if (screen === "not_logged_in")  return <NotLoggedIn />;
+  if (screen === "billing_locked") return <BillingLocked orgName={orgName} />;
+  if (screen === "not_enabled")    return <NotEnabled orgName={orgName} />;
 
   return (
     <div className="flex flex-col bg-white h-full">
@@ -141,6 +145,29 @@ function NotEnabled({ orgName }: { orgName: string }) {
           {orgName ? `${orgName} hasn't` : "Your admin hasn't"} enabled the browser extension. Contact your admin to turn it on in Organisation Settings.
         </p>
       </div>
+    </div>
+  );
+}
+
+function BillingLocked({ orgName }: { orgName: string }) {
+  const BASE = import.meta.env.VITE_API_URL ?? "https://tickworks.app";
+  return (
+    <div className="flex flex-col items-center justify-center text-center px-6 gap-4 bg-white h-full">
+      <div className="w-12 h-12 rounded-2xl bg-gray-50 border border-gray-100 flex items-center justify-center">
+        <Clock size={22} strokeWidth={1.5} className="text-gray-400" />
+      </div>
+      <div>
+        <p className="font-bold text-ink text-sm mb-1">Workspace not active</p>
+        <p className="text-xs text-gray-400 leading-relaxed">
+          {orgName ? `${orgName}'s` : "Your"} workspace doesn't have an active plan. Ask your admin to complete billing setup.
+        </p>
+      </div>
+      <button
+        onClick={() => chrome.tabs.create({ url: `${BASE}/billing` })}
+        className="w-full py-2.5 rounded-xl bg-mint text-ink text-xs font-semibold hover:bg-mint-hover transition-colors"
+      >
+        Go to Billing
+      </button>
     </div>
   );
 }

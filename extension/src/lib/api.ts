@@ -81,6 +81,7 @@ export interface OrgSettings {
   extension_enabled: boolean;
   name: string;
   plan: string;
+  is_internal: boolean;
 }
 
 export interface Me {
