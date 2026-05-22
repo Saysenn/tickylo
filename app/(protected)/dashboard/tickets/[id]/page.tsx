@@ -241,7 +241,7 @@ export default function TicketDetailPage() {
 		if (ticket?.billable_hours != null) setBillableDraft(String(ticket.billable_hours));
 	}, [ticket?.billable_hours]);
 
-	// ── Mutations ────────────────────────────────────────────────────────
+// ── Mutations ────────────────────────────────────────────────────────
 
 	const invalidate = () => {
 		queryClient.invalidateQueries({ queryKey: ["task", id] });

@@ -8,11 +8,12 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Pagination } from "@/components/ui/pagination";
 import { TaskFormDialog } from "./task-form-dialog";
+import { EditTicketDialog } from "./edit-ticket-dialog";
 import { TimeOutDialog } from "@/components/dashboard/time-tracker/time-out-dialog";
 import { useAppSelector } from "@/store/hooks";
 import { formatDueDate, formatDurationMs } from "@/lib/utils/format";
 import { cn } from "@/lib/utils/cn";
-import { ClipboardList, Plus, Trash2, CheckCheck, UserCog, X, SlidersHorizontal, Clock, CheckSquare, Search } from "lucide-react";
+import { ClipboardList, Plus, Trash2, CheckCheck, UserCog, X, SlidersHorizontal, Clock, CheckSquare, Search, Pencil } from "lucide-react";
 import { Combobox } from "@/components/ui/combobox";
 import { ROWS_PER_PAGE } from "@/configs/pagination.config";
 import {
@@ -72,6 +73,7 @@ export function TasksTable() {
 	const [bulkMode, setBulkMode] = useState(false);
 	const [bulkAssignOpen, setBulkAssignOpen] = useState(false);
 	const [filtersOpen, setFiltersOpen] = useState(false);
+	const [editingTask, setEditingTask] = useState<Task | null>(null);
 
 	// Filter state — synced to URL params
 	const typeFilter     = searchParams.get("type")     ?? "";
@@ -187,6 +189,18 @@ const { mutateAsync: claimTask, isPending: isClaiming } = useMutation({
 		onSuccess: invalidateAll,
 	});
 
+
+	const { mutateAsync: deleteTask, isPending: isDeleting } = useMutation({
+		mutationFn: (id: string) => APIService.tasks.remove(id),
+		onSuccess: invalidateAll,
+	});
+
+
+	const handleDeleteTask = async (e: React.MouseEvent, id: string, title: string) => {
+		e.stopPropagation();
+		if (!window.confirm(`Delete "${title}"? This cannot be undone.`)) return;
+		await deleteTask(id);
+	};
 
 	const { mutateAsync: bulkAction, isPending: isBulkPending } = useMutation({
 		mutationFn: ({ action, ...payload }: { action: "assign" | "complete" | "delete" | "status" | "priority" | "due_date"; user_id?: string; status?: string; priority?: string; due_date?: string | null }) =>
@@ -605,6 +619,28 @@ const { mutateAsync: claimTask, isPending: isClaiming } = useMutation({
 
 										<td className="px-4 py-2" onClick={(e) => e.stopPropagation()}>
 											<div className="flex items-center justify-end gap-1">
+												{isAdmin && (
+													<>
+														<Button
+															variant="ghost"
+															size="icon-sm"
+															title="Edit"
+															onClick={(e) => { e.stopPropagation(); setEditingTask(task); }}
+														>
+															<Pencil className="w-3.5 h-3.5" />
+														</Button>
+														<Button
+															variant="ghost"
+															size="icon-sm"
+															title="Delete"
+															className="text-destructive hover:text-destructive"
+															disabled={isDeleting}
+															onClick={(e) => handleDeleteTask(e, task.id, task.title)}
+														>
+															<Trash2 className="w-3.5 h-3.5" />
+														</Button>
+													</>
+												)}
 												{!isAdmin && task.status === "pending" && (
 													<Button
 														size="sm"
@@ -658,6 +694,14 @@ const { mutateAsync: claimTask, isPending: isClaiming } = useMutation({
 						onGoTo={goToPage}
 					/>
 				</div>
+			)}
+
+			{editingTask && (
+				<EditTicketDialog
+					ticket={editingTask}
+					open={!!editingTask}
+					onOpenChange={(v) => { if (!v) setEditingTask(null); }}
+				/>
 			)}
 
 			{/* Complete task dialog — stops timer + marks task done */}
