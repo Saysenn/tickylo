@@ -117,11 +117,12 @@ export function TaskFormDialog({
 	const [assignedTo, setAssignedTo] = useState("");
 	const [clientId, setClientId] = useState("");
 	const [clientName, setClientName] = useState("");
+	const [clientComboValue, setClientComboValue] = useState("");
 	const [estimatedHours, setEstimatedHours] = useState("");
 	const [implementationPlan, setImplementationPlan] = useState("");
 	const [rollbackPlan, setRollbackPlan] = useState("");
 	const [links, setLinks] = useState<TicketLink[]>([]);
-	const [source, setSource] = useState("");
+	const [source, setSource] = useState("in_system");
 	const [assigneePermission, setAssigneePermission] = useState("editor");
 	const [error, setError] = useState("");
 
@@ -186,11 +187,12 @@ export function TaskFormDialog({
 		setAssignedTo("");
 		setClientId("");
 		setClientName("");
+		setClientComboValue("");
 		setEstimatedHours("");
 		setImplementationPlan("");
 		setRollbackPlan("");
 		setLinks([]);
-		setSource("");
+		setSource("in_system");
 		setAssigneePermission("editor");
 		setError("");
 		setSelectedTemplateId("");
@@ -412,15 +414,26 @@ export function TaskFormDialog({
 							<Combobox
 								options={[
 									{ value: "", label: "No client" },
+									{ value: "__front_office__", label: "Front Office" },
+									{ value: "__back_office__", label: "Back Office" },
 									...clients
 										.filter((c: any) => !c.deleted_at)
 										.map((c: any) => ({ value: c.id, label: c.name })),
 								]}
-								value={clientId}
+								value={clientComboValue}
 								onChange={(v) => {
-									setClientId(v);
-									const found = clients.find((c: any) => c.id === v);
-									setClientName(found?.name ?? "");
+									setClientComboValue(v);
+									if (v === "__front_office__") {
+										setClientId("");
+										setClientName("Front Office");
+									} else if (v === "__back_office__") {
+										setClientId("");
+										setClientName("Back Office");
+									} else {
+										setClientId(v);
+										const found = clients.find((c: any) => c.id === v);
+										setClientName(found?.name ?? "");
+									}
 								}}
 								placeholder="No client"
 								searchPlaceholder="Search clients…"

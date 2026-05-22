@@ -33,6 +33,7 @@ import { TaskSubtasks } from "@/components/dashboard/tasks/task-subtasks";
 import { TicketAttachmentsPanel } from "@/components/dashboard/attachments/ticket-attachments-panel";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { LinksEditor } from "@/components/dashboard/tasks/links-editor";
+import { RichTextEditor } from "@/components/ui/rich-text-editor";
 
 // ── Constants ─────────────────────────────────────────────────────────────
 
@@ -1384,6 +1385,13 @@ function EditTicketDialog({ ticket, open, onOpenChange, onSave, isEmployee = fal
 	const [dueDate,            setDueDate]            = useState(ticket.due_date ? toDatetimeInput(ticket.due_date) : "");
 	const [clientId,           setClientId]           = useState<string>((ticket as any).client_id ?? "");
 	const [clientName,         setClientName]         = useState(ticket.client_name ?? "");
+	const BUILTIN_CLIENTS = ["Front Office", "Back Office"];
+	const initClientCombo = (ticket as any).client_id
+		? ((ticket as any).client_id)
+		: BUILTIN_CLIENTS.includes(ticket.client_name ?? "")
+			? `__${(ticket.client_name ?? "").toLowerCase().replace(" ", "_")}__`
+			: "";
+	const [clientComboValue,   setClientComboValue]   = useState<string>(initClientCombo);
 	const [clientEmail,        setClientEmail]        = useState((ticket as any).client_email ?? "");
 	const [estimatedHours,     setEstimatedHours]     = useState(ticket.estimated_hours != null ? String(ticket.estimated_hours) : "");
 	const [billableHours,      setBillableHours]      = useState(ticket.billable_hours  != null ? String(ticket.billable_hours)  : "");
@@ -1414,6 +1422,13 @@ function EditTicketDialog({ ticket, open, onOpenChange, onSave, isEmployee = fal
 			setDueDate(ticket.due_date ? toDatetimeInput(ticket.due_date) : "");
 			setClientId((ticket as any).client_id ?? "");
 			setClientName(ticket.client_name ?? "");
+			setClientComboValue(
+				(ticket as any).client_id
+					? (ticket as any).client_id
+					: BUILTIN_CLIENTS.includes(ticket.client_name ?? "")
+						? `__${(ticket.client_name ?? "").toLowerCase().replace(" ", "_")}__`
+						: ""
+			);
 			setClientEmail((ticket as any).client_email ?? "");
 			setEstimatedHours(ticket.estimated_hours != null ? String(ticket.estimated_hours) : "");
 			setBillableHours(ticket.billable_hours  != null ? String(ticket.billable_hours)  : "");
@@ -1580,15 +1595,26 @@ function EditTicketDialog({ ticket, open, onOpenChange, onSave, isEmployee = fal
 								<Combobox
 									options={[
 										{ value: "", label: "No client" },
+										{ value: "__front_office__", label: "Front Office" },
+										{ value: "__back_office__", label: "Back Office" },
 										...clientOptions
 											.filter((c: any) => !c.deleted_at)
 											.map((c: any) => ({ value: c.id, label: c.name })),
 									]}
-									value={clientId}
+									value={clientComboValue}
 									onChange={(v) => {
-										setClientId(v);
-										const found = clientOptions.find((c: any) => c.id === v);
-										setClientName(found?.name ?? "");
+										setClientComboValue(v);
+										if (v === "__front_office__") {
+											setClientId("");
+											setClientName("Front Office");
+										} else if (v === "__back_office__") {
+											setClientId("");
+											setClientName("Back Office");
+										} else {
+											setClientId(v);
+											const found = clientOptions.find((c: any) => c.id === v);
+											setClientName(found?.name ?? "");
+										}
 									}}
 									placeholder="No client"
 									searchPlaceholder="Search clients…"
@@ -1638,20 +1664,11 @@ function EditTicketDialog({ ticket, open, onOpenChange, onSave, isEmployee = fal
 						<span className="text-[10px] font-semibold uppercase tracking-widest text-ink-3/50 whitespace-nowrap">Description</span>
 						<div className="flex-1 border-t border-border/40" />
 					</div>
-					<div className="rounded-lg border border-border focus-within:ring-1 focus-within:ring-mint overflow-hidden">
-						<textarea
-							id="edit-desc"
-							value={description}
-							onChange={(e) => setDescription(e.target.value)}
-							rows={5}
-							maxLength={1000}
-							placeholder="What needs to be done? Context, steps to reproduce, acceptance criteria…"
-							className="w-full bg-background px-3 py-3 text-sm focus:outline-none placeholder:text-ink-3/40 resize-none"
-						/>
-						<div className="px-3 py-2 border-t border-border/40 bg-accent/40">
-							<span className="text-[10px] text-ink-3/50 font-medium">Markdown supported · Attachments coming soon</span>
-						</div>
-					</div>
+					<RichTextEditor
+						value={description}
+						onChange={setDescription}
+						placeholder="What needs to be done? Context, steps to reproduce, acceptance criteria…"
+					/>
 
 					{error && <p className="text-xs text-destructive">{error}</p>}
 
