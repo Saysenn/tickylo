@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Dialog } from "radix-ui";
 import APIService from "@/lib/infra/api";
+import { useAppSelector } from "@/store/hooks";
 import { Clock, Timer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { TimeEntry } from "@/components/dashboard/time-tracker/types";
@@ -27,6 +28,7 @@ function shouldShow(hasActiveTimer: boolean): boolean {
 export function TimerNudgeBanner() {
 	const queryClient = useQueryClient();
 	const [visible, setVisible] = useState(false);
+	const onboardingDone = useAppSelector((s) => s.auth.user?.onboarding_completed ?? true);
 	const prevActiveRef = useRef<TimeEntry | null | undefined>(undefined);
 
 	const { data: activeEntry, isLoading } = useQuery<TimeEntry | null>({
@@ -83,7 +85,7 @@ export function TimerNudgeBanner() {
 	}
 
 	return (
-		<Dialog.Root open={visible}>
+		<Dialog.Root open={visible && onboardingDone}>
 			<Dialog.Portal>
 				<Dialog.Overlay className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm data-[state=open]:animate-in data-[state=open]:fade-in-0" />
 				<Dialog.Content
