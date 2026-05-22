@@ -410,6 +410,14 @@ function TicketDetail({
           <p className="text-[10px] text-gray-400 italic">Unassigned</p>
         )}
 
+        {/* Client */}
+        {(t.client_name || t.client_id) && (
+          <div className="flex items-center gap-1.5">
+            <span className="text-[9px] font-semibold text-gray-400 uppercase tracking-wider">Client</span>
+            <span className="text-[10px] font-medium text-ink-2">{t.client_name ?? "—"}</span>
+          </div>
+        )}
+
         {/* Meta row */}
         <div className="flex flex-wrap gap-x-4 gap-y-1">
           {t.due_date && (

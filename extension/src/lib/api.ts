@@ -115,6 +115,8 @@ export interface Ticket {
   due_date: string | null;
   created_at: string;
   user_id: string | null;
+  client_id: string | null;
+  client_name: string | null;
   assignee: { id: string; name: string | null; email: string } | null;
   transferRequests: { id: string }[];
   reopenRequests: { id: string }[];
