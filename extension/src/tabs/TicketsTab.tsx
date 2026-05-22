@@ -52,11 +52,26 @@ export function TicketsTab({
 }) {
   const [view, setView]             = useState<View>("mine");
   const [mineFilter, setMineFilter] = useState<"active" | "all" | "resolved">("active");
-  const [tickets, setTickets]       = useState<Ticket[]>([]);
+  const CACHE_KEY = `tw_tickets_${view}_${mineFilter}`;
+  const CACHE_TTL = 60_000;
+
+  function readCache(): Ticket[] {
+    try {
+      const raw = localStorage.getItem(CACHE_KEY);
+      if (!raw) return [];
+      const { tickets, ts } = JSON.parse(raw);
+      return Date.now() - ts < CACHE_TTL ? tickets : [];
+    } catch { return []; }
+  }
+  function writeCache(data: Ticket[]) {
+    try { localStorage.setItem(CACHE_KEY, JSON.stringify({ tickets: data, ts: Date.now() })); } catch {}
+  }
+
+  const [tickets, setTickets]       = useState<Ticket[]>(() => readCache());
   const [page, setPage]             = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [loadingMore, setLoadingMore] = useState(false);
-  const [loading, setLoading]       = useState(false);
+  const [loading, setLoading]       = useState(tickets.length === 0);
   const [refreshing, setRefreshing] = useState(false);
   const [acting, setActing]         = useState<string | null>(null);
   const [creating, setCreating]     = useState(false);
@@ -82,6 +97,7 @@ export function TicketsTab({
       setTotalPages(res.totalPages);
       const filtered = applyFilter(res.data);
       setTickets((prev) => append ? [...prev, ...filtered] : filtered);
+      if (!append) writeCache(filtered);
       setPage(pageNum);
     } catch { if (!append) setTickets([]); }
     finally { setLoading(false); setLoadingMore(false); }
@@ -103,7 +119,14 @@ export function TicketsTab({
 
   async function handleAction(id: string, action: "start" | "complete" | "hold" | "reopen") {
     setActing(id);
-    try { await updateTicketStatus(id, action); await load(); } finally { setActing(null); }
+    try {
+      await updateTicketStatus(id, action);
+      await load();
+      if (selected?.id === id) {
+        const fresh: any = await getTicket(id);
+        setSelected({ ...fresh, client_rate_type: fresh.client?.rate_type ?? null });
+      }
+    } finally { setActing(null); }
   }
 
   async function handleStartTimer(ticket: Ticket) {
@@ -275,9 +298,12 @@ function TicketRow({
   const isActive = activeTimer?.id !== undefined;
 
   return (
-    <button
+    <div
       onClick={onSelect}
-      className="w-full text-left px-4 py-3 hover:bg-gray-50/80 transition-colors"
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => e.key === "Enter" && onSelect()}
+      className="w-full text-left px-4 py-3 hover:bg-gray-50/80 transition-colors cursor-pointer"
     >
       <div className="flex items-start gap-2">
         <div className="flex-1 min-w-0">
@@ -311,7 +337,7 @@ function TicketRow({
           )}
         </div>
       </div>
-    </button>
+    </div>
   );
 }
 
@@ -359,6 +385,8 @@ function TicketDetail({
   const [showDueForm, setShowDueForm]       = useState(false);
   const [showCompleteForm, setShowComplete] = useState(false);
   const [billableInput, setBillableInput]   = useState("");
+
+  useEffect(() => { setT(initial); }, [initial]);
 
   useEffect(() => {
     getTicket(initial.id).then((raw: any) => {
@@ -440,6 +468,38 @@ function TicketDetail({
           )}
         </div>
 
+        {showCompleteForm && (
+          <div className="rounded-xl border border-mint/30 bg-mint/5 p-3 space-y-2">
+            <p className="text-[9px] font-semibold text-gray-400 uppercase tracking-wider">Billable hours</p>
+            <p className="text-[10px] text-gray-400">This client is billed hourly. Enter hours worked or leave blank to use tracked time.</p>
+            <input
+              type="number" min="0" step="0.5"
+              value={billableInput}
+              onChange={(e) => setBillableInput(e.target.value)}
+              placeholder="e.g. 2.5 (optional)"
+              className="w-full px-2.5 py-1.5 rounded-lg border border-gray-200 text-xs focus:outline-none focus:border-mint"
+            />
+            <div className="flex gap-1.5">
+              <button
+                onClick={async () => {
+                  if (billableInput.trim()) {
+                    await updateBillableHours(t.id, parseFloat(billableInput)).catch(() => {});
+                  }
+                  setShowComplete(false);
+                  onAction("complete");
+                }}
+                className="flex-1 py-1.5 rounded-lg bg-mint text-ink text-[10px] font-semibold hover:bg-mint-hover transition-colors"
+              >
+                Complete
+              </button>
+              <button onClick={() => setShowComplete(false)}
+                className="flex-1 py-1.5 rounded-lg border border-gray-200 text-[10px] text-gray-500 hover:bg-gray-50 transition-colors">
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Description */}
         {t.description && (
           <div className="rounded-xl bg-gray-50 px-3 py-2.5">
@@ -490,37 +550,6 @@ function TicketDetail({
           </div>
         )}
 
-        {showCompleteForm && (
-          <div className="rounded-xl border border-mint/30 bg-mint/5 p-3 space-y-2">
-            <p className="text-[9px] font-semibold text-gray-400 uppercase tracking-wider">Billable hours</p>
-            <p className="text-[10px] text-gray-400">This client is billed hourly. Enter hours worked or leave blank to use tracked time.</p>
-            <input
-              type="number" min="0" step="0.5"
-              value={billableInput}
-              onChange={(e) => setBillableInput(e.target.value)}
-              placeholder="e.g. 2.5 (optional)"
-              className="w-full px-2.5 py-1.5 rounded-lg border border-gray-200 text-xs focus:outline-none focus:border-mint"
-            />
-            <div className="flex gap-1.5">
-              <button
-                onClick={async () => {
-                  if (billableInput.trim()) {
-                    await updateBillableHours(t.id, parseFloat(billableInput)).catch(() => {});
-                  }
-                  setShowComplete(false);
-                  onAction("complete");
-                }}
-                className="flex-1 py-1.5 rounded-lg bg-mint text-ink text-[10px] font-semibold hover:bg-mint-hover transition-colors"
-              >
-                Complete
-              </button>
-              <button onClick={() => setShowComplete(false)}
-                className="flex-1 py-1.5 rounded-lg border border-gray-200 text-[10px] text-gray-500 hover:bg-gray-50 transition-colors">
-                Cancel
-              </button>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Actions */}
