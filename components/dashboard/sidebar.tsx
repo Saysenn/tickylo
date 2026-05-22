@@ -87,6 +87,14 @@ export function Sidebar({ isOpen = false, onClose, role }: SidebarProps) {
 		},
 	];
 
+	const TOUR_IDS: Record<string, string> = {
+		"/dashboard":              "tour-nav-dashboard",
+		"/dashboard/tickets":      "tour-nav-tickets",
+		"/dashboard/time-tracker": "tour-nav-timer",
+		"/dashboard/employees":    "tour-nav-employees",
+		"/dashboard/reports":      "tour-nav-reports",
+	};
+
 	const NavLink = ({ label, href, icon: Icon }: NavItem) => {
 		const isActive =
 			pathname === href || (href !== "/dashboard" && pathname.startsWith(href));
@@ -94,6 +102,7 @@ export function Sidebar({ isOpen = false, onClose, role }: SidebarProps) {
 			<Link
 				href={href}
 				onClick={onClose}
+				id={TOUR_IDS[href]}
 				className={cn(
 					"flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150",
 					isActive

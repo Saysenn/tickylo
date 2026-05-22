@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { Sidebar } from "./sidebar";
 import { Header } from "./header";
 import { TimerNudgeBanner } from "./timer-nudge-banner";
+import { OnboardingTour } from "./onboarding-tour";
 import type { UserProfile } from "@/types";
 
 interface DashboardShellProps {
@@ -35,6 +36,7 @@ export function DashboardShell({ user, orgName, children }: DashboardShellProps)
           sidebarOpen={sidebarOpen}
         />
         <TimerNudgeBanner />
+        <Suspense><OnboardingTour /></Suspense>
         <main className="flex-1 p-5 md:p-7">{children}</main>
       </div>
     </div>

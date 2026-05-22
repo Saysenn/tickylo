@@ -4,6 +4,7 @@ import { ProfileMetaSection } from "@/components/dashboard/settings/profile-meta
 import { TwoFactorSettings } from "@/components/dashboard/settings/two-factor-settings";
 import { ShiftSettingsSection } from "@/components/dashboard/settings/shift-settings-section";
 import { SettingsTabNav } from "@/components/dashboard/settings/settings-tab-nav";
+import { OnboardingTourSection } from "@/components/dashboard/settings/onboarding-tour-section";
 
 export const metadata = { title: "Profile · Settings" };
 
@@ -31,7 +32,12 @@ export default async function ProfileSettingsPage({
 			</Suspense>
 
 			<div className="space-y-5">
-				{tab === "personal" && <ProfileMetaSection />}
+				{tab === "personal" && (
+					<>
+						<ProfileMetaSection />
+						<OnboardingTourSection />
+					</>
+				)}
 				{tab === "shift"    && <ShiftSettingsSection isAdmin={isAdmin} />}
 				{tab === "security" && <TwoFactorSettings />}
 			</div>

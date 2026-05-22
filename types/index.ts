@@ -8,6 +8,7 @@ export interface UserProfile {
 	twoFactorEnabled: boolean;
 	role: Role;
 	org_id: string | null;
+	onboarding_completed: boolean;
 }
 
 export interface AuthState {

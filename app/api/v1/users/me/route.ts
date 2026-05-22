@@ -12,7 +12,7 @@ export async function GET() {
 		if (!user) return errorResponse("Unauthorized", 401);
 		const row = await prisma.user.findUnique({
 			where: { id: user.id },
-			select: { id: true, name: true, email: true, timezone: true, shift_start: true, shift_end: true },
+			select: { id: true, name: true, email: true, timezone: true, shift_start: true, shift_end: true, onboarding_completed: true },
 		});
 		return ok(row);
 	} catch (err) {
@@ -22,9 +22,10 @@ export async function GET() {
 }
 
 const PatchSchema = z.object({
-	timezone:    z.string().min(1).max(64).optional(),
-	shift_start: z.string().regex(TIME_REGEX, "shift_start must be HH:MM").nullable().optional(),
-	shift_end:   z.string().regex(TIME_REGEX, "shift_end must be HH:MM").nullable().optional(),
+	timezone:             z.string().min(1).max(64).optional(),
+	shift_start:          z.string().regex(TIME_REGEX, "shift_start must be HH:MM").nullable().optional(),
+	shift_end:            z.string().regex(TIME_REGEX, "shift_end must be HH:MM").nullable().optional(),
+	onboarding_completed: z.boolean().optional(),
 });
 
 export async function PATCH(request: NextRequest) {
@@ -37,7 +38,7 @@ export async function PATCH(request: NextRequest) {
 		const row = await prisma.user.update({
 			where: { id: user.id },
 			data: parsed.data,
-			select: { id: true, name: true, email: true, timezone: true, shift_start: true, shift_end: true },
+			select: { id: true, name: true, email: true, timezone: true, shift_start: true, shift_end: true, onboarding_completed: true },
 		});
 		return ok(row);
 	} catch (err) {

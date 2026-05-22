@@ -24,6 +24,8 @@ class APIService {
 	public users = {
 		me: () => axiosService.get(`${apiVersion}/users/me`),
 		getMe: () => axiosService.get(`${apiVersion}/users/me`),
+		updateMe: (data: { timezone?: string; shift_start?: string | null; shift_end?: string | null; onboarding_completed?: boolean }) =>
+			axiosService.patch(`${apiVersion}/users/me`, data),
 		updateTimezone: (timezone: string) =>
 			axiosService.patch(`${apiVersion}/users/me`, { timezone }),
 		updateShift: (shift_start: string | null, shift_end: string | null) =>

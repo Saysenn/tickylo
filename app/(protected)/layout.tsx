@@ -28,12 +28,16 @@ export default async function ProtectedLayout({
   // Super admin belongs in /super-admin, not the regular dashboard
   if (role === "super_admin") redirect("/super-admin/dashboard");
 
-  const org = orgId
-    ? await prisma.organization.findUnique({
-        where: { id: orgId },
-        select: { name: true, plan: true, is_internal: true },
-      })
-    : null;
+  const [org, dbUser] = await Promise.all([
+    orgId ? prisma.organization.findUnique({
+      where: { id: orgId },
+      select: { name: true, plan: true, is_internal: true },
+    }) : null,
+    prisma.user.findUnique({
+      where: { id: user.id },
+      select: { onboarding_completed: true },
+    }),
+  ]);
 
   // Billing gate — locked orgs go to /billing unless they're already there
   // Internal orgs bypass this check entirely
@@ -49,6 +53,7 @@ export default async function ProtectedLayout({
     twoFactorEnabled: false,
     role: (user.app_metadata?.role ?? "employee") as UserProfile["role"],
     org_id: user.app_metadata?.org_id ?? null,
+    onboarding_completed: dbUser?.onboarding_completed ?? false,
   };
 
   return (
