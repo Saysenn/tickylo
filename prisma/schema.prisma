@@ -46,6 +46,8 @@ model Organization {
   ticket_templates TicketTemplate[]
   departments      Department[]
   deletionRequest  OrgDeletionRequest?
+  clients          Client[]
+  invoices         Invoice[]
 
   @@map("organizations")
 }
@@ -335,6 +337,8 @@ model Ticket {
   ticket_type         String  @default("internal_task")
   client_name         String?
   client_email        String?
+  client_id           String?
+  client              Client? @relation(fields: [client_id], references: [id], onDelete: SetNull)
   estimated_hours     Float?
   billable_hours      Float?
   implementation_plan String?
@@ -370,7 +374,49 @@ model Ticket {
   @@index([org_id, user_id, status])
   @@index([org_id, due_date])
   @@index([org_id, priority])
+  @@index([client_id])
   @@map("tasks")
+}
+
+// ─── Client Management ────────────────────────────────────────────────────────
+
+model Client {
+  id               String    @id @default(cuid())
+  org_id           String
+  name             String
+  email            String?
+  currency         String    @default("USD")
+  hourly_rate      Float     @default(0)
+  discount_percent Float     @default(0)
+  notes            String?
+  deleted_at       DateTime?
+  created_at       DateTime  @default(now())
+  updated_at       DateTime  @updatedAt
+
+  org     Organization @relation(fields: [org_id], references: [id], onDelete: Cascade)
+  tickets Ticket[]
+  invoices Invoice[]
+
+  @@unique([org_id, name])
+  @@index([org_id])
+  @@map("clients")
+}
+
+model Invoice {
+  id             String   @id @default(cuid())
+  org_id         String
+  invoice_number String
+  type           String
+  client_id      String?
+  date_from      DateTime
+  date_to        DateTime
+  generated_at   DateTime @default(now())
+
+  org    Organization @relation(fields: [org_id], references: [id], onDelete: Cascade)
+  client Client?      @relation(fields: [client_id], references: [id], onDelete: SetNull)
+
+  @@index([org_id])
+  @@map("invoices")
 }
 
 model TicketComment {

@@ -790,12 +790,17 @@ export default function TicketDetailPage() {
 									</MetaRow>
 								)}
 
-								{ticket.client_name && (
+								{((ticket as any).client || ticket.client_name) && (
 									<MetaRow icon={Building2} label="Client">
 										<div className="space-y-0.5">
-											<span className="font-medium text-ink">{ticket.client_name}</span>
-											{(ticket as any).client_email && (
-												<p className="text-xs text-ink-3">{(ticket as any).client_email}</p>
+											<span className="font-medium text-ink">
+												{(ticket as any).client?.name ?? ticket.client_name}
+												{(ticket as any).client?.deleted_at && (
+													<span className="ml-1.5 text-[10px] font-normal text-amber-600">[Deactivated]</span>
+												)}
+											</span>
+											{((ticket as any).client?.email ?? (ticket as any).client_email) && (
+												<p className="text-xs text-ink-3">{(ticket as any).client?.email ?? (ticket as any).client_email}</p>
 											)}
 										</div>
 									</MetaRow>
@@ -1377,6 +1382,7 @@ function EditTicketDialog({ ticket, open, onOpenChange, onSave, isEmployee = fal
 	const [status,             setStatus]             = useState<string>(ticket.status);
 	const [priority,           setPriority]           = useState<string>(ticket.priority ?? "medium");
 	const [dueDate,            setDueDate]            = useState(ticket.due_date ? toDatetimeInput(ticket.due_date) : "");
+	const [clientId,           setClientId]           = useState<string>((ticket as any).client_id ?? "");
 	const [clientName,         setClientName]         = useState(ticket.client_name ?? "");
 	const [clientEmail,        setClientEmail]        = useState((ticket as any).client_email ?? "");
 	const [estimatedHours,     setEstimatedHours]     = useState(ticket.estimated_hours != null ? String(ticket.estimated_hours) : "");
@@ -1389,6 +1395,14 @@ function EditTicketDialog({ ticket, open, onOpenChange, onSave, isEmployee = fal
 	const [isSaving,           setIsSaving]           = useState(false);
 	const [error,              setError]              = useState("");
 
+	const { data: clientsData } = useQuery({
+		queryKey: ["clients"],
+		queryFn: () => APIService.clients.list(),
+		enabled: open && !isEmployee,
+		staleTime: 60_000,
+	});
+	const clientOptions: any[] = (clientsData as any)?.data ?? [];
+
 	// Sync all form fields with latest ticket data each time the dialog opens
 	useEffect(() => {
 		if (open) {
@@ -1398,6 +1412,7 @@ function EditTicketDialog({ ticket, open, onOpenChange, onSave, isEmployee = fal
 			setStatus(ticket.status);
 			setPriority(ticket.priority ?? "medium");
 			setDueDate(ticket.due_date ? toDatetimeInput(ticket.due_date) : "");
+			setClientId((ticket as any).client_id ?? "");
 			setClientName(ticket.client_name ?? "");
 			setClientEmail((ticket as any).client_email ?? "");
 			setEstimatedHours(ticket.estimated_hours != null ? String(ticket.estimated_hours) : "");
@@ -1439,6 +1454,7 @@ function EditTicketDialog({ ticket, open, onOpenChange, onSave, isEmployee = fal
 					due_date: dueDate ? new Date(dueDate).toISOString() : null,
 					source: source || null,
 					assignee_permission: assigneePermission,
+					client_id: clientId || null,
 					client_name: clientName.trim() || null,
 					client_email: clientEmail.trim() || null,
 					estimated_hours: estimatedHours ? parseFloat(estimatedHours) : null,
@@ -1560,15 +1576,25 @@ function EditTicketDialog({ ticket, open, onOpenChange, onSave, isEmployee = fal
 								<input id="edit-due" type="datetime-local" value={dueDate} onChange={(e) => setDueDate(e.target.value)} className={inputCls} />
 							</div>
 							<div className="space-y-1.5">
-								<Label htmlFor="edit-client">{optLabel("Client name")}</Label>
-								<input id="edit-client" type="text" value={clientName} onChange={(e) => setClientName(e.target.value)} maxLength={100} placeholder="e.g. Acme Corp" className={inputCls} />
+								<Label>{optLabel("Client")}</Label>
+								<Combobox
+									options={[
+										{ value: "", label: "No client" },
+										...clientOptions
+											.filter((c: any) => !c.deleted_at)
+											.map((c: any) => ({ value: c.id, label: c.name })),
+									]}
+									value={clientId}
+									onChange={(v) => {
+										setClientId(v);
+										const found = clientOptions.find((c: any) => c.id === v);
+										setClientName(found?.name ?? "");
+									}}
+									placeholder="No client"
+									searchPlaceholder="Search clients…"
+									emptyText="No clients found."
+								/>
 							</div>
-						</div>
-					)}
-					{!isEmployee && (
-						<div className="space-y-1.5">
-							<Label htmlFor="edit-client-email">{optLabel("Client email")}</Label>
-							<input id="edit-client-email" type="email" value={clientEmail} onChange={(e) => setClientEmail(e.target.value)} maxLength={200} placeholder="client@example.com" className={inputCls} />
 						</div>
 					)}
 					<div className="grid grid-cols-2 gap-4">

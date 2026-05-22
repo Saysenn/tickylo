@@ -15,6 +15,7 @@ import {
 	Inbox,
 	Building2,
 	CalendarDays,
+	Briefcase,
 } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import type { Role } from "@/configs/rbac.config";
@@ -67,6 +68,7 @@ export function Sidebar({ isOpen = false, onClose, role }: SidebarProps) {
 			items: [
 				{ label: "Employees", href: "/dashboard/employees", icon: Users, roles: ["admin"], hidden: !gate("employees") },
 				{ label: "Departments", href: "/dashboard/departments", icon: Building2, roles: ["admin"], hidden: !departmentsEnabled || !gate("departments") },
+				{ label: "Clients", href: "/dashboard/clients", icon: Briefcase, roles: ["admin"] },
 				{ label: "Requests", href: "/dashboard/ticket-requests", icon: Inbox, roles: ["admin"], hidden: !gate("ticket_requests") },
 			],
 		},
@@ -99,6 +101,7 @@ export function Sidebar({ isOpen = false, onClose, role }: SidebarProps) {
 		"/dashboard/requests":         "tour-nav-my-requests",
 		"/dashboard/time-logs":        "tour-nav-time-logs",
 		"/dashboard/audit-logs":       "tour-nav-ticket-logs",
+		"/dashboard/clients":          "tour-nav-clients",
 	};
 
 	const NavLink = ({ label, href, icon: Icon }: NavItem) => {

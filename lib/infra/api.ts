@@ -186,6 +186,7 @@ class APIService {
 			assigned_to?: string;
 			ticket_type?: string;
 			client_name?: string;
+			client_id?: string;
 			estimated_hours?: number;
 			billable_hours?: number;
 			implementation_plan?: string;
@@ -304,6 +305,28 @@ class APIService {
 		remove: (id: string) => axiosService.delete(`${apiVersion}/request/${id}`),
 		bulkDelete: (ids: string[]) =>
 			axiosService.post(`${apiVersion}/request/bulk-delete`, { ids }),
+	};
+
+	// ---------------------------------------------------------------------------
+	// Clients
+	// ---------------------------------------------------------------------------
+	public clients = {
+		list: () => axiosService.get(`${apiVersion}/clients`),
+		create: (data: { name: string; email?: string; currency?: string; hourly_rate?: number; discount_percent?: number; notes?: string }) =>
+			axiosService.post(`${apiVersion}/clients`, data),
+		update: (id: string, data: Partial<{ name: string; email: string | null; currency: string; hourly_rate: number; discount_percent: number; notes: string | null }>) =>
+			axiosService.patch(`${apiVersion}/clients/${id}`, data),
+		remove: (id: string) => axiosService.delete(`${apiVersion}/clients/${id}`),
+	};
+
+	// ---------------------------------------------------------------------------
+	// Invoice
+	// ---------------------------------------------------------------------------
+	public invoice = {
+		preview: (params: { type: string; client_id?: string; date_from: string; date_to: string; tz_offset?: number }) =>
+			axiosService.get(`${apiVersion}/reports/invoice`, params),
+		export: (data: { type: string; client_id?: string; date_from: string; date_to: string; tz_offset?: number; org_name: string; org_logo?: string }) =>
+			axiosService.instance.post(`/v1/reports/invoice/export`, data, { responseType: "blob" }),
 	};
 
 	// ---------------------------------------------------------------------------

@@ -43,6 +43,7 @@ interface TaskFormDialogProps {
 		assigned_to?: string;
 		ticket_type?: string;
 		client_name?: string;
+		client_id?: string;
 		estimated_hours?: number;
 		billable_hours?: number;
 		implementation_plan?: string;
@@ -114,6 +115,7 @@ export function TaskFormDialog({
 	const [priority, setPriority] = useState("medium");
 	const [dueDate, setDueDate] = useState("");
 	const [assignedTo, setAssignedTo] = useState("");
+	const [clientId, setClientId] = useState("");
 	const [clientName, setClientName] = useState("");
 	const [estimatedHours, setEstimatedHours] = useState("");
 	const [implementationPlan, setImplementationPlan] = useState("");
@@ -159,6 +161,14 @@ export function TaskFormDialog({
 	});
 	const employees: any[] = (employeesResult as any)?.data ?? [];
 
+	const { data: clientsResult } = useQuery({
+		queryKey: ["clients"],
+		queryFn: () => APIService.clients.list(),
+		enabled: open,
+		staleTime: 60_000,
+	});
+	const clients: any[] = (clientsResult as any)?.data ?? [];
+
 	const handleTypeChange = useCallback((newType: string) => {
 		setTicketType(newType);
 		// Keep the body text, just the prefix changes — focus title body
@@ -174,6 +184,7 @@ export function TaskFormDialog({
 		setPriority("medium");
 		setDueDate("");
 		setAssignedTo("");
+		setClientId("");
 		setClientName("");
 		setEstimatedHours("");
 		setImplementationPlan("");
@@ -198,6 +209,7 @@ export function TaskFormDialog({
 				priority: priority || undefined,
 				due_date: dueDate ? new Date(dueDate).toISOString() : undefined,
 				assigned_to: assignedTo || undefined,
+				client_id: clientId || undefined,
 				client_name: clientName.trim() || undefined,
 				estimated_hours: estimatedHours ? parseFloat(estimatedHours) : undefined,
 				implementation_plan: isRteEmpty(implementationPlan) ? undefined : implementationPlan,
@@ -396,15 +408,23 @@ export function TaskFormDialog({
 
 					<div className="grid grid-cols-2 gap-4">
 						<div className="space-y-1.5">
-							<Label htmlFor="client-name"><FieldOpt>Client</FieldOpt></Label>
-							<input
-								id="client-name"
-								type="text"
-								value={clientName}
-								onChange={(e) => setClientName(e.target.value)}
-								maxLength={100}
-								placeholder="e.g. Acme Corp"
-								className={inputCls}
+							<Label><FieldOpt>Client</FieldOpt></Label>
+							<Combobox
+								options={[
+									{ value: "", label: "No client" },
+									...clients
+										.filter((c: any) => !c.deleted_at)
+										.map((c: any) => ({ value: c.id, label: c.name })),
+								]}
+								value={clientId}
+								onChange={(v) => {
+									setClientId(v);
+									const found = clients.find((c: any) => c.id === v);
+									setClientName(found?.name ?? "");
+								}}
+								placeholder="No client"
+								searchPlaceholder="Search clients…"
+								emptyText="No clients found."
 							/>
 						</div>
 						<div className="space-y-1.5">

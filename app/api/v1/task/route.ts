@@ -17,6 +17,7 @@ const createTaskSchema = z.object({
 	assigned_to: z.string().optional(),
 	ticket_type: z.enum(["internal_task", "request", "incident", "change"]).optional(),
 	client_name: z.string().max(200).optional(),
+	client_id: z.string().optional(),
 	client_email: z.string().email().max(200).optional(),
 	estimated_hours: z.number().positive().optional(),
 	billable_hours: z.number().nonnegative().optional(),

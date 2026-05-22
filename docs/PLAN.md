@@ -1,10 +1,10 @@
 # Tickworks — Remaining Work
 
-2. **Help Center CTA** — Fixed "Need help?" widget bottom-left of dashboard.
-3. **Client Management + Invoice Export** — See full spec below.
-4. **SMS → Ticket** — Twilio inbound → AI parse → ticket (Enterprise).
-5. **Email → Ticket** — Inbound webhook → AI parse → ticket (Enterprise).
-6. **AI Ticket Assistance** — Plain text → auto-fill fields + chatbot (Enterprise).
+1. **Help Center CTA** — Fixed "Need help?" widget bottom-left of dashboard.
+2. **Client Management + Invoice Export** — See full spec below.
+3. **SMS → Ticket** — Twilio inbound → AI parse → ticket (Enterprise).
+4. **Email → Ticket** — Inbound webhook → AI parse → ticket (Enterprise).
+5. **AI Ticket Assistance** — Plain text → auto-fill fields + chatbot (Enterprise).
 
 ---
 

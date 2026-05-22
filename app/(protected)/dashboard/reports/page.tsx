@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/infra/prisma";
 import { canAccess } from "@/lib/utils/plan-gate";
 import { PerformanceTable } from "@/components/dashboard/performance/performance-table";
+import { InvoiceSection } from "@/components/dashboard/reports/invoice-section";
 import { PageTour } from "@/components/dashboard/page-tour";
 import type { DriveStep } from "driver.js";
 
@@ -25,7 +26,10 @@ export default async function ReportsPage() {
 	if (!user) redirect("/login");
 	if (user.app_metadata?.role !== "admin") redirect("/dashboard");
 	const orgId = user.app_metadata?.org_id as string | undefined;
-	const org = orgId ? await prisma.organization.findUnique({ where: { id: orgId }, select: { plan: true, is_internal: true } }) : null;
+	const org = orgId ? await prisma.organization.findUnique({
+		where: { id: orgId },
+		select: { plan: true, is_internal: true, name: true, slug: true, logo_url: true },
+	}) : null;
 	if (!org || !canAccess(org.plan, org.is_internal, "reports")) redirect("/dashboard?upgrade=reports");
 
 	return (
@@ -39,6 +43,12 @@ export default async function ReportsPage() {
 			</div>
 
 			<PerformanceTable />
+
+			<InvoiceSection
+				orgName={org.name}
+				orgSlug={org.slug}
+				orgLogoUrl={org.logo_url ?? undefined}
+			/>
 		</div>
 	);
 }

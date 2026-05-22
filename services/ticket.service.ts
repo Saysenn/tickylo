@@ -200,6 +200,7 @@ export type CreateTicketData = {
 	assigned_to?: string;
 	ticket_type?: string;
 	client_name?: string;
+	client_id?: string;
 	client_email?: string;
 	estimated_hours?: number;
 	billable_hours?: number;
@@ -279,6 +280,7 @@ export async function getTicket(id: string, caller: Caller) {
 		include: {
 			assignee: { select: { id: true, name: true, email: true } },
 			creator: { select: { id: true, name: true, email: true } },
+			client: { select: { id: true, name: true, email: true, deleted_at: true } },
 		},
 	});
 
@@ -297,6 +299,7 @@ export type UpdateTicketData = {
 	due_date?: Date | null;
 	ticket_type?: string;
 	client_name?: string | null;
+	client_id?: string | null;
 	client_email?: string | null;
 	estimated_hours?: number | null;
 	billable_hours?: number | null;
