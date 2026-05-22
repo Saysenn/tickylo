@@ -13,11 +13,6 @@ import { EmployeeDeleteDialog } from "./employee-delete-dialog";
 import { Pagination } from "@/components/ui/pagination";
 import { UserPlus, Pencil, Trash2, Users, Search, CheckSquare, SlidersHorizontal, X } from "lucide-react";
 import {
-	SelectRoot,
-	SelectTrigger,
-	SelectValue,
-	SelectContent,
-	SelectItem,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils/cn";
 import { formatInitials, formatDate } from "@/lib/utils/format";
@@ -237,18 +232,15 @@ export function EmployeesTable() {
 						searchPlaceholder="Search departments…"
 						className="w-[190px] h-8 text-sm"
 					/>
-					<SelectRoot
+					<Combobox
+						className="w-[160px]"
+						options={[
+							{ value: "__all__", label: "All employees" },
+							{ value: "managers", label: "Managers only" },
+						]}
 						value={roleFilter ?? "__all__"}
-						onValueChange={(v) => setRoleFilter(v === "__all__" ? undefined : "managers")}
-					>
-						<SelectTrigger className="h-8 text-sm w-[160px]">
-							<SelectValue placeholder="All employees" />
-						</SelectTrigger>
-						<SelectContent>
-							<SelectItem value="__all__">All employees</SelectItem>
-							<SelectItem value="managers">Managers only</SelectItem>
-						</SelectContent>
-					</SelectRoot>
+						onChange={(v) => setRoleFilter(v === "__all__" ? undefined : "managers")}
+					/>
 					{hasActiveFilters && (
 						<Button size="sm" variant="ghost" className="h-8 text-xs gap-1.5 text-ink-3" onClick={clearFilters}>
 							<X className="w-3.5 h-3.5" />
@@ -280,19 +272,19 @@ export function EmployeesTable() {
 						{selectedIds.size > 0 ? `${selectedIds.size} selected` : "Select employees to act on"}
 					</span>
 					<div className="flex items-center gap-2 ml-auto flex-wrap">
-						<SelectRoot
-							onValueChange={(v) => bulkAction({ action: "change_role", role: v })}
+						<Combobox
+							className="w-[130px]"
+							options={[
+								{ value: "", label: "Change role" },
+								{ value: "employee", label: "Set Employee" },
+								{ value: "manager", label: "Set Manager" },
+								{ value: "admin", label: "Set Admin" },
+							]}
+							value=""
+							onChange={(v) => v && bulkAction({ action: "change_role", role: v })}
+							placeholder="Change role"
 							disabled={isBulkPending || selectedIds.size === 0}
-						>
-							<SelectTrigger className="h-7 text-xs w-[130px]">
-								<SelectValue placeholder="Change role" />
-							</SelectTrigger>
-							<SelectContent>
-								<SelectItem value="employee">Set Employee</SelectItem>
-								<SelectItem value="manager">Set Manager</SelectItem>
-								<SelectItem value="admin">Set Admin</SelectItem>
-							</SelectContent>
-						</SelectRoot>
+						/>
 						{departmentsEnabled && (
 							<Combobox
 								options={[

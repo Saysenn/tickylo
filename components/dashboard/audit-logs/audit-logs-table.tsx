@@ -7,13 +7,7 @@ import { Pagination } from "@/components/ui/pagination";
 import APIService from "@/lib/infra/api";
 import { formatDateTime } from "@/lib/utils/format";
 import { cn } from "@/lib/utils/cn";
-import {
-	SelectRoot,
-	SelectTrigger,
-	SelectValue,
-	SelectContent,
-	SelectItem,
-} from "@/components/ui/select";
+import { Combobox } from "@/components/ui/combobox";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { formatInitials } from "@/lib/utils/format";
@@ -285,27 +279,19 @@ export function AuditLogsTable({
 			<div className="flex flex-wrap items-center gap-2">
 				<Filter className="w-3.5 h-3.5 text-ink-3 shrink-0" />
 
-				<SelectRoot value={action} onValueChange={(v) => handleFilterChange(() => setAction(v))}>
-					<SelectTrigger className="h-8 text-xs w-36">
-						<SelectValue />
-					</SelectTrigger>
-					<SelectContent>
-						{ACTION_OPTIONS.map((o) => (
-							<SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
-						))}
-					</SelectContent>
-				</SelectRoot>
+				<Combobox
+					className="w-36"
+					options={ACTION_OPTIONS}
+					value={action}
+					onChange={(v) => handleFilterChange(() => setAction(v))}
+				/>
 
-				<SelectRoot value={entityType} onValueChange={(v) => handleFilterChange(() => setEntityType(v))}>
-					<SelectTrigger className="h-8 text-xs w-36">
-						<SelectValue />
-					</SelectTrigger>
-					<SelectContent>
-						{ENTITY_OPTIONS.map((o) => (
-							<SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
-						))}
-					</SelectContent>
-				</SelectRoot>
+				<Combobox
+					className="w-36"
+					options={ENTITY_OPTIONS}
+					value={entityType}
+					onChange={(v) => handleFilterChange(() => setEntityType(v))}
+				/>
 
 				<Input
 					type="date"

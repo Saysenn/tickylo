@@ -9,9 +9,7 @@ import { formatDate, formatDateTime, formatInitials } from "@/lib/utils/format";
 import { cn } from "@/lib/utils/cn";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-	SelectRoot, SelectTrigger, SelectValue, SelectContent, SelectItem,
-} from "@/components/ui/select";
+import { Combobox } from "@/components/ui/combobox";
 import { EmployeePickerModal } from "@/components/dashboard/tickets/employee-picker-modal";
 import { Pagination } from "@/components/ui/pagination";
 
@@ -308,16 +306,12 @@ export function TicketRequestsTable() {
 			<div className="flex flex-wrap items-center gap-2">
 				<Filter className="w-3.5 h-3.5 text-ink-3 shrink-0" />
 
-				<SelectRoot value={typeFilter} onValueChange={(v) => handleFilterChange(() => setTypeFilter(v))}>
-					<SelectTrigger className="h-8 text-xs w-36">
-						<SelectValue />
-					</SelectTrigger>
-					<SelectContent>
-						{TYPE_OPTIONS.map((o) => (
-							<SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
-						))}
-					</SelectContent>
-				</SelectRoot>
+				<Combobox
+					className="w-36"
+					options={TYPE_OPTIONS}
+					value={typeFilter}
+					onChange={(v) => handleFilterChange(() => setTypeFilter(v))}
+				/>
 
 				<form onSubmit={handleSearch} className="flex items-center gap-1.5">
 					<div className="relative">

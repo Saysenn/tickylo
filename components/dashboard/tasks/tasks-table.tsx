@@ -16,11 +16,6 @@ import { ClipboardList, Plus, Trash2, CheckCheck, UserCog, X, SlidersHorizontal,
 import { Combobox } from "@/components/ui/combobox";
 import { ROWS_PER_PAGE } from "@/configs/pagination.config";
 import {
-	SelectRoot,
-	SelectTrigger,
-	SelectValue,
-	SelectContent,
-	SelectItem,
 } from "@/components/ui/select";
 import type { Task, TaskPage } from "./types";
 import type { TimeEntry } from "@/components/dashboard/time-tracker/types";
@@ -427,36 +422,36 @@ const { mutateAsync: claimTask, isPending: isClaiming } = useMutation({
 							</Button>
 						)}
 						{isAdmin && (
-							<SelectRoot
-								onValueChange={(v) => bulkAction({ action: "status", status: v })}
+							<Combobox
+								className="w-[120px]"
+								options={[
+									{ value: "", label: "Set status" },
+									{ value: "open", label: "Open" },
+									{ value: "in_progress", label: "In Progress" },
+									{ value: "assigned", label: "Assigned" },
+									{ value: "stale", label: "Stale" },
+									{ value: "completed", label: "Completed" },
+								]}
+								value=""
+								onChange={(v) => v && bulkAction({ action: "status", status: v })}
+								placeholder="Set status"
 								disabled={isBulkPending || selectedIds.size === 0}
-							>
-								<SelectTrigger className="h-7 text-xs w-[110px]">
-									<SelectValue placeholder="Set status" />
-								</SelectTrigger>
-								<SelectContent>
-									<SelectItem value="open">Open</SelectItem>
-									<SelectItem value="in_progress">In Progress</SelectItem>
-									<SelectItem value="assigned">Assigned</SelectItem>
-									<SelectItem value="stale">Stale</SelectItem>
-									<SelectItem value="completed">Completed</SelectItem>
-								</SelectContent>
-							</SelectRoot>
+							/>
 						)}
 						{isAdmin && (
-							<SelectRoot
-								onValueChange={(v) => bulkAction({ action: "priority", priority: v })}
+							<Combobox
+								className="w-[120px]"
+								options={[
+									{ value: "", label: "Set priority" },
+									{ value: "low", label: "Low" },
+									{ value: "medium", label: "Medium" },
+									{ value: "high", label: "High" },
+								]}
+								value=""
+								onChange={(v) => v && bulkAction({ action: "priority", priority: v })}
+								placeholder="Set priority"
 								disabled={isBulkPending || selectedIds.size === 0}
-							>
-								<SelectTrigger className="h-7 text-xs w-[110px]">
-									<SelectValue placeholder="Set priority" />
-								</SelectTrigger>
-								<SelectContent>
-									<SelectItem value="low">Low</SelectItem>
-									<SelectItem value="medium">Medium</SelectItem>
-									<SelectItem value="high">High</SelectItem>
-								</SelectContent>
-							</SelectRoot>
+							/>
 						)}
 						<Button
 							size="sm" variant="ghost"

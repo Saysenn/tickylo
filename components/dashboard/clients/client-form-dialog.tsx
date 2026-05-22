@@ -13,13 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-	SelectRoot,
-	SelectTrigger,
-	SelectValue,
-	SelectContent,
-	SelectItem,
-} from "@/components/ui/select";
+import { Combobox } from "@/components/ui/combobox";
 
 const CURRENCIES = ["USD", "EUR", "GBP", "PHP", "AUD", "CAD", "SGD", "JPY", "INR", "MYR", "IDR"];
 
@@ -170,30 +164,21 @@ export function ClientFormDialog({ mode, client, trigger, onSubmit, isPending }:
 					<div className="grid grid-cols-2 gap-4">
 						<div className="space-y-1.5">
 							<Label>Currency</Label>
-							<SelectRoot value={currency} onValueChange={setCurrency}>
-								<SelectTrigger>
-									<SelectValue placeholder="USD" />
-								</SelectTrigger>
-								<SelectContent>
-									{CURRENCIES.map((c) => (
-										<SelectItem key={c} value={c}>{c}</SelectItem>
-									))}
-								</SelectContent>
-							</SelectRoot>
+							<Combobox
+								options={CURRENCIES.map((c) => ({ value: c, label: c }))}
+								value={currency}
+								onChange={setCurrency}
+								placeholder="USD"
+							/>
 						</div>
 
 						<div className="space-y-1.5">
 							<Label>Rate Type</Label>
-							<SelectRoot value={rateType} onValueChange={(v) => setRateType(v as RateType)}>
-								<SelectTrigger>
-									<SelectValue />
-								</SelectTrigger>
-								<SelectContent>
-									{RATE_TYPES.map((r) => (
-										<SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
-									))}
-								</SelectContent>
-							</SelectRoot>
+							<Combobox
+								options={RATE_TYPES.map((r) => ({ value: r.value, label: r.label }))}
+								value={rateType}
+								onChange={(v) => setRateType(v as RateType)}
+							/>
 						</div>
 					</div>
 
