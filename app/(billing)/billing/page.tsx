@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/infra/prisma";
 import { Logo } from "@/components/logo";
 import BillingSetupForm from "@/components/billing/billing-setup-form";
+import { Clock } from "lucide-react";
 
 export const metadata = { title: "Billing Setup — Tickworks" };
 
@@ -13,11 +14,6 @@ export default async function BillingPage() {
 	if (!user) redirect("/login");
 
 	const role = user.app_metadata?.role as string | undefined;
-	if (role !== "admin") {
-		// Employees who somehow reach /billing go back to dashboard
-		redirect("/dashboard");
-	}
-
 	const orgId = user.app_metadata?.org_id as string | undefined;
 	if (!orgId) redirect("/pending");
 
@@ -31,6 +27,42 @@ export default async function BillingPage() {
 	// Already active — redirect to dashboard
 	if (org.is_internal || ["trial", "business", "enterprise"].includes(org.plan)) {
 		redirect("/dashboard");
+	}
+
+	// Non-admins can't set up billing — show a waiting screen instead of looping
+	if (role !== "admin") {
+		return (
+			<div className="min-h-screen bg-background flex flex-col">
+				<header className="border-b border-border/60 px-6 py-4">
+					<Logo size="sm" />
+				</header>
+				<main className="flex-1 flex items-center justify-center px-4 py-12">
+					<div className="max-w-md w-full text-center space-y-6">
+						<div className="mx-auto w-16 h-16 bg-warning/10 rounded-2xl flex items-center justify-center">
+							<Clock className="w-8 h-8 text-warning-fg" strokeWidth={1.5} />
+						</div>
+						<div className="space-y-2">
+							<h1 className="text-2xl font-bold text-ink">Workspace not yet active</h1>
+							<p className="text-ink-3 leading-relaxed text-sm">
+								<span className="font-medium text-ink">{org.name}</span> hasn&apos;t been activated yet.
+								Your admin needs to complete billing setup before you can access the dashboard.
+							</p>
+						</div>
+						<div className="p-4 bg-warning/5 border border-warning/30 rounded-xl text-sm text-warning-fg text-left space-y-1">
+							<p className="font-medium">What to do</p>
+							<ul className="list-disc list-inside space-y-0.5">
+								<li>Contact your organisation admin</li>
+								<li>Ask them to complete billing setup at tickworks.app/billing</li>
+								<li>You&apos;ll be able to log in once the workspace is active</li>
+							</ul>
+						</div>
+						<a href="/login" className="text-sm text-ink-3 hover:text-ink-2 transition-colors underline underline-offset-2">
+							Back to login
+						</a>
+					</div>
+				</main>
+			</div>
+		);
 	}
 
 	return (

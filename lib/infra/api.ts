@@ -470,6 +470,8 @@ class APIService {
 			axiosService.get(`${apiVersion}/super-admin/orgs`),
 		toggleInternal: (orgId: string, is_internal: boolean) =>
 			axiosService.patch(`${apiVersion}/super-admin/orgs/${orgId}`, { is_internal }),
+		setOrgPlan: (orgId: string, plan: string) =>
+			axiosService.patch(`${apiVersion}/super-admin/orgs/${orgId}`, { plan }),
 		getDeletionRequests: () =>
 			axiosService.get(`${apiVersion}/super-admin/deletion-requests`),
 		approveDeletion: (id: string) =>

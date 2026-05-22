@@ -27,9 +27,12 @@ const PLAN_COLORS: Record<string, string> = {
 	cancelled:  "text-red-500 bg-red-500/10",
 };
 
+const PLANS = ["pending", "trial", "business", "enterprise", "unpaid", "cancelled"] as const;
+
 export function OrgsTable({ orgs }: { orgs: Org[] }) {
 	const router = useRouter();
 	const [toggling, setToggling] = useState<string | null>(null);
+	const [settingPlan, setSettingPlan] = useState<string | null>(null);
 
 	const { mutate: toggleInternal } = useMutation({
 		mutationFn: ({ orgId, is_internal }: { orgId: string; is_internal: boolean }) => {
@@ -37,6 +40,14 @@ export function OrgsTable({ orgs }: { orgs: Org[] }) {
 			return APIService.superAdmin.toggleInternal(orgId, is_internal);
 		},
 		onSettled: () => { setToggling(null); router.refresh(); },
+	});
+
+	const { mutate: setPlan } = useMutation({
+		mutationFn: ({ orgId, plan }: { orgId: string; plan: string }) => {
+			setSettingPlan(orgId);
+			return APIService.superAdmin.setOrgPlan(orgId, plan);
+		},
+		onSettled: () => { setSettingPlan(null); router.refresh(); },
 	});
 
 	if (orgs.length === 0) {
@@ -72,9 +83,23 @@ export function OrgsTable({ orgs }: { orgs: Org[] }) {
 								</div>
 							</td>
 							<td className="px-4 py-3.5">
-								<span className={cn("text-xs font-medium px-2 py-0.5 rounded-full capitalize", PLAN_COLORS[org.plan] ?? "text-ink-3 bg-accent")}>
-									{org.is_internal ? "internal" : org.plan}
-								</span>
+								<select
+									value={org.plan}
+									disabled={settingPlan === org.id || org.is_internal}
+									onChange={(e) => setPlan({ orgId: org.id, plan: e.target.value })}
+									className={cn(
+										"text-xs font-medium px-2 py-0.5 rounded-full border-0 cursor-pointer focus:outline-none focus:ring-1 focus:ring-mint disabled:opacity-50 disabled:cursor-not-allowed",
+										PLAN_COLORS[org.plan] ?? "text-ink-3 bg-accent",
+									)}
+									title="Change plan"
+								>
+									{PLANS.map((p) => (
+										<option key={p} value={p} className="text-ink bg-background">{p}</option>
+									))}
+								</select>
+								{org.is_internal && (
+									<span className="ml-1 text-xs text-mint font-medium">(internal)</span>
+								)}
 							</td>
 							<td className="px-4 py-3.5">
 								<span className="text-ink-3">{org._count.users}</span>

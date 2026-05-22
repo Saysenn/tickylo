@@ -4,8 +4,11 @@ import { requireSuperAdmin } from "@/lib/auth/require-super-admin";
 import { prisma } from "@/lib/infra/prisma";
 import { errorResponse, ok } from "@/lib/utils/response";
 
+const VALID_PLANS = ["pending", "unpaid", "trial", "business", "enterprise", "cancelled"] as const;
+
 const bodySchema = z.object({
-	is_internal: z.boolean(),
+	is_internal: z.boolean().optional(),
+	plan: z.enum(VALID_PLANS).optional(),
 });
 
 export async function PATCH(
@@ -20,10 +23,14 @@ export async function PATCH(
 		const body = bodySchema.safeParse(await req.json());
 		if (!body.success) return errorResponse(body.error.issues[0]?.message ?? "Invalid input", 400);
 
+		const updateData: Record<string, unknown> = {};
+		if (body.data.is_internal !== undefined) updateData.is_internal = body.data.is_internal;
+		if (body.data.plan !== undefined) updateData.plan = body.data.plan;
+
 		const org = await prisma.organization.update({
 			where: { id },
-			data:  { is_internal: body.data.is_internal },
-			select: { id: true, name: true, is_internal: true },
+			data: updateData,
+			select: { id: true, name: true, plan: true, is_internal: true },
 		});
 
 		return ok(org);
