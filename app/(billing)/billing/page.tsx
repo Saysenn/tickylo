@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/infra/prisma";
 import { Logo } from "@/components/logo";
 import BillingSetupForm from "@/components/billing/billing-setup-form";
+import { SignOutButton } from "@/components/billing/sign-out-button";
 import { Clock } from "lucide-react";
 
 export const metadata = { title: "Billing Setup — Tickworks" };
@@ -56,9 +57,7 @@ export default async function BillingPage() {
 								<li>You&apos;ll be able to log in once the workspace is active</li>
 							</ul>
 						</div>
-						<a href="/login" className="text-sm text-ink-3 hover:text-ink-2 transition-colors underline underline-offset-2">
-							Back to login
-						</a>
+						<SignOutButton />
 					</div>
 				</main>
 			</div>

@@ -64,7 +64,7 @@ function SetupForm({ orgName, hadTrial }: Props) {
 
 			return APIService.billing.setup({
 				plan,
-				seat_count:        plan === "business" ? seatCount : 25,
+				seat_count:        plan === "business" ? seatCount : 26,
 				interval:          "monthly",
 				payment_method_id: paymentMethod.id,
 			});
@@ -102,7 +102,7 @@ function SetupForm({ orgName, hadTrial }: Props) {
 						$20/mo base + $4.99/seat/mo
 					</p>
 					<p className="text-[11px] text-ink-3/70 mt-1">
-						Full ticketing, time tracking, reports
+						Admin included. Each employee = $4.99/seat.
 					</p>
 				</button>
 
@@ -125,10 +125,10 @@ function SetupForm({ orgName, hadTrial }: Props) {
 						{plan === "enterprise" && <CheckCircle2 className="w-4 h-4 text-mint" />}
 					</div>
 					<p className="text-xs text-ink-3 leading-relaxed">
-						$100/mo flat — 25 seats included
+						$100/mo flat — 26 seats + admin
 					</p>
 					<p className="text-[11px] text-ink-3/70 mt-1">
-						+ Attachments, SMS, Email inbound, 2FA
+						No per-seat math. Everything the platform has.
 					</p>
 				</button>
 			</div>
@@ -178,10 +178,11 @@ function SetupForm({ orgName, hadTrial }: Props) {
 							{[
 								"Full ticketing + task management",
 								"Per-ticket time tracking",
+								"Departments + bulk operations",
+								"Ticket requests + templates",
 								"Leave management",
-								"Workload + performance reports",
-								"Custom ticket types",
-								"Email notifications",
+								"File & image attachments",
+								"Team overview (time manager)",
 								"Audit log + GDPR tools",
 								"Work schedule config",
 								"Browser extension",
@@ -192,10 +193,11 @@ function SetupForm({ orgName, hadTrial }: Props) {
 								</li>
 							))}
 							{[
-								"File & image attachments",
+								"Reports & performance analytics",
+								"CSV export",
+								"AI assistance",
 								"SMS → ticket",
 								"Email → ticket",
-								"2FA enforcement",
 							].map((f) => (
 								<li key={f} className="flex items-center gap-2 text-xs text-ink-3/40 line-through">
 									<Check className="w-3 h-3 text-ink-3/20 shrink-0" />
@@ -210,19 +212,14 @@ function SetupForm({ orgName, hadTrial }: Props) {
 							<p className="text-sm font-semibold text-ink">Enterprise — what's included</p>
 							<p className="text-base font-bold text-ink">$100<span className="text-xs font-normal text-ink-3">/mo</span></p>
 						</div>
-						<p className="text-xs text-ink-3">25 seats + admin included. Everything in Business, plus:</p>
+						<p className="text-xs text-ink-3">26 seats + admin included. No per-seat math. Everything in Business, plus:</p>
 						<ul className="space-y-1.5">
 							{[
-								"File & image attachments in threads",
-								"Storage setup — S3 or Supabase (1-on-1 guidance)",
-								"SMS → ticket via Twilio",
-								"Email → ticket inbound webhook",
-								"2FA / OTP enforcement org-wide",
-								"White-label / custom domain",
-								"Dedicated onboarding + account manager",
-								"SLA guarantee",
-								"On-premise deployment",
-								"Custom integrations + full API access",
+								"Reports & performance analytics",
+								"CSV export",
+								"AI assistance",
+								"SMS → ticket",
+								"Email → ticket",
 							].map((f) => (
 								<li key={f} className="flex items-center gap-2 text-xs text-ink-3">
 									<Check className="w-3 h-3 text-mint shrink-0" />
