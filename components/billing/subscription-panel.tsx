@@ -153,7 +153,7 @@ export default function SubscriptionPanel({
 						{isOnBusiness ? (
 							<>
 								<p className="text-xs text-ink-3">
-									$4.99/seat/mo · Mid-month changes are prorated automatically.
+									$3.99/seat/mo · Mid-month changes are prorated automatically.
 								</p>
 								<div className="flex items-center gap-3">
 									<div className="flex items-center gap-2">
@@ -269,7 +269,7 @@ export default function SubscriptionPanel({
 							<div className="flex items-center justify-between">
 								<div>
 									<p className="text-sm font-medium text-ink">Change to Business</p>
-									<p className="text-xs text-ink-3 mt-0.5">$20/mo + $4.99/seat · Choose which seats to keep</p>
+									<p className="text-xs text-ink-3 mt-0.5">$20/mo + $3.99/seat · Choose which seats to keep</p>
 								</div>
 								<Button
 									size="sm"

@@ -2,11 +2,11 @@
 
 ---
 
-## Business — $20/mo + $4.99/seat/mo
+## Business — $20/mo + $3.99/seat/mo
 
-Admin included in base. Each employee = $4.99/seat. Buy and remove seats anytime from Settings → Subscription.
+Admin included in base. Each employee = $3.99/seat. Buy and remove seats anytime from Settings → Subscription.
 
-**Annual:** $200/yr base + $49.90/yr per seat (2 months free)
+**Annual:** $200/yr base + $39.90/yr per seat (2 months free)
 
 ---
 
@@ -42,7 +42,7 @@ Need more than 26 seats? Contact us — [hello@tickworks.app](mailto:hello@tickw
 | SMS → ticket                   |        ❌        |        ❌        |       ✅       |
 | Email → ticket                 |        ❌        |        ❌        |       ✅       |
 | **Seats**                      |  **11 + admin**  | **Pay per seat** | **26 + admin** |
-| **Price**                      |    **14 days**   | **$20 + $4.99/seat** | **$100/mo flat** |
+| **Price**                      |    **14 days**   | **$20 + $3.99/seat** | **$100/mo flat** |
 
 > Trial gets everything Business gets for 14 days, with 11 free seats included.
 
@@ -50,7 +50,7 @@ Need more than 26 seats? Contact us — [hello@tickworks.app](mailto:hello@tickw
 
 ## Why Enterprise is the better deal at scale
 
-A Business customer with 26 employees pays `$20 + (26 × $4.99) = $149.74/mo` with no reports, no AI, no CSV export. Enterprise at $100 flat is cheaper and gets everything.
+A Business customer with 26 employees pays `$20 + (26 × $3.99) = $123.74/mo` with no reports, no AI, no CSV export. Enterprise at $100 flat is cheaper and gets everything.
 
 ---
 

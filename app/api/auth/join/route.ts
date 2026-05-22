@@ -7,6 +7,7 @@ import { sendEmail } from "@/lib/email/send";
 import { employeeJoinRequestEmail } from "@/lib/email/templates";
 import { GDPR } from "@/configs/gdpr.config";
 import { rateLimit, getIP } from "@/lib/utils/rate-limit";
+import { LOCKED_PLANS, ENTERPRISE_INCLUDED_SEATS, TRIAL_INCLUDED_SEATS } from "@/configs/stripe.config";
 
 const schema = z.object({
 	org_join_code:    z.string().min(1),
@@ -33,9 +34,25 @@ export async function POST(request: NextRequest) {
 		// Validate org_join_code
 		const org = await prisma.organization.findUnique({
 			where: { org_join_code },
-			select: { id: true, name: true },
+			select: { id: true, name: true, plan: true, seat_count: true, is_internal: true, _count: { select: { users: true } } },
 		});
 		if (!org) return errorResponse("Invalid join code", 404);
+
+		// Block if org billing is not active
+		if (!org.is_internal && LOCKED_PLANS.includes(org.plan as any)) {
+			return errorResponse("This workspace is not currently active. Contact your admin.", 403);
+		}
+
+		// Enforce seat limits
+		const currentUsers = org._count.users;
+		let seatLimit: number;
+		if (org.plan === "trial") seatLimit = TRIAL_INCLUDED_SEATS;
+		else if (org.plan === "enterprise") seatLimit = ENTERPRISE_INCLUDED_SEATS;
+		else seatLimit = org.seat_count; // business
+
+		if (!org.is_internal && currentUsers >= seatLimit) {
+			return errorResponse("This workspace has no available seats. Ask your admin to add more seats.", 403);
+		}
 
 		const supabase = createAdminClient();
 

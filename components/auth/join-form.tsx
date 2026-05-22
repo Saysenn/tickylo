@@ -25,7 +25,12 @@ export function JoinForm({ initialCode }: { initialCode?: string }) {
 	useEffect(() => {
 		if (initialCode) {
 			APIService.org.checkJoinCode(initialCode)
-				.then((org: any) => { setOrgName(org.name); setStep("details"); })
+				.then((org: any) => {
+					setOrgName(org.name);
+					if (org.is_locked) { setError("This workspace is not currently active. Contact your admin."); return; }
+					if (!org.seats_available) { setError("This workspace has no available seats. Ask your admin to add more."); return; }
+					setStep("details");
+				})
 				.catch(() => {});
 		}
 	}, [initialCode]);
@@ -65,8 +70,10 @@ export function JoinForm({ initialCode }: { initialCode?: string }) {
 		setError("");
 		setLoading(true);
 		try {
-			const org = await APIService.org.checkJoinCode(code);
+			const org: any = await APIService.org.checkJoinCode(code);
 			setOrgName(org.name);
+			if (org.is_locked) { setError("This workspace is not currently active. Contact your admin."); return; }
+			if (!org.seats_available) { setError("This workspace has no available seats. Ask your admin to add more."); return; }
 			setStep("details");
 		} catch (err: any) {
 			setError(err?.response?.data?.error ?? "Invalid join code. Please check with your admin.");

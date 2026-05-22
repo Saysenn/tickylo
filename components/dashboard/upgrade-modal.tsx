@@ -40,7 +40,7 @@ const PLAN_INFO = {
 	business: {
 		label: "Business",
 		price: "$20/mo",
-		priceNote: "+ $4.99/seat/mo",
+		priceNote: "+ $3.99/seat/mo",
 		color: "text-blue-600",
 		bg: "bg-blue-500/10 border-blue-500/20",
 		icon: Zap,

@@ -3,7 +3,7 @@ import { z } from "zod";
 import { requireAdmin } from "@/lib/auth/require-admin";
 import { prisma } from "@/lib/infra/prisma";
 import { errorResponse, ok } from "@/lib/utils/response";
-import { getStripe, STRIPE_PRICES } from "@/configs/stripe.config";
+import { getStripe, STRIPE_PRICES, ENTERPRISE_INCLUDED_SEATS } from "@/configs/stripe.config";
 
 const bodySchema = z.object({
 	plan:             z.enum(["business", "enterprise"]),
@@ -69,6 +69,13 @@ export async function POST(req: NextRequest) {
 			const basePrice = STRIPE_PRICES.enterprise[priceKey];
 			if (!basePrice) return errorResponse("Stripe price IDs not configured", 500);
 			items.push({ price: basePrice, quantity: 1 });
+			// Extra seats beyond the 26 included
+			const extraSeats = Math.max(0, seat_count - ENTERPRISE_INCLUDED_SEATS);
+			if (extraSeats > 0) {
+				const seatPrice = STRIPE_PRICES.enterprise[seatKey];
+				if (!seatPrice) return errorResponse("Enterprise seat price ID not configured", 500);
+				items.push({ price: seatPrice, quantity: extraSeats });
+			}
 		}
 
 		// Determine trial — no trial if org previously had one
@@ -85,7 +92,7 @@ export async function POST(req: NextRequest) {
 
 		// Find item IDs for later seat updates (business only)
 		const baseItemId = subscription.items.data[0]?.id ?? null;
-		const seatItemId = plan === "business" ? (subscription.items.data[1]?.id ?? null) : null;
+		const seatItemId = subscription.items.data[1]?.id ?? null;
 
 		const trialEnd = subscription.trial_end ? new Date(subscription.trial_end * 1000) : null;
 		const newPlan  = trialDays > 0 ? "trial" : plan;
@@ -98,7 +105,7 @@ export async function POST(req: NextRequest) {
 				stripe_base_item_id:    baseItemId,
 				stripe_seat_item_id:    seatItemId,
 				plan:                   newPlan,
-				seat_count:             newPlan === "trial" ? 11 : plan === "enterprise" ? 26 : seat_count,
+				seat_count:             newPlan === "trial" ? 11 : plan === "enterprise" ? Math.max(ENTERPRISE_INCLUDED_SEATS, seat_count) : seat_count,
 				trial_ends_at:          trialEnd,
 				had_trial:              true,
 			},

@@ -3,21 +3,20 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { loadStripe } from "@stripe/stripe-js";
-import {
-	Elements,
-	CardElement,
-	useStripe,
-	useElements,
-} from "@stripe/react-stripe-js";
+import { Elements, CardElement, useStripe, useElements } from "@stripe/react-stripe-js";
 import { useMutation } from "@tanstack/react-query";
-import { Building2, Users, CheckCircle2, Check } from "lucide-react";
+import { Building2, Users, Check, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils/cn";
 import APIService from "@/lib/infra/api";
+import {
+	BUSINESS_SEAT_PRICE_USD,
+	BUSINESS_BASE_PRICE_USD,
+	ENTERPRISE_BASE_PRICE_USD,
+	ENTERPRISE_INCLUDED_SEATS,
+} from "@/configs/stripe.config";
 
-const stripePromise = loadStripe(
-	process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ?? "",
-);
+const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ?? "");
 
 const CARD_ELEMENT_OPTIONS = {
 	style: {
@@ -32,251 +31,184 @@ const CARD_ELEMENT_OPTIONS = {
 
 type Plan = "business" | "enterprise";
 
-interface Props {
-	orgName: string;
-	hadTrial: boolean;
-}
+const BUSINESS_FEATURES = [
+	"Ticketing and task management",
+	"Per-ticket time tracking",
+	"Departments and bulk operations",
+	"Ticket requests and templates",
+	"Leave management",
+	"File and image attachments",
+	"Team overview and time manager",
+	"Audit log and GDPR tools",
+	"Work schedule configuration",
+	"Browser extension",
+];
+
+const ENTERPRISE_EXTRAS = [
+	"Everything in Business",
+	"Reports and performance analytics",
+	"CSV export",
+	"AI assistance",
+	"SMS to ticket",
+	"Email to ticket",
+];
+
+interface Props { orgName: string; hadTrial: boolean }
 
 function SetupForm({ orgName, hadTrial }: Props) {
-	const stripe  = useStripe();
+	const stripe   = useStripe();
 	const elements = useElements();
-	const router  = useRouter();
+	const router   = useRouter();
 
 	const [plan, setPlan]           = useState<Plan>("business");
 	const [seatCount, setSeatCount] = useState(5);
+	const [entSeats, setEntSeats]   = useState(ENTERPRISE_INCLUDED_SEATS);
 	const [error, setError]         = useState<string | null>(null);
 
-	const businessTotal = (20 + seatCount * 4.99).toFixed(2);
-	const enterpriseTotal = "100.00";
+	const businessTotal  = BUSINESS_BASE_PRICE_USD + seatCount * BUSINESS_SEAT_PRICE_USD;
+	const entExtraSeats  = Math.max(0, entSeats - ENTERPRISE_INCLUDED_SEATS);
+	const enterpriseTotal = ENTERPRISE_BASE_PRICE_USD + entExtraSeats * BUSINESS_SEAT_PRICE_USD;
 
 	const { mutate: setup, isPending } = useMutation({
 		mutationFn: async () => {
 			if (!stripe || !elements) throw new Error("Stripe not loaded");
 			const card = elements.getElement(CardElement);
 			if (!card) throw new Error("Card element not found");
-
-			const { paymentMethod, error: pmErr } = await stripe.createPaymentMethod({
-				type: "card",
-				card,
-			});
+			const { paymentMethod, error: pmErr } = await stripe.createPaymentMethod({ type: "card", card });
 			if (pmErr) throw new Error(pmErr.message);
 			if (!paymentMethod) throw new Error("Payment method creation failed");
-
 			return APIService.billing.setup({
 				plan,
-				seat_count:        plan === "business" ? seatCount : 26,
+				seat_count:        plan === "business" ? seatCount : entSeats,
 				interval:          "monthly",
 				payment_method_id: paymentMethod.id,
 			});
 		},
 		onSuccess: () => router.push("/billing/success"),
-		onError: (err: any) => {
-			const msg = err?.response?.data?.error ?? err?.message ?? "Setup failed";
-			setError(msg);
-		},
+		onError: (err: any) => setError(err?.response?.data?.error ?? err?.message ?? "Setup failed"),
 	});
 
 	return (
-		<div className="space-y-6">
+		<div className="space-y-8">
 			{/* Plan selector */}
 			<div className="grid grid-cols-2 gap-3">
-				{/* Business */}
-				<button
-					type="button"
-					onClick={() => setPlan("business")}
-					className={cn(
-						"text-left p-4 rounded-xl border-2 transition-all",
-						plan === "business"
-							? "border-mint bg-mint/5"
-							: "border-border hover:border-border/80 bg-card",
-					)}
-				>
-					<div className="flex items-center justify-between mb-2">
-						<div className="flex items-center gap-2">
-							<Building2 className="w-4 h-4 text-ink-3" />
-							<span className="font-semibold text-ink text-sm">Business</span>
+				{([
+					{ key: "business" as Plan, Icon: Building2, label: "Business", price: `$${BUSINESS_BASE_PRICE_USD}/mo + $${BUSINESS_SEAT_PRICE_USD}/seat`, sub: "Pay only for what you need" },
+					{ key: "enterprise" as Plan, Icon: Users, label: "Enterprise", price: `$${ENTERPRISE_BASE_PRICE_USD}/mo flat`, sub: `${ENTERPRISE_INCLUDED_SEATS} seats included` },
+				] as const).map(({ key, Icon, label, price, sub }) => (
+					<button
+						key={key}
+						type="button"
+						onClick={() => setPlan(key)}
+						className={cn(
+							"text-left p-4 rounded-xl border-2 transition-all",
+							plan === key ? "border-mint bg-mint/5" : "border-border hover:border-border/80 bg-card",
+						)}
+					>
+						<div className="flex items-start justify-between gap-2 mb-3">
+							<div className={cn("w-8 h-8 rounded-lg flex items-center justify-center", plan === key ? "bg-mint/20" : "bg-accent")}>
+								<Icon className={cn("w-4 h-4", plan === key ? "text-mint" : "text-ink-3")} />
+							</div>
+							{plan === key && (
+								<span className="text-[10px] font-semibold text-mint bg-mint/10 px-2 py-0.5 rounded-full">Selected</span>
+							)}
 						</div>
-						{plan === "business" && <CheckCircle2 className="w-4 h-4 text-mint" />}
-					</div>
-					<p className="text-xs text-ink-3 leading-relaxed">
-						$20/mo base + $4.99/seat/mo
-					</p>
-					<p className="text-[11px] text-ink-3/70 mt-1">
-						Admin included. Each employee = $4.99/seat.
-					</p>
-				</button>
-
-				{/* Enterprise */}
-				<button
-					type="button"
-					onClick={() => setPlan("enterprise")}
-					className={cn(
-						"text-left p-4 rounded-xl border-2 transition-all",
-						plan === "enterprise"
-							? "border-mint bg-mint/5"
-							: "border-border hover:border-border/80 bg-card",
-					)}
-				>
-					<div className="flex items-center justify-between mb-2">
-						<div className="flex items-center gap-2">
-							<Users className="w-4 h-4 text-ink-3" />
-							<span className="font-semibold text-ink text-sm">Enterprise</span>
-						</div>
-						{plan === "enterprise" && <CheckCircle2 className="w-4 h-4 text-mint" />}
-					</div>
-					<p className="text-xs text-ink-3 leading-relaxed">
-						$100/mo flat — 26 seats + admin
-					</p>
-					<p className="text-[11px] text-ink-3/70 mt-1">
-						No per-seat math. Everything the platform has.
-					</p>
-				</button>
+						<p className="font-semibold text-ink text-sm">{label}</p>
+						<p className="text-xs text-ink-3 mt-0.5">{price}</p>
+						<p className="text-[11px] text-ink-3/60 mt-0.5">{sub}</p>
+					</button>
+				))}
 			</div>
 
-			{/* Seat count (Business only) */}
+			{/* Seat count */}
 			{plan === "business" && (
-				<div className="space-y-2">
-					<label className="text-xs font-semibold text-ink-3 uppercase tracking-wider">
-						Number of seats (employees)
-					</label>
-					<div className="flex items-center justify-between gap-4">
-						<div className="flex items-center gap-2">
-							<button
-								type="button"
-								onClick={() => setSeatCount((c) => Math.max(1, c - 1))}
-								className="w-8 h-8 rounded border border-border text-ink-3 hover:text-ink hover:bg-accent transition-colors text-lg font-medium"
-							>
-								−
-							</button>
-							<span className="w-12 text-center font-semibold text-ink text-base">{seatCount}</span>
-							<button
-								type="button"
-								onClick={() => setSeatCount((c) => Math.min(500, c + 1))}
-								className="w-8 h-8 rounded border border-border text-ink-3 hover:text-ink hover:bg-accent transition-colors text-lg font-medium"
-							>
-								+
-							</button>
-							<span className="text-sm text-ink-3 ml-1">seat{seatCount !== 1 ? "s" : ""}</span>
-						</div>
-						<div className="text-right">
-							<p className="text-lg font-bold text-ink">${businessTotal}<span className="text-xs font-normal text-ink-3">/mo</span></p>
-							<p className="text-[11px] text-ink-3">$20 + {seatCount} × $4.99</p>
-						</div>
-					</div>
-				</div>
+				<SeatPicker
+					label="Number of employee seats"
+					count={seatCount}
+					min={1}
+					max={500}
+					onChange={setSeatCount}
+					note={`$${BUSINESS_BASE_PRICE_USD} base + ${seatCount} × $${BUSINESS_SEAT_PRICE_USD}/mo`}
+					total={businessTotal}
+				/>
 			)}
 
-			{/* Features summary for selected plan */}
-			<div className="rounded-lg border border-border/60 bg-accent/30 px-4 py-4 space-y-3">
-				{plan === "business" ? (
+			{plan === "enterprise" && (
+				<SeatPicker
+					label="Total seats"
+					count={entSeats}
+					min={ENTERPRISE_INCLUDED_SEATS}
+					max={500}
+					onChange={setEntSeats}
+					note={
+						entExtraSeats > 0
+							? `$${ENTERPRISE_BASE_PRICE_USD} flat + ${entExtraSeats} extra × $${BUSINESS_SEAT_PRICE_USD}/mo`
+							: `${ENTERPRISE_INCLUDED_SEATS} seats included in base price`
+					}
+					total={enterpriseTotal}
+				/>
+			)}
+
+			{/* What you get */}
+			<div className="rounded-xl border border-border/60 bg-accent/20 p-4 space-y-3">
+				<p className="text-sm font-semibold text-ink">
+					{plan === "business" ? "Business includes" : "Enterprise includes"}
+				</p>
+				<ul className="grid grid-cols-1 gap-1.5">
+					{(plan === "business" ? BUSINESS_FEATURES : ENTERPRISE_EXTRAS).map((f) => (
+						<li key={f} className="flex items-center gap-2 text-xs text-ink-3">
+							<Check className="w-3 h-3 text-mint shrink-0" />
+							{f}
+						</li>
+					))}
+				</ul>
+			</div>
+
+			{/* Trial / no-trial notice */}
+			<div className={cn(
+				"rounded-xl px-4 py-3 text-sm",
+				hadTrial ? "bg-warning/10 border border-warning/20" : "bg-mint/10 border border-mint/20",
+			)}>
+				{hadTrial ? (
 					<>
-						<div className="flex items-center justify-between">
-							<p className="text-sm font-semibold text-ink">Business — what's included</p>
-							<p className="text-base font-bold text-ink">${businessTotal}<span className="text-xs font-normal text-ink-3">/mo</span></p>
-						</div>
-						<ul className="space-y-1.5">
-							{[
-								"Full ticketing + task management",
-								"Per-ticket time tracking",
-								"Departments + bulk operations",
-								"Ticket requests + templates",
-								"Leave management",
-								"File & image attachments",
-								"Team overview (time manager)",
-								"Audit log + GDPR tools",
-								"Work schedule config",
-								"Browser extension",
-							].map((f) => (
-								<li key={f} className="flex items-center gap-2 text-xs text-ink-3">
-									<Check className="w-3 h-3 text-mint shrink-0" />
-									{f}
-								</li>
-							))}
-							{[
-								"Reports & performance analytics",
-								"CSV export",
-								"AI assistance",
-								"SMS → ticket",
-								"Email → ticket",
-							].map((f) => (
-								<li key={f} className="flex items-center gap-2 text-xs text-ink-3/40 line-through">
-									<Check className="w-3 h-3 text-ink-3/20 shrink-0" />
-									{f}
-								</li>
-							))}
-						</ul>
+						<p className="font-medium text-ink">No second trial</p>
+						<p className="text-xs text-ink-3 mt-0.5">Your card will be charged immediately when you subscribe.</p>
 					</>
 				) : (
 					<>
-						<div className="flex items-center justify-between">
-							<p className="text-sm font-semibold text-ink">Enterprise — what's included</p>
-							<p className="text-base font-bold text-ink">$100<span className="text-xs font-normal text-ink-3">/mo</span></p>
-						</div>
-						<p className="text-xs text-ink-3">26 seats + admin included. No per-seat math. Everything in Business, plus:</p>
-						<ul className="space-y-1.5">
-							{[
-								"Reports & performance analytics",
-								"CSV export",
-								"AI assistance",
-								"SMS → ticket",
-								"Email → ticket",
-							].map((f) => (
-								<li key={f} className="flex items-center gap-2 text-xs text-ink-3">
-									<Check className="w-3 h-3 text-mint shrink-0" />
-									{f}
-								</li>
-							))}
-						</ul>
+						<p className="font-medium text-ink">14-day free trial</p>
+						<p className="text-xs text-ink-3 mt-0.5">Your card is saved but not charged until the trial ends.</p>
 					</>
 				)}
 			</div>
 
-			{/* Trial notice */}
-			{!hadTrial && (
-				<div className="rounded-lg bg-mint/10 border border-mint/20 px-4 py-3">
-					<p className="text-sm font-medium text-ink">14-day free trial</p>
-					<p className="text-xs text-ink-3 mt-0.5">
-						Your card will be saved but not charged until the trial ends.
-					</p>
-				</div>
-			)}
-
-			{hadTrial && (
-				<div className="rounded-lg bg-warning/10 border border-warning/20 px-4 py-3">
-					<p className="text-sm font-medium text-ink">No second trial</p>
-					<p className="text-xs text-ink-3 mt-0.5">
-						You've previously used a trial on this account. Your card will be charged immediately upon setup.
-					</p>
-				</div>
-			)}
-
 			{/* Card input */}
 			<div className="space-y-2">
-				<label className="text-xs font-semibold text-ink-3 uppercase tracking-wider">
-					Payment method
-				</label>
-				<div className="rounded-lg border border-border bg-background px-3 py-3">
+				<label className="text-xs font-semibold text-ink-3 uppercase tracking-wider">Payment method</label>
+				<div className="rounded-xl border border-border bg-background px-3 py-3">
 					<CardElement options={CARD_ELEMENT_OPTIONS} />
 				</div>
-				<p className="text-[11px] text-ink-3">
+				<p className="flex items-center gap-1.5 text-[11px] text-ink-3">
+					<Lock className="w-3 h-3" />
 					Secured by Stripe. Your card details never touch our servers.
 				</p>
 			</div>
 
 			{error && (
-				<div className="rounded-lg bg-destructive/10 border border-destructive/20 px-4 py-3">
+				<div className="rounded-xl bg-destructive/10 border border-destructive/20 px-4 py-3">
 					<p className="text-sm text-destructive">{error}</p>
 				</div>
 			)}
 
 			<Button
 				className="w-full"
+				size="lg"
 				isLoading={isPending}
 				disabled={!stripe || isPending}
 				onClick={() => { setError(null); setup(); }}
 			>
 				{hadTrial
-					? `Subscribe to ${plan === "business" ? "Business" : "Enterprise"} Plan`
+					? `Subscribe — ${plan === "business" ? `$${businessTotal.toFixed(2)}` : `$${enterpriseTotal.toFixed(2)}`}/mo`
 					: `Start Free Trial — ${plan === "business" ? "Business" : "Enterprise"}`}
 			</Button>
 
@@ -285,6 +217,43 @@ function SetupForm({ orgName, hadTrial }: Props) {
 				<a href="/terms" className="underline hover:text-ink">Terms of Service</a>.
 				Cancel anytime from Settings.
 			</p>
+		</div>
+	);
+}
+
+function SeatPicker({
+	label, count, min, max, onChange, note, total,
+}: {
+	label: string; count: number; min: number; max: number;
+	onChange: (n: number) => void; note: string; total: number;
+}) {
+	return (
+		<div className="space-y-2">
+			<label className="text-xs font-semibold text-ink-3 uppercase tracking-wider">{label}</label>
+			<div className="flex items-center justify-between gap-4 rounded-xl border border-border bg-accent/20 px-4 py-3">
+				<div className="flex items-center gap-3">
+					<button
+						type="button"
+						onClick={() => onChange(Math.max(min, count - 1))}
+						className="w-8 h-8 rounded-lg border border-border bg-background text-ink-3 hover:text-ink hover:bg-accent transition-colors text-xl font-light leading-none flex items-center justify-center"
+					>
+						−
+					</button>
+					<span className="w-10 text-center font-bold text-ink text-lg">{count}</span>
+					<button
+						type="button"
+						onClick={() => onChange(Math.min(max, count + 1))}
+						className="w-8 h-8 rounded-lg border border-border bg-background text-ink-3 hover:text-ink hover:bg-accent transition-colors text-xl font-light leading-none flex items-center justify-center"
+					>
+						+
+					</button>
+					<span className="text-sm text-ink-3">seat{count !== 1 ? "s" : ""}</span>
+				</div>
+				<div className="text-right">
+					<p className="text-lg font-bold text-ink">${total.toFixed(2)}<span className="text-xs font-normal text-ink-3">/mo</span></p>
+					<p className="text-[11px] text-ink-3">{note}</p>
+				</div>
+			</div>
 		</div>
 	);
 }

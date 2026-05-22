@@ -103,7 +103,7 @@ export function DowngradeDialog({ open, onOpenChange, activeCount, onSuccess }: 
 
 					<h2 className="text-base font-bold text-ink mb-1">Change to Business Plan</h2>
 					<p className="text-sm text-ink-3 mb-5">
-						$20/mo + $4.99/seat/mo · Changes are prorated automatically.
+						$20/mo + $3.99/seat/mo · Changes are prorated automatically.
 					</p>
 
 					{/* Step 1 — choose seat count */}
@@ -130,7 +130,7 @@ export function DowngradeDialog({ open, onOpenChange, activeCount, onSuccess }: 
 										</button>
 									</div>
 									<span className="text-xs text-ink-3">
-										${(20 + seatCount * 4.99).toFixed(2)}/mo total
+										${(20 + seatCount * 3.99).toFixed(2)}/mo total
 									</span>
 								</div>
 							</div>
@@ -238,7 +238,7 @@ export function DowngradeDialog({ open, onOpenChange, activeCount, onSuccess }: 
 								</div>
 								<div className="flex items-center justify-between px-4 py-3">
 									<span className="text-sm text-ink-3">Monthly cost</span>
-									<span className="text-sm font-semibold text-ink">${(20 + seatCount * 4.99).toFixed(2)}/mo</span>
+									<span className="text-sm font-semibold text-ink">${(20 + seatCount * 3.99).toFixed(2)}/mo</span>
 								</div>
 								{deactivateCount > 0 && (
 									<div className="flex items-center justify-between px-4 py-3">
