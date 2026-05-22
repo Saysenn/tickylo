@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { Building2, FlaskConical } from "lucide-react";
+import { Combobox } from "@/components/ui/combobox";
 import { formatDate } from "@/lib/utils/format";
 import { cn } from "@/lib/utils/cn";
 import APIService from "@/lib/infra/api";
@@ -83,20 +84,15 @@ export function OrgsTable({ orgs }: { orgs: Org[] }) {
 								</div>
 							</td>
 							<td className="px-4 py-3.5">
-								<select
+								<Combobox
+									options={PLANS.map((p) => ({ value: p, label: p.charAt(0).toUpperCase() + p.slice(1) }))}
 									value={org.plan}
-									disabled={settingPlan === org.id || org.is_internal}
-									onChange={(e) => setPlan({ orgId: org.id, plan: e.target.value })}
-									className={cn(
-										"text-xs font-medium px-2 py-0.5 rounded-full border-0 cursor-pointer focus:outline-none focus:ring-1 focus:ring-mint disabled:opacity-50 disabled:cursor-not-allowed",
-										PLAN_COLORS[org.plan] ?? "text-ink-3 bg-accent",
-									)}
-									title="Change plan"
-								>
-									{PLANS.map((p) => (
-										<option key={p} value={p} className="text-ink bg-background">{p}</option>
-									))}
-								</select>
+									onChange={(plan) => {
+										if (settingPlan === org.id || org.is_internal) return;
+										setPlan({ orgId: org.id, plan });
+									}}
+									placeholder="Select plan…"
+								/>
 								{org.is_internal && (
 									<span className="ml-1 text-xs text-mint font-medium">(internal)</span>
 								)}

@@ -13,6 +13,7 @@ import { useAppSelector } from "@/store/hooks";
 import { formatDueDate, formatDurationMs } from "@/lib/utils/format";
 import { cn } from "@/lib/utils/cn";
 import { ClipboardList, Plus, Trash2, CheckCheck, UserCog, X, SlidersHorizontal, Clock, CheckSquare, Search } from "lucide-react";
+import { Combobox } from "@/components/ui/combobox";
 import { ROWS_PER_PAGE } from "@/configs/pagination.config";
 import {
 	SelectRoot,
@@ -258,8 +259,6 @@ const { mutateAsync: claimTask, isPending: isClaiming } = useMutation({
 		? "There are no unassigned tickets available to claim."
 		: "No tickets found matching your filters.";
 
-	const filterSelect = "h-8 rounded-md border border-border bg-background px-2 text-sm focus:outline-none focus:ring-1 focus:ring-mint text-ink";
-
 	return (
 		<div className="space-y-3">
 			{/* Toolbar */}
@@ -320,33 +319,45 @@ const { mutateAsync: claimTask, isPending: isClaiming } = useMutation({
 					<div className="flex items-center gap-2 flex-wrap">
 						{/* View toggle (employee only) */}
 						{!isAdmin && (
-							<select
+							<Combobox
+								className="w-36"
+								options={[
+									{ value: "assigned", label: "My Tickets" },
+									{ value: "unassigned", label: "Unassigned" },
+									{ value: "all", label: "All Tickets" },
+								]}
 								value={viewFilter}
-								onChange={(e) => { setViewFilter(e.target.value as typeof viewFilter); resetPage(); }}
-								className={filterSelect}
-							>
-								<option value="assigned">My Tickets</option>
-								<option value="unassigned">Unassigned</option>
-								<option value="all">All Tickets</option>
-							</select>
+								onChange={(v) => { setViewFilter(v as typeof viewFilter); resetPage(); }}
+								placeholder="My Tickets"
+							/>
 						)}
 
 						{/* Status */}
-						<select value={statusFilter} onChange={(e) => updateParam("status", e.target.value)} className={filterSelect}>
-							<option value="">All statuses</option>
-							{ALL_STATUSES.map((s) => (
-								<option key={s} value={s}>{s === "overdue" ? "Overdue" : (STATUS_LABEL[s] ?? s)}</option>
-							))}
-						</select>
+						<Combobox
+							className="w-36"
+							options={[
+								{ value: "", label: "All statuses" },
+								...ALL_STATUSES.map((s) => ({ value: s, label: s === "overdue" ? "Overdue" : (STATUS_LABEL[s] ?? s) })),
+							]}
+							value={statusFilter}
+							onChange={(v) => updateParam("status", v)}
+							placeholder="All statuses"
+						/>
 
 						{/* Priority */}
-						<select value={priorityFilter} onChange={(e) => updateParam("priority", e.target.value)} className={filterSelect}>
-							<option value="">All priorities</option>
-							<option value="low">Low</option>
-							<option value="medium">Medium</option>
-							<option value="high">High</option>
-							<option value="critical">Critical</option>
-						</select>
+						<Combobox
+							className="w-36"
+							options={[
+								{ value: "", label: "All priorities" },
+								{ value: "low", label: "Low" },
+								{ value: "medium", label: "Medium" },
+								{ value: "high", label: "High" },
+								{ value: "critical", label: "Critical" },
+							]}
+							value={priorityFilter}
+							onChange={(v) => updateParam("priority", v)}
+							placeholder="All priorities"
+						/>
 
 						{/* Overdue quick-filter pill */}
 						<button

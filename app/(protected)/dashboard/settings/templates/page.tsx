@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils/cn";
 import { RichTextEditor } from "@/components/ui/rich-text-editor";
+import { Combobox } from "@/components/ui/combobox";
 import type { TicketTemplate } from "@/components/dashboard/tasks/types";
 
 function isRteEmpty(val: string | null | undefined): boolean {
@@ -54,9 +55,6 @@ const PRIORITY_LABEL: Record<string, string> = {
 
 const inputCls =
 	"w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-mint placeholder:text-ink-3/40";
-
-const selectCls =
-	"w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-mint";
 
 // ── Create / Edit form ──────────────────────────────────────────────────────
 
@@ -121,23 +119,33 @@ function TemplateForm({
 				<div className="grid grid-cols-2 gap-3 sm:grid-cols-[1fr_1fr_2fr]">
 					<div className="space-y-1.5">
 						<Label htmlFor="tpl-type">Type</Label>
-						<select id="tpl-type" value={ticketType} onChange={(e) => setTicketType(e.target.value)} className={selectCls}>
-							<option value="">No prefill</option>
-							<option value="internal_task">Internal Task</option>
-							<option value="request">Request</option>
-							<option value="incident">Incident</option>
-							<option value="change">Request for Change</option>
-						</select>
+						<Combobox
+							options={[
+								{ value: "", label: "No prefill" },
+								{ value: "internal_task", label: "Internal Task" },
+								{ value: "request", label: "Request" },
+								{ value: "incident", label: "Incident" },
+								{ value: "change", label: "Request for Change" },
+							]}
+							value={ticketType}
+							onChange={setTicketType}
+							placeholder="No prefill"
+						/>
 					</div>
 					<div className="space-y-1.5">
 						<Label htmlFor="tpl-priority">Priority</Label>
-						<select id="tpl-priority" value={priority} onChange={(e) => setPriority(e.target.value)} className={selectCls}>
-							<option value="">No prefill</option>
-							<option value="low">Low</option>
-							<option value="medium">Medium</option>
-							<option value="high">High</option>
-							<option value="critical">Critical</option>
-						</select>
+						<Combobox
+							options={[
+								{ value: "", label: "No prefill" },
+								{ value: "low", label: "Low" },
+								{ value: "medium", label: "Medium" },
+								{ value: "high", label: "High" },
+								{ value: "critical", label: "Critical" },
+							]}
+							value={priority}
+							onChange={setPriority}
+							placeholder="No prefill"
+						/>
 					</div>
 					<div className="col-span-2 sm:col-span-1 space-y-1.5">
 						<Label htmlFor="tpl-title">Title prefill</Label>

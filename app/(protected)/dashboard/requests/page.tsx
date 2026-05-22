@@ -5,9 +5,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import APIService from "@/lib/infra/api";
 import { formatDate, formatDateTime } from "@/lib/utils/format";
 import { Button } from "@/components/ui/button";
-import {
-	SelectRoot, SelectTrigger, SelectValue, SelectContent, SelectItem,
-} from "@/components/ui/select";
+import { Combobox } from "@/components/ui/combobox";
 import { RotateCcw, ArrowRightLeft, Calendar, Inbox, Filter, ChevronRight, X } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import Link from "next/link";
@@ -214,16 +212,12 @@ export default function RequestsPage() {
 			{/* Filters */}
 			<div className="flex items-center gap-2">
 				<Filter className="w-3.5 h-3.5 text-ink-3 shrink-0" />
-				<SelectRoot value={typeFilter} onValueChange={handleFilterChange}>
-					<SelectTrigger className="h-8 text-xs w-36">
-						<SelectValue />
-					</SelectTrigger>
-					<SelectContent>
-						{TYPE_OPTIONS.map((o) => (
-							<SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
-						))}
-					</SelectContent>
-				</SelectRoot>
+				<Combobox
+					className="w-36"
+					options={TYPE_OPTIONS}
+					value={typeFilter}
+					onChange={handleFilterChange}
+				/>
 				{data && (
 					<span className="text-xs text-ink-3 ml-auto">{data.total} request{data.total !== 1 ? "s" : ""}</span>
 				)}

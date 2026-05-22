@@ -1507,63 +1507,93 @@ function EditTicketDialog({ ticket, open, onOpenChange, onSave, isEmployee = fal
 					{isEmployee ? (
 						<div className="space-y-1.5">
 							<Label htmlFor="edit-priority">Priority</Label>
-							<select id="edit-priority" value={priority} onChange={(e) => setPriority(e.target.value)} className={inputCls}>
-								<option value="low">Low</option>
-								<option value="medium">Medium</option>
-								<option value="high">High</option>
-								<option value="critical">Critical</option>
-							</select>
+							<Combobox
+								options={[
+									{ value: "low", label: "Low" },
+									{ value: "medium", label: "Medium" },
+									{ value: "high", label: "High" },
+									{ value: "critical", label: "Critical" },
+								]}
+								value={priority}
+								onChange={setPriority}
+								placeholder="Select priority…"
+							/>
 						</div>
 					) : (
 						<>
 							<div className="grid grid-cols-3 gap-4">
 								<div className="space-y-1.5">
 									<Label htmlFor="edit-type">Type</Label>
-									<select id="edit-type" value={ticketType} onChange={(e) => setTicketType(e.target.value)} className={inputCls}>
-										<option value="internal_task">Internal Task</option>
-										<option value="request">Request</option>
-										<option value="incident">Incident</option>
-										<option value="change">Request for Change</option>
-									</select>
+									<Combobox
+										options={[
+											{ value: "internal_task", label: "Internal Task" },
+											{ value: "request", label: "Request" },
+											{ value: "incident", label: "Incident" },
+											{ value: "change", label: "Request for Change" },
+										]}
+										value={ticketType}
+										onChange={setTicketType}
+										placeholder="Select type…"
+									/>
 								</div>
 								<div className="space-y-1.5">
 									<Label htmlFor="edit-status">Status</Label>
-									<select id="edit-status" value={status} onChange={(e) => setStatus(e.target.value)} className={inputCls}>
-										<option value="pending">Open</option>
-										<option value="assigned">Assigned</option>
-										<option value="in_progress">In Progress</option>
-										<option value="on_hold">On Hold</option>
-										<option value="stale">Stale</option>
-										<option value="completed">Resolved</option>
-										<option value="closed">Closed</option>
-									</select>
+									<Combobox
+										options={[
+											{ value: "pending", label: "Open" },
+											{ value: "assigned", label: "Assigned" },
+											{ value: "in_progress", label: "In Progress" },
+											{ value: "on_hold", label: "On Hold" },
+											{ value: "stale", label: "Stale" },
+											{ value: "completed", label: "Resolved" },
+											{ value: "closed", label: "Closed" },
+										]}
+										value={status}
+										onChange={setStatus}
+										placeholder="Select status…"
+									/>
 								</div>
 								<div className="space-y-1.5">
 									<Label htmlFor="edit-priority">Priority</Label>
-									<select id="edit-priority" value={priority} onChange={(e) => setPriority(e.target.value)} className={inputCls}>
-										<option value="low">Low</option>
-										<option value="medium">Medium</option>
-										<option value="high">High</option>
-										<option value="critical">Critical</option>
-									</select>
+									<Combobox
+										options={[
+											{ value: "low", label: "Low" },
+											{ value: "medium", label: "Medium" },
+											{ value: "high", label: "High" },
+											{ value: "critical", label: "Critical" },
+										]}
+										value={priority}
+										onChange={setPriority}
+										placeholder="Select priority…"
+									/>
 								</div>
 							</div>
 							<div className="grid grid-cols-2 gap-4">
 								<div className="space-y-1.5">
 									<Label htmlFor="edit-source">{optLabel("Source")}</Label>
-									<select id="edit-source" value={source} onChange={(e) => setSource(e.target.value)} className={inputCls}>
-										<option value="">Not specified</option>
-										<option value="in_system">In-system</option>
-										<option value="email">Email</option>
-										<option value="sms">SMS</option>
-									</select>
+									<Combobox
+										options={[
+											{ value: "", label: "Not specified" },
+											{ value: "in_system", label: "In-system" },
+											{ value: "email", label: "Email" },
+											{ value: "sms", label: "SMS" },
+										]}
+										value={source}
+										onChange={setSource}
+										placeholder="Not specified"
+									/>
 								</div>
 								<div className="space-y-1.5">
 									<Label htmlFor="edit-permission">Assignee access</Label>
-									<select id="edit-permission" value={assigneePermission} onChange={(e) => setAssigneePermission(e.target.value)} className={inputCls}>
-										<option value="editor">Editor — can edit fields</option>
-										<option value="viewer">Viewer — read-only</option>
-									</select>
+									<Combobox
+										options={[
+											{ value: "editor", label: "Editor — can edit fields" },
+											{ value: "viewer", label: "Viewer — read-only" },
+										]}
+										value={assigneePermission}
+										onChange={setAssigneePermission}
+										placeholder="Select access…"
+									/>
 								</div>
 							</div>
 						</>
@@ -1643,12 +1673,20 @@ function EditTicketDialog({ ticket, open, onOpenChange, onSave, isEmployee = fal
 					</div>
 					<div className="space-y-4">
 						<div className="space-y-1.5">
-							<Label htmlFor="edit-impl">{optLabel("Implementation plan")}</Label>
-							<textarea id="edit-impl" value={implementationPlan} onChange={(e) => setImplementationPlan(e.target.value)} rows={3} maxLength={5000} placeholder={"- Step 1: Deploy to staging\n- Step 2: Run migrations\n• Verify all endpoints respond"} className={`${inputCls} resize-none`} />
+							<Label>{optLabel("Implementation plan")}</Label>
+							<RichTextEditor
+								value={implementationPlan}
+								onChange={setImplementationPlan}
+								placeholder="- Step 1: Deploy to staging&#10;- Step 2: Run migrations&#10;• Verify all endpoints respond"
+							/>
 						</div>
 						<div className="space-y-1.5">
-							<Label htmlFor="edit-roll">{optLabel("Rollback plan")}</Label>
-							<textarea id="edit-roll" value={rollbackPlan} onChange={(e) => setRollbackPlan(e.target.value)} rows={2} maxLength={2000} placeholder={"- Step 1: Roll back deployment\n• Restore database snapshot if needed"} className={`${inputCls} resize-none`} />
+							<Label>{optLabel("Rollback plan")}</Label>
+							<RichTextEditor
+								value={rollbackPlan}
+								onChange={setRollbackPlan}
+								placeholder="- Step 1: Roll back deployment&#10;• Restore database snapshot if needed"
+							/>
 						</div>
 					</div>
 

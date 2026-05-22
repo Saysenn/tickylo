@@ -12,6 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import APIService from "@/lib/infra/api";
+import { Combobox } from "@/components/ui/combobox";
 
 interface RequestFormDialogProps {
 	isPending: boolean;
@@ -104,27 +105,21 @@ export function RequestFormDialog({
 					{/* Leave type */}
 					<div className="space-y-1.5">
 						<Label htmlFor="type">Leave type</Label>
-						<select
-							id="type"
-							value={type}
-							onChange={(e) => setType(e.target.value)}
-							className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-mint"
-						>
-							{LEAVE_TYPES.map((lt) => {
+						<Combobox
+							options={LEAVE_TYPES.map((lt) => {
 								const balance = getBalance(lt.field);
 								const exhausted = isExhausted(lt.field);
-								return (
-									<option key={lt.value} value={lt.value} disabled={exhausted}>
-										{lt.label}
-										{metaExists && !isLoadingMeta
-											? exhausted
-												? " — No days remaining"
-												: ` — ${balance} day${balance === 1 ? "" : "s"} remaining`
-											: ""}
-									</option>
-								);
+								const suffix = metaExists && !isLoadingMeta
+									? exhausted
+										? " — No days remaining"
+										: ` — ${balance} day${balance === 1 ? "" : "s"} remaining`
+									: "";
+								return { value: lt.value, label: `${lt.label}${suffix}` };
 							})}
-						</select>
+							value={type}
+							onChange={setType}
+							placeholder="Select leave type…"
+						/>
 
 						{/* Inline warning for exhausted selected type */}
 						{metaExists && selectedExhausted && (

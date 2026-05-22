@@ -69,9 +69,6 @@ const TYPE_HINT: Record<string, string> = {
 	change:        "e.g. Roll back the Node.js upgrade",
 };
 
-const selectCls =
-	"w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-mint";
-
 const inputCls =
 	"w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-mint placeholder:text-ink-3/40";
 
@@ -257,34 +254,23 @@ export function TaskFormDialog({
 						{templatesLoading ? (
 							<span className="flex-1 text-xs text-ink-3/40 italic">Loading…</span>
 						) : templates.length > 0 ? (
-							<select
-								className="flex-1 rounded-md border border-border bg-background px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-mint"
+							<Combobox
+								options={[
+									{ value: "", label: "Select a template…" },
+									...templates.filter((t) => t.is_shared).map((t) => ({ value: t.id, label: `[Shared] ${t.name}` })),
+									...templates.filter((t) => !t.is_shared).map((t) => ({ value: t.id, label: `[Personal] ${t.name}` })),
+								]}
 								value={selectedTemplateId}
-								onChange={(e) => {
-									const id = e.target.value;
+								onChange={(id) => {
 									const t = templates.find((t) => t.id === id);
 									if (t) {
 										applyTemplate(t);
 										setSelectedTemplateId("");
 									}
 								}}
-							>
-								<option value="">Select a template…</option>
-								{templates.filter((t) => t.is_shared).length > 0 && (
-									<optgroup label="Shared">
-										{templates.filter((t) => t.is_shared).map((t) => (
-											<option key={t.id} value={t.id}>{t.name}</option>
-										))}
-									</optgroup>
-								)}
-								{templates.filter((t) => !t.is_shared).length > 0 && (
-									<optgroup label="Personal">
-										{templates.filter((t) => !t.is_shared).map((t) => (
-											<option key={t.id} value={t.id}>{t.name}</option>
-										))}
-									</optgroup>
-								)}
-							</select>
+								placeholder="Select a template…"
+								searchPlaceholder="Search templates…"
+							/>
 						) : (
 							<span className="flex-1 text-xs text-ink-3/50 italic">No templates saved yet</span>
 						)}
@@ -296,31 +282,31 @@ export function TaskFormDialog({
 					<div className="grid grid-cols-2 gap-4">
 						<div className="space-y-1.5">
 							<Label htmlFor="ticket-type">Type</Label>
-							<select
-								id="ticket-type"
+							<Combobox
+								options={[
+									{ value: "internal_task", label: "Internal Task" },
+									{ value: "request", label: "Request" },
+									{ value: "incident", label: "Incident" },
+									{ value: "change", label: "Request for Change" },
+								]}
 								value={ticketType}
-								onChange={(e) => handleTypeChange(e.target.value)}
-								className={selectCls}
-							>
-								<option value="internal_task">Internal Task</option>
-								<option value="request">Request</option>
-								<option value="incident">Incident</option>
-								<option value="change">Request for Change</option>
-							</select>
+								onChange={handleTypeChange}
+								placeholder="Select type…"
+							/>
 						</div>
 						<div className="space-y-1.5">
 							<Label htmlFor="priority">Priority</Label>
-							<select
-								id="priority"
+							<Combobox
+								options={[
+									{ value: "low", label: "Low" },
+									{ value: "medium", label: "Medium" },
+									{ value: "high", label: "High" },
+									{ value: "critical", label: "Critical" },
+								]}
 								value={priority}
-								onChange={(e) => setPriority(e.target.value)}
-								className={selectCls}
-							>
-								<option value="low">Low</option>
-								<option value="medium">Medium</option>
-								<option value="high">High</option>
-								<option value="critical">Critical</option>
-							</select>
+								onChange={setPriority}
+								placeholder="Select priority…"
+							/>
 						</div>
 					</div>
 
@@ -388,19 +374,29 @@ export function TaskFormDialog({
 						<div className="grid grid-cols-2 gap-4">
 							<div className="space-y-1.5">
 								<Label htmlFor="source"><FieldOpt>Source</FieldOpt></Label>
-								<select id="source" value={source} onChange={(e) => setSource(e.target.value)} className={selectCls}>
-									<option value="">Not specified</option>
-									<option value="in_system">In-system</option>
-									<option value="email">Email</option>
-									<option value="sms">SMS</option>
-								</select>
+								<Combobox
+									options={[
+										{ value: "", label: "Not specified" },
+										{ value: "in_system", label: "In-system" },
+										{ value: "email", label: "Email" },
+										{ value: "sms", label: "SMS" },
+									]}
+									value={source}
+									onChange={setSource}
+									placeholder="Not specified"
+								/>
 							</div>
 							<div className="space-y-1.5">
 								<Label htmlFor="assignee-permission">Assignee access</Label>
-								<select id="assignee-permission" value={assigneePermission} onChange={(e) => setAssigneePermission(e.target.value)} className={selectCls}>
-									<option value="editor">Editor — can edit fields</option>
-									<option value="viewer">Viewer — read-only</option>
-								</select>
+								<Combobox
+									options={[
+										{ value: "editor", label: "Editor — can edit fields" },
+										{ value: "viewer", label: "Viewer — read-only" },
+									]}
+									value={assigneePermission}
+									onChange={setAssigneePermission}
+									placeholder="Select access…"
+								/>
 							</div>
 						</div>
 					)}

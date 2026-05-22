@@ -19,6 +19,7 @@ import { useAppSelector } from "@/store/hooks";
 import { formatDate } from "@/lib/utils/format";
 import { cn } from "@/lib/utils/cn";
 import { Inbox, Plus, Trash2, BellRing, CheckCircle2, SlidersHorizontal } from "lucide-react";
+import { Combobox } from "@/components/ui/combobox";
 import { ROWS_PER_PAGE } from "@/configs/pagination.config";
 import type { LeaveRequest, LeaveRequestPage } from "./types";
 
@@ -246,18 +247,15 @@ export function RequestsTable() {
 				{/* Filter row */}
 				{filtersOpen && (
 					<div className="flex items-center gap-2 flex-wrap">
-						<select
+						<Combobox
+							options={[
+								{ value: "", label: "All statuses" },
+								...ALL_STATUSES.map((s) => ({ value: s, label: s.charAt(0).toUpperCase() + s.slice(1) })),
+							]}
 							value={statusFilter}
-							onChange={(e) => updateParam("status", e.target.value)}
-							className="h-8 rounded-md border border-border bg-background px-2 text-sm focus:outline-none focus:ring-1 focus:ring-mint"
-						>
-							<option value="">All statuses</option>
-							{ALL_STATUSES.map((s) => (
-								<option key={s} value={s} className="capitalize">
-									{s.charAt(0).toUpperCase() + s.slice(1)}
-								</option>
-							))}
-						</select>
+							onChange={(v) => updateParam("status", v)}
+							placeholder="All statuses"
+						/>
 						{statusFilter && (
 							<button
 								type="button"
