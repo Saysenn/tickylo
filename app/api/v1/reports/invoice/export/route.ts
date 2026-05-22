@@ -56,7 +56,9 @@ export async function POST(request: NextRequest) {
 				if (!te.end_time) return sum;
 				return sum + (te.end_time.getTime() - te.start_time.getTime());
 			}, 0);
-			const billableHours = Math.round((totalMs / 3600000) * 100) / 100;
+			const billableHours = Math.round(
+				(ticket.billable_hours != null ? ticket.billable_hours : totalMs / 3600000) * 100
+			) / 100;
 			const rate = ticket.client?.hourly_rate ?? 0;
 			const subtotal = Math.round(billableHours * rate * 100) / 100;
 			const discountPct = ticket.client?.discount_percent ?? 0;

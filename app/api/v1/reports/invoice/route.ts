@@ -59,7 +59,9 @@ export async function GET(request: NextRequest) {
 				if (!te.end_time) return sum;
 				return sum + (te.end_time.getTime() - te.start_time.getTime());
 			}, 0);
-			const billableHours = totalMs / 3600000;
+			const billableHours = ticket.billable_hours != null
+				? ticket.billable_hours
+				: totalMs / 3600000;
 			const rate = ticket.client?.hourly_rate ?? 0;
 			const subtotal = billableHours * rate;
 			const discountPct = ticket.client?.discount_percent ?? 0;
