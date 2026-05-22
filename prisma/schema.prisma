@@ -390,6 +390,8 @@ model Client {
   rate_type        String    @default("hourly")
   hourly_rate      Float     @default(0)
   discount_percent Float     @default(0)
+  billing_cycle    String    @default("per_ticket")
+  payment_terms    String    @default("net_30")
   notes            String?
   deleted_at       DateTime?
   created_at       DateTime  @default(now())

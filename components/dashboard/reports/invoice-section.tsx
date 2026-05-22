@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import APIService from "@/lib/infra/api";
 import { Button } from "@/components/ui/button";
@@ -63,9 +63,18 @@ export function InvoiceSection({ orgName, orgLogoUrl }: Props) {
 	const [clientId, setClientId]       = useState("");
 	const [dateFrom, setDateFrom]       = useState("");
 	const [dateTo, setDateTo]           = useState("");
-	const [sessions, setSessions]       = useState<SessionInvoice[]>([]);
+	const [sessions, setSessions]       = useState<SessionInvoice[]>(() => {
+		try {
+			const stored = localStorage.getItem("tw_invoice_sessions");
+			return stored ? JSON.parse(stored) : [];
+		} catch { return []; }
+	});
 	const [exportingId, setExportingId] = useState<string | null>(null);
 	const [exportErrors, setExportErrors] = useState<Record<string, string>>({});
+
+	useEffect(() => {
+		try { localStorage.setItem("tw_invoice_sessions", JSON.stringify(sessions)); } catch {}
+	}, [sessions]);
 
 	const tzOffset = new Date().getTimezoneOffset();
 
@@ -238,7 +247,7 @@ export function InvoiceSection({ orgName, orgLogoUrl }: Props) {
 			<div className="rounded-xl border bg-background min-h-[320px] flex flex-col">
 				<div className="px-5 py-4 border-b">
 					<p className="text-sm font-semibold text-ink">Generated This Session</p>
-					<p className="text-xs text-ink-3 mt-0.5">Invoices are not saved — export before leaving.</p>
+					<p className="text-xs text-ink-3 mt-0.5">Saved locally in your browser. Export to keep a permanent copy.</p>
 				</div>
 
 				{sessions.length === 0 ? (

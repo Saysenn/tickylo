@@ -13,6 +13,8 @@ const createClientSchema = z.object({
 	rate_type: z.enum(["hourly", "fixed", "none"]).optional(),
 	hourly_rate: z.number().nonnegative().optional(),
 	discount_percent: z.number().min(0).max(100).optional(),
+	billing_cycle: z.enum(["per_ticket", "monthly", "per_project"]).optional(),
+	payment_terms: z.enum(["due_on_receipt", "net_15", "net_30", "net_60"]).optional(),
 });
 
 export async function GET() {
@@ -46,7 +48,7 @@ export async function POST(request: NextRequest) {
 		const parsed = createClientSchema.safeParse(body);
 		if (!parsed.success) return errorResponse(parsed.error.issues[0]?.message ?? "Invalid input", 400);
 
-		const { name, email, phone, currency, rate_type, hourly_rate, discount_percent } = parsed.data;
+		const { name, email, phone, currency, rate_type, hourly_rate, discount_percent, billing_cycle, payment_terms } = parsed.data;
 
 		// Check unique [org_id, name]
 		const existing = await prisma.client.findUnique({ where: { org_id_name: { org_id: orgId, name } } });
@@ -62,6 +64,8 @@ export async function POST(request: NextRequest) {
 				rate_type: rate_type ?? "hourly",
 				hourly_rate: hourly_rate ?? 0,
 				discount_percent: discount_percent ?? 0,
+				billing_cycle: billing_cycle ?? "per_ticket",
+				payment_terms: payment_terms ?? "net_30",
 			},
 			include: { _count: { select: { tickets: true } } },
 		});

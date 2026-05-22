@@ -17,6 +17,8 @@ interface Client {
 	rate_type: string;
 	hourly_rate: number;
 	discount_percent: number;
+	billing_cycle: string;
+	payment_terms: string;
 	notes: string | null;
 	deleted_at: string | null;
 	created_at: string;
@@ -139,7 +141,14 @@ export function ClientsTable() {
 									<td className="px-4 py-3 text-xs text-ink-2 font-medium">
 										{client.rate_type === "none"
 											? <span className="text-ink-3">—</span>
-											: `${client.currency} ${client.hourly_rate.toFixed(2)}${client.rate_type === "hourly" ? "/hr" : " fixed"}`
+											: (() => {
+												const suffix = client.rate_type === "hourly"
+													? "/hr"
+													: client.billing_cycle === "monthly"     ? "/mo"
+													: client.billing_cycle === "per_project" ? "/project"
+													: "/ticket";
+												return `${client.currency} ${client.hourly_rate.toFixed(2)}${suffix}`;
+											})()
 										}
 									</td>
 									<td className="px-4 py-3 text-xs text-ink-3 hidden sm:table-cell">

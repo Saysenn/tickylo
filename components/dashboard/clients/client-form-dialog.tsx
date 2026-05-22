@@ -68,7 +68,22 @@ const RATE_TYPES = [
 	{ value: "none",   label: "No rate" },
 ] as const;
 
+const BILLING_CYCLES = [
+	{ value: "per_ticket",  label: "Per ticket" },
+	{ value: "monthly",     label: "Monthly" },
+	{ value: "per_project", label: "Per project" },
+];
+
+const PAYMENT_TERMS = [
+	{ value: "due_on_receipt", label: "Due on receipt" },
+	{ value: "net_15",         label: "Net 15" },
+	{ value: "net_30",         label: "Net 30" },
+	{ value: "net_60",         label: "Net 60" },
+];
+
 type RateType = "hourly" | "fixed" | "none";
+type BillingCycle = "per_ticket" | "monthly" | "per_project";
+type PaymentTerms = "due_on_receipt" | "net_15" | "net_30" | "net_60";
 
 export interface ClientFormData {
 	name: string;
@@ -78,6 +93,8 @@ export interface ClientFormData {
 	rate_type?: RateType;
 	hourly_rate?: number;
 	discount_percent?: number;
+	billing_cycle?: BillingCycle;
+	payment_terms?: PaymentTerms;
 }
 
 interface Client {
@@ -89,6 +106,8 @@ interface Client {
 	rate_type: string;
 	hourly_rate: number;
 	discount_percent: number;
+	billing_cycle: string;
+	payment_terms: string;
 }
 
 interface Props {
@@ -109,6 +128,8 @@ export function ClientFormDialog({ mode, client, trigger, onSubmit, isPending }:
 	const [rateType, setRateType] = useState<RateType>("hourly");
 	const [rate, setRate] = useState("");
 	const [discountPercent, setDiscountPercent] = useState("");
+	const [billingCycle, setBillingCycle] = useState<BillingCycle>("per_ticket");
+	const [paymentTerms, setPaymentTerms] = useState<PaymentTerms>("net_30");
 	const [error, setError] = useState("");
 
 	useEffect(() => {
@@ -122,6 +143,8 @@ export function ClientFormDialog({ mode, client, trigger, onSubmit, isPending }:
 			setRateType((client?.rate_type as RateType) ?? "hourly");
 			setRate(client?.hourly_rate != null && client.hourly_rate > 0 ? String(client.hourly_rate) : "");
 			setDiscountPercent(client?.discount_percent != null && client.discount_percent > 0 ? String(client.discount_percent) : "");
+			setBillingCycle((client?.billing_cycle as BillingCycle) ?? "per_ticket");
+			setPaymentTerms((client?.payment_terms as PaymentTerms) ?? "net_30");
 			setError("");
 		}
 	}, [open, client]);
@@ -138,6 +161,8 @@ export function ClientFormDialog({ mode, client, trigger, onSubmit, isPending }:
 				rate_type: rateType,
 				hourly_rate: rateType !== "none" && rate ? parseFloat(rate) : undefined,
 				discount_percent: discountPercent ? parseFloat(discountPercent) : undefined,
+				billing_cycle: billingCycle,
+				payment_terms: paymentTerms,
 			});
 			setOpen(false);
 		} catch (err: any) {
@@ -145,7 +170,7 @@ export function ClientFormDialog({ mode, client, trigger, onSubmit, isPending }:
 		}
 	};
 
-	const rateLabel = rateType === "fixed" ? "Fixed Rate" : "Hourly Rate";
+	const rateLabel = "Rate";
 
 	return (
 		<DialogRoot open={open} onOpenChange={setOpen}>
@@ -225,6 +250,7 @@ export function ClientFormDialog({ mode, client, trigger, onSubmit, isPending }:
 								onChange={setCurrency}
 								placeholder="USD"
 							/>
+							<p className="text-[11px] text-ink-3">Currency used on all invoices for this client.</p>
 						</div>
 
 						<div className="space-y-1.5">
@@ -234,6 +260,11 @@ export function ClientFormDialog({ mode, client, trigger, onSubmit, isPending }:
 								value={rateType}
 								onChange={(v) => setRateType(v as RateType)}
 							/>
+							<p className="text-[11px] text-ink-3">
+								{rateType === "hourly" && "Charge = hours worked × rate."}
+								{rateType === "fixed"  && "Flat charge per ticket, regardless of hours."}
+								{rateType === "none"   && "This client won't appear on invoices."}
+							</p>
 						</div>
 					</div>
 
@@ -252,6 +283,9 @@ export function ClientFormDialog({ mode, client, trigger, onSubmit, isPending }:
 									onChange={(e) => setRate(e.target.value)}
 									placeholder="0.00"
 								/>
+								<p className="text-[11px] text-ink-3">
+									{rateType === "hourly" ? "Amount charged per hour of work." : "Fixed amount charged per completed ticket."}
+								</p>
 							</div>
 
 							<div className="space-y-1.5">
@@ -268,9 +302,33 @@ export function ClientFormDialog({ mode, client, trigger, onSubmit, isPending }:
 									onChange={(e) => setDiscountPercent(e.target.value)}
 									placeholder="0"
 								/>
+								<p className="text-[11px] text-ink-3">Applied after subtotal. E.g. 10 = 10% off.</p>
 							</div>
 						</div>
 					)}
+
+					<div className="grid grid-cols-2 gap-4">
+						<div className="space-y-1.5">
+							<Label>Billing Cycle</Label>
+							<Combobox
+								options={BILLING_CYCLES}
+								value={billingCycle}
+								onChange={(v) => setBillingCycle(v as BillingCycle)}
+								placeholder="Per ticket"
+							/>
+							<p className="text-[11px] text-ink-3">How often you send invoices to this client.</p>
+						</div>
+						<div className="space-y-1.5">
+							<Label>Payment Terms</Label>
+							<Combobox
+								options={PAYMENT_TERMS}
+								value={paymentTerms}
+								onChange={(v) => setPaymentTerms(v as PaymentTerms)}
+								placeholder="Net 30"
+							/>
+							<p className="text-[11px] text-ink-3">How many days the client has to pay after receiving the invoice.</p>
+						</div>
+					</div>
 
 					{error && <p className="text-sm text-destructive">{error}</p>}
 
