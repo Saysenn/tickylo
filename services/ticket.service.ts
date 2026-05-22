@@ -217,11 +217,7 @@ export async function createTicket(caller: Caller, data: CreateTicketData) {
 	const { assigned_to: rawAssignedTo, ...rest } = data;
 
 	const assigned_to = isAdminCaller ? rawAssignedTo : undefined;
-	const status = !isAdminCaller
-		? "needs_approval"
-		: assigned_to
-		? "assigned"
-		: "pending";
+	const status = assigned_to ? "assigned" : "pending";
 
 	const entry = await prisma.ticket.create({
 		data: {
@@ -248,8 +244,8 @@ export async function createTicket(caller: Caller, data: CreateTicketData) {
 	if (!isAdminCaller) {
 		notifyAdmins({
 			type: "ticket_needs_approval",
-			title: "Ticket submitted for approval",
-			body: `"${entry.title}" was submitted and needs your review.`,
+			title: "New ticket submitted",
+			body: `"${entry.title}" was submitted and is ready for assignment.`,
 			link: `/dashboard/tickets/${entry.id}`,
 		}).catch(() => {});
 	} else if (assigned_to) {
