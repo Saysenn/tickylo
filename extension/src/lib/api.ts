@@ -62,6 +62,8 @@ export const createTicket   = (data: CreateTicketData) =>
   req<Ticket>("/ticket", { method: "POST", body: JSON.stringify(data) });
 export const updateTicketStatus = (id: string, action: "start" | "complete" | "hold" | "reopen") =>
   req(`/ticket/${id}/${action}`, { method: "PATCH", body: "{}" });
+export const updateBillableHours = (id: string, billable_hours: number | null) =>
+  req(`/task/${id}/billable`, { method: "PATCH", body: JSON.stringify({ billable_hours }) });
 export const requestTransfer = (id: string, reason?: string) =>
   req(`/ticket/${id}/transfer-request`, { method: "POST", body: JSON.stringify({ reason: reason ?? "" }) });
 export const requestReopen = (id: string, reason?: string) =>
@@ -117,6 +119,7 @@ export interface Ticket {
   user_id: string | null;
   client_id: string | null;
   client_name: string | null;
+  client_rate_type: string | null;
   assignee: { id: string; name: string | null; email: string } | null;
   transferRequests: { id: string }[];
   reopenRequests: { id: string }[];

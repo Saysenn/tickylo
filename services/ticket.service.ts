@@ -276,7 +276,7 @@ export async function getTicket(id: string, caller: Caller) {
 		include: {
 			assignee: { select: { id: true, name: true, email: true } },
 			creator: { select: { id: true, name: true, email: true } },
-			client: { select: { id: true, name: true, email: true, deleted_at: true } },
+			client: { select: { id: true, name: true, email: true, deleted_at: true, rate_type: true } },
 		},
 	});
 

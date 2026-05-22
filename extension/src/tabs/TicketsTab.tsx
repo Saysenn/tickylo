@@ -3,7 +3,7 @@ import { Plus, ArrowLeftRight, RotateCcw, Play, Square, CheckCheck, PauseCircle,
 import {
   getMyTickets, getAvailableTickets, claimTicket,
   updateTicketStatus, startTimer, stopTimer, createTicket,
-  requestTransfer, requestReopen, requestDueDateExtension, getTicket, getClients,
+  requestTransfer, requestReopen, requestDueDateExtension, getTicket, getClients, updateBillableHours,
 } from "../lib/api";
 import type { Ticket, ActiveTimer, Client } from "../lib/api";
 import { Storage } from "../lib/storage";
@@ -354,12 +354,16 @@ function TicketDetail({
   onReopen: () => void;
   onDueDateRequest: (date: string) => void;
 }) {
-  const [t, setT]                       = useState<Ticket>(initial);
-  const [dueDateInput, setDueDateInput] = useState("");
-  const [showDueForm, setShowDueForm]   = useState(false);
+  const [t, setT]                           = useState<Ticket>(initial);
+  const [dueDateInput, setDueDateInput]     = useState("");
+  const [showDueForm, setShowDueForm]       = useState(false);
+  const [showCompleteForm, setShowComplete] = useState(false);
+  const [billableInput, setBillableInput]   = useState("");
 
   useEffect(() => {
-    getTicket(initial.id).then(setT).catch(() => {});
+    getTicket(initial.id).then((raw: any) => {
+      setT({ ...raw, client_rate_type: raw.client?.rate_type ?? null });
+    }).catch(() => {});
   }, [initial.id]);
 
   const isThisTicketTimed = activeTimer?.ticket_id === t.id;
@@ -485,6 +489,38 @@ function TicketDetail({
             </div>
           </div>
         )}
+
+        {showCompleteForm && (
+          <div className="rounded-xl border border-mint/30 bg-mint/5 p-3 space-y-2">
+            <p className="text-[9px] font-semibold text-gray-400 uppercase tracking-wider">Billable hours</p>
+            <p className="text-[10px] text-gray-400">This client is billed hourly. Enter hours worked or leave blank to use tracked time.</p>
+            <input
+              type="number" min="0" step="0.5"
+              value={billableInput}
+              onChange={(e) => setBillableInput(e.target.value)}
+              placeholder="e.g. 2.5 (optional)"
+              className="w-full px-2.5 py-1.5 rounded-lg border border-gray-200 text-xs focus:outline-none focus:border-mint"
+            />
+            <div className="flex gap-1.5">
+              <button
+                onClick={async () => {
+                  if (billableInput.trim()) {
+                    await updateBillableHours(t.id, parseFloat(billableInput)).catch(() => {});
+                  }
+                  setShowComplete(false);
+                  onAction("complete");
+                }}
+                className="flex-1 py-1.5 rounded-lg bg-mint text-ink text-[10px] font-semibold hover:bg-mint-hover transition-colors"
+              >
+                Complete
+              </button>
+              <button onClick={() => setShowComplete(false)}
+                className="flex-1 py-1.5 rounded-lg border border-gray-200 text-[10px] text-gray-500 hover:bg-gray-50 transition-colors">
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Actions */}
@@ -509,7 +545,10 @@ function TicketDetail({
           });
 
         if (isAssignee && t.status === "in_progress")
-          actions.push({ icon: <CheckCheck size={15} strokeWidth={2.5} />, tip: "Mark complete", onClick: () => onAction("complete"), primary: true });
+          actions.push({ icon: <CheckCheck size={15} strokeWidth={2.5} />, tip: "Mark complete", onClick: () => {
+            if (t.client_rate_type === "hourly") { setBillableInput(""); setShowComplete(true); }
+            else onAction("complete");
+          }, primary: true });
 
         if (isAssignee && (t.status === "assigned" || t.status === "in_progress"))
           actions.push({ icon: <PauseCircle size={15} strokeWidth={2} />, tip: "Put on hold", onClick: () => onAction("hold") });
