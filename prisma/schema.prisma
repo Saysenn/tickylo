@@ -385,7 +385,9 @@ model Client {
   org_id           String
   name             String
   email            String?
+  phone            String?
   currency         String    @default("USD")
+  rate_type        String    @default("hourly")
   hourly_rate      Float     @default(0)
   discount_percent Float     @default(0)
   notes            String?

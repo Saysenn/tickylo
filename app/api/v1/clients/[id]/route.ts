@@ -8,7 +8,9 @@ import z from "zod";
 const updateClientSchema = z.object({
 	name: z.string().min(1).max(200).optional(),
 	email: z.string().email().max(200).optional().nullable(),
+	phone: z.string().max(50).optional().nullable(),
 	currency: z.string().max(10).optional(),
+	rate_type: z.enum(["hourly", "fixed", "none"]).optional(),
 	hourly_rate: z.number().nonnegative().optional(),
 	discount_percent: z.number().min(0).max(100).optional(),
 	notes: z.string().max(2000).optional().nullable(),

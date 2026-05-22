@@ -73,6 +73,15 @@ const ADMIN_STEPS = [
 		},
 	},
 	{
+		element: "#tour-nav-clients",
+		popover: {
+			title: "Clients",
+			description: "Manage your client list — set hourly rates, currencies, and discounts. Clients can be linked to tickets for accurate billing.",
+			side: "right" as const,
+			align: "start" as const,
+		},
+	},
+	{
 		element: "#tour-nav-requests",
 		popover: {
 			title: "Requests",

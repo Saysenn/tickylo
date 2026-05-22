@@ -12,7 +12,9 @@ interface Client {
 	id: string;
 	name: string;
 	email: string | null;
+	phone: string | null;
 	currency: string;
+	rate_type: string;
 	hourly_rate: number;
 	discount_percent: number;
 	notes: string | null;
@@ -111,7 +113,7 @@ export function ClientsTable() {
 						<thead>
 							<tr className="border-b bg-accent/30">
 								<th className="text-left px-4 py-2 text-xs font-semibold text-ink-3 uppercase tracking-wider">Name</th>
-								<th className="text-left px-4 py-2 text-xs font-semibold text-ink-3 uppercase tracking-wider hidden md:table-cell">Email</th>
+								<th className="text-left px-4 py-2 text-xs font-semibold text-ink-3 uppercase tracking-wider hidden md:table-cell">Contact</th>
 								<th className="text-left px-4 py-2 text-xs font-semibold text-ink-3 uppercase tracking-wider">Rate</th>
 								<th className="text-left px-4 py-2 text-xs font-semibold text-ink-3 uppercase tracking-wider hidden sm:table-cell">Discount</th>
 								<th className="text-left px-4 py-2 text-xs font-semibold text-ink-3 uppercase tracking-wider hidden sm:table-cell">Tickets</th>
@@ -130,11 +132,15 @@ export function ClientsTable() {
 											)}
 										</div>
 									</td>
-									<td className="px-4 py-3 text-xs text-ink-3 hidden md:table-cell">
-										{client.email ?? "—"}
+									<td className="px-4 py-3 hidden md:table-cell">
+										<p className="text-xs text-ink-3">{client.email ?? "—"}</p>
+										{client.phone && <p className="text-[11px] text-ink-3/60">{client.phone}</p>}
 									</td>
 									<td className="px-4 py-3 text-xs text-ink-2 font-medium">
-										{client.currency} {client.hourly_rate.toFixed(2)}/hr
+										{client.rate_type === "none"
+											? <span className="text-ink-3">—</span>
+											: `${client.currency} ${client.hourly_rate.toFixed(2)}${client.rate_type === "hourly" ? "/hr" : " fixed"}`
+										}
 									</td>
 									<td className="px-4 py-3 text-xs text-ink-3 hidden sm:table-cell">
 										{client.discount_percent > 0 ? `${client.discount_percent}%` : "—"}
