@@ -145,6 +145,7 @@ export async function POST(request: NextRequest) {
 				client_id: type === "client" ? client_id : null,
 				date_from: fromDate,
 				date_to: toDate,
+				template_id: resolvedTemplateId,
 			},
 		});
 

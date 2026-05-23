@@ -46,6 +46,8 @@ export async function GET(req: NextRequest) {
 			client_name:    inv.client?.name ?? null,
 			date_from:      inv.date_from.toISOString().split("T")[0],
 			date_to:        inv.date_to.toISOString().split("T")[0],
+			template_id:    inv.template_id,
+			format:         inv.template_id.endsWith("-pdf") ? "pdf" : "xlsx",
 			generated_at:   inv.generated_at.toISOString(),
 		}));
 

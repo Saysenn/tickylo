@@ -421,6 +421,7 @@ model Invoice {
   client_id      String?
   date_from      DateTime
   date_to        DateTime
+  template_id    String   @default("classic-xlsx")
   generated_at   DateTime @default(now())
 
   org    Organization @relation(fields: [org_id], references: [id], onDelete: Cascade)

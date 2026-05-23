@@ -428,9 +428,11 @@ class APIService {
 	public invoices = {
 		list: (params?: { page?: number; limit?: number; date_from?: string; date_to?: string }) =>
 			axiosService.get<{
-				data: { id: string; invoice_number: string; type: string; client_name: string | null; date_from: string; date_to: string; generated_at: string }[];
+				data: { id: string; invoice_number: string; type: string; client_name: string | null; date_from: string; date_to: string; template_id: string; format: "pdf" | "xlsx"; generated_at: string }[];
 				total: number; page: number; pages: number;
 			}>(`${apiVersion}/invoices`, params),
+		export: (id: string) =>
+			axiosService.instance.get(`/v1/invoices/${id}/export`, { responseType: "blob" }),
 	};
 
 	public orgLogo = {
