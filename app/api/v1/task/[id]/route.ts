@@ -34,6 +34,7 @@ const employeeUpdateSchema = z.object({
 	title: z.string().min(1).max(200).optional(),
 	description: z.string().max(1000).nullable().optional(),
 	priority: z.enum(["low", "medium", "high", "critical"]).optional(),
+	ticket_type: z.enum(["internal_task", "request", "incident", "change"]).optional(),
 	due_date: z.coerce.date().nullable().optional(),
 	implementation_plan: z.string().max(5000).nullable().optional(),
 	rollback_plan: z.string().max(5000).nullable().optional(),
