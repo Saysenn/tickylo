@@ -76,12 +76,15 @@ export function TasksTable() {
 	const [editingTask, setEditingTask] = useState<Task | null>(null);
 
 	// Filter state — synced to URL params
-	const typeFilter     = searchParams.get("type")     ?? "";
-	const priorityFilter = searchParams.get("priority") ?? "";
-	const assigneeFilter = searchParams.get("assignee") ?? "";
-	const dueFilter      = searchParams.get("due")      ?? "";
+	const typeFilter     = searchParams.get("type")      ?? "";
+	const priorityFilter = searchParams.get("priority")  ?? "";
+	const assigneeFilter = searchParams.get("assignee")  ?? "";
+	const dueFilter      = searchParams.get("due")       ?? "";
+	const dateFrom       = searchParams.get("date_from") ?? "";
+	const dateTo         = searchParams.get("date_to")   ?? "";
+	const resolvedFilter = statusFilter === "resolved";
 
-	const activeFilterCount = [priorityFilter, dueFilter, statusFilter, search]
+	const activeFilterCount = [priorityFilter, dueFilter, statusFilter, search, dateFrom, dateTo]
 		.filter(Boolean).length;
 
 	const clearAllFilters = () => {
@@ -90,6 +93,14 @@ export function TasksTable() {
 		router.push(`?${params.toString()}`);
 		setSearchInput("");
 	};
+
+	const updateDateRange = (from: string, to: string) => {
+		const params = new URLSearchParams(searchParams.toString());
+		if (from) params.set("date_from", from); else params.delete("date_from");
+		if (to) params.set("date_to", to); else params.delete("date_to");
+		params.set("page", "1");
+		router.push(`?${params.toString()}`);
+	};
 	const user = useAppSelector((s) => s.auth.user);
 	const isAdmin = user?.role === "admin";
 
@@ -97,6 +108,16 @@ export function TasksTable() {
 		const params = new URLSearchParams(searchParams.toString());
 		if (value) params.set(key, value);
 		else params.delete(key);
+		params.set("page", "1");
+		router.push(`?${params.toString()}`);
+	};
+
+	const updateParams = (updates: Record<string, string>) => {
+		const params = new URLSearchParams(searchParams.toString());
+		Object.entries(updates).forEach(([key, value]) => {
+			if (value) params.set(key, value);
+			else params.delete(key);
+		});
 		params.set("page", "1");
 		router.push(`?${params.toString()}`);
 	};
@@ -117,7 +138,7 @@ export function TasksTable() {
 	};
 
 	const { data: result, isLoading, isError } = useQuery<TaskPage>({
-		queryKey: ["tasks", page, statusFilter, search, viewFilter, typeFilter, priorityFilter, assigneeFilter, dueFilter],
+		queryKey: ["tasks", page, statusFilter, search, viewFilter, typeFilter, priorityFilter, assigneeFilter, dueFilter, dateFrom, dateTo],
 		queryFn: () => APIService.tasks.list(
 			page,
 			ROWS_PER_PAGE,
@@ -125,10 +146,12 @@ export function TasksTable() {
 			search || undefined,
 			isAdmin ? undefined : viewFilter,
 			{
-				type:     typeFilter     || undefined,
-				priority: priorityFilter || undefined,
-				assignee: assigneeFilter || undefined,
-				due:      dueFilter      || undefined,
+				type:      typeFilter     || undefined,
+				priority:  priorityFilter || undefined,
+				assignee:  assigneeFilter || undefined,
+				due:       dueFilter      || undefined,
+				date_from: dateFrom       || undefined,
+				date_to:   dateTo         || undefined,
 			},
 		),
 	});
@@ -304,6 +327,40 @@ const { mutateAsync: claimTask, isPending: isClaiming } = useMutation({
 						)}
 					</button>
 
+					{/* Overdue pill */}
+					<button
+						type="button"
+						onClick={() => updateParams({
+							due:    dueFilter === "overdue" ? "" : "overdue",
+							status: dueFilter === "overdue" ? statusFilter : "",
+						})}
+						className={cn(
+							"h-8 px-3 rounded-md border text-xs font-medium transition-colors",
+							dueFilter === "overdue"
+								? "bg-destructive/10 border-destructive/30 text-destructive"
+								: "border-border bg-background text-ink-3 hover:text-ink hover:border-border/80",
+						)}
+					>
+						Overdue
+					</button>
+
+					{/* Resolved pill */}
+					<button
+						type="button"
+						onClick={() => updateParams({
+							status: resolvedFilter ? "" : "resolved",
+							due:    "",
+						})}
+						className={cn(
+							"h-8 px-3 rounded-md border text-xs font-medium transition-colors",
+							resolvedFilter
+								? "bg-green-500/10 border-green-500/30 text-green-600"
+								: "border-border bg-background text-ink-3 hover:text-ink hover:border-border/80",
+						)}
+					>
+						Resolved
+					</button>
+
 					<div className="flex items-center gap-2 ml-auto">
 						<p className="text-sm text-ink-3">{result?.total ?? 0} {(result?.total ?? 0) === 1 ? "ticket" : "tickets"}</p>
 						<Button
@@ -345,12 +402,12 @@ const { mutateAsync: claimTask, isPending: isClaiming } = useMutation({
 						<Combobox
 							className="w-36"
 							options={[
-								{ value: "", label: "All statuses" },
-								...ALL_STATUSES.map((s) => ({ value: s, label: s === "overdue" ? "Overdue" : (STATUS_LABEL[s] ?? s) })),
+								{ value: "", label: "Active tickets" },
+								...ALL_STATUSES.filter(s => !["completed","closed","rejected"].includes(s)).map((s) => ({ value: s, label: s === "overdue" ? "Overdue" : (STATUS_LABEL[s] ?? s) })),
 							]}
-							value={statusFilter}
+							value={resolvedFilter ? "" : statusFilter}
 							onChange={(v) => updateParam("status", v)}
-							placeholder="All statuses"
+							placeholder="Active tickets"
 						/>
 
 						{/* Priority */}
@@ -368,19 +425,22 @@ const { mutateAsync: claimTask, isPending: isClaiming } = useMutation({
 							placeholder="All priorities"
 						/>
 
-						{/* Overdue quick-filter pill */}
-						<button
-							type="button"
-							onClick={() => updateParam("due", dueFilter === "overdue" ? "" : "overdue")}
-							className={cn(
-								"h-8 px-3 rounded-md border text-xs font-medium transition-colors",
-								dueFilter === "overdue"
-									? "bg-destructive/10 border-destructive/30 text-destructive"
-									: "border-border bg-background text-ink-3 hover:text-ink hover:border-border/80",
-							)}
-						>
-							Overdue
-						</button>
+						{/* Date range */}
+						<input
+							type="date"
+							value={dateFrom}
+							max={dateTo || undefined}
+							onChange={(e) => updateDateRange(e.target.value, dateTo)}
+							className="h-8 rounded-md border border-border bg-background px-2 text-xs text-ink focus:outline-none focus:ring-1 focus:ring-mint"
+						/>
+						<span className="text-xs text-ink-3">—</span>
+						<input
+							type="date"
+							value={dateTo}
+							min={dateFrom || undefined}
+							onChange={(e) => updateDateRange(dateFrom, e.target.value)}
+							className="h-8 rounded-md border border-border bg-background px-2 text-xs text-ink focus:outline-none focus:ring-1 focus:ring-mint"
+						/>
 
 						{/* Clear filters */}
 						{activeFilterCount > 0 && (
@@ -520,7 +580,10 @@ const { mutateAsync: claimTask, isPending: isClaiming } = useMutation({
 										Status
 									</th>
 									<th className="text-left px-4 py-2 text-xs font-semibold text-ink-3 uppercase tracking-wider hidden md:table-cell">
-										Due
+										{resolvedFilter ? "Completed" : "Due"}
+									</th>
+									<th className="text-left px-4 py-2 text-xs font-semibold text-ink-3 uppercase tracking-wider hidden lg:table-cell">
+										Created
 									</th>
 									<th className="text-left px-4 py-2 text-xs font-semibold text-ink-3 uppercase tracking-wider hidden lg:table-cell">
 										Time Spent
@@ -595,7 +658,13 @@ const { mutateAsync: claimTask, isPending: isClaiming } = useMutation({
 										</td>
 
 										<td className="px-4 py-2 hidden md:table-cell whitespace-nowrap">
-											{task.due_date ? (
+											{resolvedFilter ? (
+												task.completed_at ? (
+													<span className="text-xs text-ink-3">{formatDueDate(task.completed_at)}</span>
+												) : (
+													<span className="text-ink-3 text-xs">—</span>
+												)
+											) : task.due_date ? (
 												<div className="flex flex-col gap-0.5">
 													<span className={cn("text-xs whitespace-nowrap", task.status !== "completed" && new Date(task.due_date) < new Date() ? "text-destructive font-medium" : "text-ink-3")}>
 														{formatDueDate(task.due_date)}
@@ -609,6 +678,10 @@ const { mutateAsync: claimTask, isPending: isClaiming } = useMutation({
 											) : (
 												<span className="text-ink-3 text-xs">—</span>
 											)}
+										</td>
+
+										<td className="px-4 py-2 hidden lg:table-cell whitespace-nowrap">
+											<span className="text-xs text-ink-3">{formatDueDate(task.created_at)}</span>
 										</td>
 
 										<td className="px-4 py-2 hidden lg:table-cell">

@@ -57,6 +57,8 @@ export type ListTicketsParams = {
 	priority?: string;
 	assignee?: string;
 	due?: string;
+	date_from?: string;
+	date_to?: string;
 };
 
 export async function listTickets(caller: Caller, params: ListTicketsParams) {
@@ -70,6 +72,8 @@ export async function listTickets(caller: Caller, params: ListTicketsParams) {
 		priority: priorityFilter,
 		assignee: assigneeFilter,
 		due: dueFilter,
+		date_from,
+		date_to,
 	} = params;
 
 	const skip = (Math.max(1, page) - 1) * Math.min(50, Math.max(1, limit));
@@ -96,12 +100,31 @@ export async function listTickets(caller: Caller, params: ListTicketsParams) {
 			? {}
 			: { user_id: caller.id };
 
+	const RESOLVED_STATUSES = ["completed", "closed", "rejected"];
+
 	const overdueFilter =
 		statusFilter === "overdue"
-			? { due_date: { lt: new Date() }, status: { not: "completed" as const } }
+			? { due_date: { lt: new Date() }, status: { notIn: RESOLVED_STATUSES as any } }
 			: {};
+
 	const statusQueryFilter =
-		statusFilter && statusFilter !== "overdue" ? { status: statusFilter as never } : {};
+		statusFilter === "resolved"
+			? { status: { in: RESOLVED_STATUSES as any } }
+			: statusFilter && statusFilter !== "overdue"
+			? { status: statusFilter as never }
+			: !statusFilter
+			? { status: { notIn: RESOLVED_STATUSES as any } }
+			: {};
+
+	const dateRangeFilter =
+		date_from || date_to
+			? {
+				created_at: {
+					...(date_from ? { gte: new Date(`${date_from}T00:00:00Z`) } : {}),
+					...(date_to   ? { lte: new Date(`${date_to}T23:59:59Z`)   } : {}),
+				},
+			  }
+			: {};
 
 	const now = new Date();
 	const todayEnd = new Date(now);
@@ -133,6 +156,7 @@ export async function listTickets(caller: Caller, params: ListTicketsParams) {
 				...statusQueryFilter,
 				...overdueFilter,
 				...dueFilter_,
+				...dateRangeFilter,
 				...searchFilter,
 				...typeFilter_,
 				...priorityFilter_,
@@ -144,6 +168,7 @@ export async function listTickets(caller: Caller, params: ListTicketsParams) {
 				...statusQueryFilter,
 				...overdueFilter,
 				...dueFilter_,
+				...dateRangeFilter,
 				...searchFilter,
 				...typeFilter_,
 				...priorityFilter_,

@@ -44,6 +44,8 @@ export async function GET(request: NextRequest) {
 			priority: searchParams.get("priority") ?? undefined,
 			assignee: searchParams.get("assignee") ?? undefined,
 			due: searchParams.get("due") ?? undefined,
+			date_from: searchParams.get("date_from") ?? undefined,
+			date_to: searchParams.get("date_to") ?? undefined,
 		});
 
 		return ok(result);

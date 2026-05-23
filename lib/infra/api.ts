@@ -177,7 +177,7 @@ class APIService {
 	public tasks = {
 		stats: () => axiosService.get(`${apiVersion}/task/stats`),
 		list: (page = 1, limit = 10, status?: string, search?: string, view?: string, filters?: {
-			type?: string; priority?: string; assignee?: string; due?: string;
+			type?: string; priority?: string; assignee?: string; due?: string; date_from?: string; date_to?: string;
 		}) =>
 			axiosService.get(`${apiVersion}/ticket`, { page, limit, status, search, view, ...filters }),
 		create: (data: {
