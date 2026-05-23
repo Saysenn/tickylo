@@ -24,6 +24,8 @@ model Organization {
   extension_enabled            Boolean  @default(false)
   admins_can_work_on_tickets   Boolean  @default(false)
   include_admins_in_summary    Boolean  @default(false)
+  performance_enabled          Boolean  @default(true)
+  invoices_enabled             Boolean  @default(true)
   created_at          DateTime @default(now())
   updated_at          DateTime @updatedAt
 

@@ -411,14 +411,26 @@ class APIService {
 		get: () => axiosService.get<{
 			attachments_enabled: boolean; departments_enabled: boolean; extension_enabled: boolean;
 			admins_can_work_on_tickets: boolean; include_admins_in_summary: boolean;
+			performance_enabled: boolean; invoices_enabled: boolean;
 			org_join_code: string; name: string; plan: string; is_internal: boolean;
 			logo_url: string | null; invoice_template: string; invoice_config: Record<string, unknown> | null;
 		}>(`${apiVersion}/org/settings`),
 		update: (data: {
 			attachments_enabled?: boolean; departments_enabled?: boolean; extension_enabled?: boolean;
 			admins_can_work_on_tickets?: boolean; include_admins_in_summary?: boolean;
+			performance_enabled?: boolean; invoices_enabled?: boolean;
 			logo_url?: string | null; invoice_template?: string; invoice_config?: Record<string, unknown> | null;
 		}) => axiosService.patch(`${apiVersion}/org/settings`, data),
+	};
+
+	// Invoices list
+	// ---------------------------------------------------------------------------
+	public invoices = {
+		list: (params?: { page?: number; limit?: number; date_from?: string; date_to?: string }) =>
+			axiosService.get<{
+				data: { id: string; invoice_number: string; type: string; client_name: string | null; date_from: string; date_to: string; generated_at: string }[];
+				total: number; page: number; pages: number;
+			}>(`${apiVersion}/invoices`, params),
 	};
 
 	public orgLogo = {

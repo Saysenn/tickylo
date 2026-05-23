@@ -19,7 +19,7 @@ const TABS = [
 	{ key: "storage",     label: "Storage" },
 	{ key: "extension",   label: "Extension" },
 	{ key: "permissions", label: "Permissions" },
-	{ key: "members",     label: "Deactivated" },
+	{ key: "members",     label: "Recover Accounts" },
 ];
 
 export default async function OrganizationSettingsPage({

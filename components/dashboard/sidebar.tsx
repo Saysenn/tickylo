@@ -11,6 +11,7 @@ import {
 	AlarmClock,
 	ClipboardList,
 	BarChart2,
+	FileText,
 	Shield,
 	Inbox,
 	Building2,
@@ -50,7 +51,9 @@ export function Sidebar({ isOpen = false, onClose, role }: SidebarProps) {
 		queryFn: () => APIService.orgSettings.get(),
 		staleTime: 300_000,
 	});
-	const departmentsEnabled = orgSettings?.departments_enabled ?? false;
+	const departmentsEnabled  = orgSettings?.departments_enabled ?? false;
+	const performanceEnabled  = orgSettings?.performance_enabled ?? true;
+	const invoicesEnabled     = orgSettings?.invoices_enabled ?? true;
 	const { plan, is_internal } = usePlan();
 	const gate = (feature: Feature) => canAccess(plan, is_internal, feature);
 
@@ -58,9 +61,10 @@ export function Sidebar({ isOpen = false, onClose, role }: SidebarProps) {
 		{
 			title: "Overview",
 			items: [
-				{ label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-				{ label: "Team Overview", href: "/dashboard/time-manager", icon: Clock, roles: ["admin"], hidden: !gate("time_manager") },
-				{ label: "Reports", href: "/dashboard/reports", icon: BarChart2, roles: ["admin"], hidden: !gate("reports") },
+				{ label: "Dashboard",    href: "/dashboard",             icon: LayoutDashboard },
+				{ label: "Team Overview", href: "/dashboard/time-manager", icon: Clock,    roles: ["admin"], hidden: !gate("time_manager") },
+				{ label: "Performance",  href: "/dashboard/performance",  icon: BarChart2, roles: ["admin"], hidden: !gate("reports") || !performanceEnabled },
+				{ label: "Invoices",     href: "/dashboard/invoices",     icon: FileText,  roles: ["admin"], hidden: !gate("reports") || !invoicesEnabled },
 			],
 		},
 		{
@@ -94,7 +98,7 @@ export function Sidebar({ isOpen = false, onClose, role }: SidebarProps) {
 		"/dashboard/tickets":          "tour-nav-tickets",
 		"/dashboard/time-tracker":     "tour-nav-timer",
 		"/dashboard/time-manager":     "tour-nav-team-overview",
-		"/dashboard/reports":          "tour-nav-reports",
+		"/dashboard/performance":       "tour-nav-reports",
 		"/dashboard/employees":        "tour-nav-employees",
 		"/dashboard/departments":      "tour-nav-departments",
 		"/dashboard/ticket-requests":  "tour-nav-requests",

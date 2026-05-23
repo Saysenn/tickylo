@@ -2,11 +2,11 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/infra/prisma";
 import { canAccess } from "@/lib/utils/plan-gate";
-import { PerformanceTable } from "@/components/dashboard/performance/performance-table";
+import { InvoicesClient } from "@/components/dashboard/invoices/invoices-client";
 
-export const metadata = { title: "Performance" };
+export const metadata = { title: "Invoices" };
 
-export default async function PerformancePage() {
+export default async function InvoicesPage() {
 	const supabase = await createClient();
 	const { data: { user } } = await supabase.auth.getUser();
 	if (!user) redirect("/login");
@@ -15,19 +15,19 @@ export default async function PerformancePage() {
 	const orgId = user.app_metadata?.org_id as string | undefined;
 	const org = orgId ? await prisma.organization.findUnique({
 		where: { id: orgId },
-		select: { plan: true, is_internal: true, performance_enabled: true },
+		select: { plan: true, is_internal: true, invoices_enabled: true, name: true, logo_url: true },
 	}) : null;
 
 	if (!org || !canAccess(org.plan, org.is_internal, "reports")) redirect("/dashboard?upgrade=reports");
-	if (!org.performance_enabled) redirect("/dashboard");
+	if (!org.invoices_enabled) redirect("/dashboard");
 
 	return (
 		<div className="w-full space-y-6">
 			<div>
-				<h1 className="text-2xl font-bold text-ink">Performance</h1>
-				<p className="text-ink-3 mt-1 text-sm">Team analytics and activity tracking.</p>
+				<h1 className="text-2xl font-bold text-ink">Invoices</h1>
+				<p className="text-ink-3 mt-1 text-sm">Generate and manage client invoices.</p>
 			</div>
-			<PerformanceTable />
+			<InvoicesClient orgName={org.name} orgLogoUrl={org.logo_url} />
 		</div>
 	);
 }
