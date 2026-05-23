@@ -1,139 +1,206 @@
 import type { InvoiceData, InvoiceConfig } from "../types";
 import { currency, paymentTermsLabel, billingCycleLabel, dueDateFrom, rateTypeLabel } from "../helpers";
 
+// Classic — corporate / legal letterhead style
+// Numbered line items, dotted leaders, formal section breaks
+
 export async function buildClassicPdf(data: InvoiceData, config: InvoiceConfig): Promise<ArrayBuffer> {
 	const { default: jsPDF } = await import("jspdf");
-	const { default: autoTable } = await import("jspdf-autotable");
 
 	const { lineItems, invoiceNumber, issueDate, orgName, orgLogoUrl, dateFrom, dateTo, type } = data;
 	const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
 
-	const PRIMARY = hexToRgb(config.primaryColor);
-	const GRAY    = [100, 100, 100] as [number, number, number];
-	const LIGHT   = [240, 244, 255] as [number, number, number];
-	const W = 210; const MARGIN = 16;
+	const P   = hexToRgb(config.primaryColor);
+	const W   = 210;
+	const M   = 18;   // margin
+	const RW  = W - M * 2;
 
-	// ── Header ────────────────────────────────────────────────────────────────
-	doc.setFillColor(...(PRIMARY as [number, number, number]));
-	doc.rect(0, 0, W, 28, "F");
+	const setColor  = (r: number, g: number, b: number) => doc.setTextColor(r, g, b);
+	const setDraw   = (r: number, g: number, b: number) => doc.setDrawColor(r, g, b);
+	const rule      = (y: number, weight = 0.25, r = 180, g = 185, b = 200) => {
+		setDraw(r, g, b); doc.setLineWidth(weight); doc.line(M, y, W - M, y);
+	};
 
-	// Logo
-	let logoEndX = MARGIN;
+	// ── Logo + Org name ───────────────────────────────────────────────────────
+	let y = 20;
+
 	if (orgLogoUrl) {
 		try {
-			const imgData = await fetchImageAsBase64(orgLogoUrl);
-			doc.addImage(imgData.data, imgData.ext, MARGIN, 6, 16, 16);
-			logoEndX = MARGIN + 20;
+			const img = await fetchImg(orgLogoUrl);
+			doc.addImage(img.data, img.ext, M, y - 7, 14, 14);
 		} catch {}
 	}
 
 	doc.setFont(config.fontFamily, "bold");
-	doc.setFontSize(16);
-	doc.setTextColor(255, 255, 255);
-	doc.text(orgName, logoEndX, 14);
-	doc.setFontSize(9);
-	doc.setFont(config.fontFamily, "normal");
-	doc.text("INVOICE", logoEndX, 21);
+	doc.setFontSize(17);
+	setColor(...P);
+	doc.text(orgName, M, y);
 
-	// Invoice number top-right
-	doc.setFontSize(9);
-	doc.setTextColor(200, 210, 255);
-	doc.text(`#${invoiceNumber}`, W - MARGIN, 14, { align: "right" });
-	doc.text(`Issued: ${issueDate}`, W - MARGIN, 21, { align: "right" });
+	// "INVOICE" stamp — top right
+	doc.setFont(config.fontFamily, "bold");
+	doc.setFontSize(22);
+	setColor(...P);
+	doc.text("INVOICE", W - M, y, { align: "right" });
 
-	// ── Bill To / Period block ────────────────────────────────────────────────
+	y += 2;
+	rule(y, 0.6, P[0], P[1], P[2]);
+	y += 7;
+
+	// ── Invoice meta — right column ───────────────────────────────────────────
 	const first      = lineItems[0];
-	const clientName = first?.client_name ?? "—";
+	const clientName = type === "client" ? (first?.client_name ?? "—") : "All Clients — Full Tally";
 	const clientEmail= first?.client_email ?? "";
 	const cur        = first?.currency ?? "USD";
 	const payTerms   = paymentTermsLabel(first?.payment_terms ?? "net_30");
 	const dueDate    = dueDateFrom(first?.payment_terms ?? "net_30", new Date(issueDate));
-	const billingCycle = billingCycleLabel(first?.billing_cycle ?? "per_ticket");
+	const billing    = billingCycleLabel(first?.billing_cycle ?? "per_ticket");
 
-	let y = 36;
-	doc.setTextColor(...GRAY);
-	doc.setFontSize(7);
-	doc.setFont(config.fontFamily, "bold");
-	doc.text("BILL TO", MARGIN, y);
-	doc.text("PERIOD", W / 2, y);
-
-	y += 5;
-	doc.setFontSize(12);
-	doc.setFont(config.fontFamily, "bold");
-	doc.setTextColor(...(PRIMARY as [number, number, number]));
-	doc.text(type === "client" ? clientName : "All Clients — Full Tally", MARGIN, y);
-
-	doc.setFontSize(9);
-	doc.setFont(config.fontFamily, "normal");
-	doc.setTextColor(...GRAY);
-	doc.text(`${dateFrom}  →  ${dateTo}`, W / 2, y);
-
-	y += 5;
-	if (clientEmail && type === "client") {
-		doc.setFontSize(9);
-		doc.text(clientEmail, MARGIN, y);
-	}
-	doc.setFontSize(8);
-	doc.text(`Issued: ${issueDate}   Due: ${dueDate}`, W / 2, y);
-
-	y += 4;
-	doc.setFontSize(8);
-	doc.text(`${billingCycle}   ·   ${payTerms}`, MARGIN, y);
-
-	y += 6;
-	doc.setDrawColor(...GRAY);
-	doc.setLineWidth(0.2);
-	doc.line(MARGIN, y, W - MARGIN, y);
-	y += 6;
-
-	// ── Line items table ──────────────────────────────────────────────────────
-	const visibleCols = buildCols(config);
-
-	autoTable(doc, {
-		startY: y,
-		head:   [visibleCols.map((c) => c.label)],
-		body:   lineItems.length > 0
-			? lineItems.map((item) => visibleCols.map((c) => cellValue(item, c.key)))
-			: [["No completed tickets found for this period."]],
-		styles:       { fontSize: 8, cellPadding: 3, font: config.fontFamily },
-		headStyles:   { fillColor: PRIMARY as [number, number, number], textColor: [255, 255, 255], fontStyle: "bold", fontSize: 8 },
-		alternateRowStyles: { fillColor: LIGHT },
-		columnStyles: buildColStyles(visibleCols),
-		margin: { left: MARGIN, right: MARGIN },
-		tableWidth: "auto",
-	});
-
-	// ── Totals ────────────────────────────────────────────────────────────────
-	const finalY = (doc as any).lastAutoTable.finalY + 6;
-	const totalSub  = lineItems.reduce((s, i) => s + i.subtotal, 0);
-	const totalDisc = lineItems.reduce((s, i) => s + i.discount_amount, 0);
-	const totalNet  = lineItems.reduce((s, i) => s + i.net_total, 0);
-	const discPct   = lineItems[0]?.discount_percent ?? 0;
-
-	let ty = finalY;
-	const addTotalLine = (label: string, val: string, bold = false) => {
-		doc.setFontSize(bold ? 10 : 8.5);
-		doc.setFont(config.fontFamily, bold ? "bold" : "normal");
-		const rgb = bold ? PRIMARY : GRAY;
-		doc.setTextColor(rgb[0], rgb[1], rgb[2]);
-		doc.text(label, W - MARGIN - 40, ty, { align: "right" });
-		doc.text(val, W - MARGIN, ty, { align: "right" });
-		ty += bold ? 6 : 5;
+	const metaRight = (label: string, val: string, yy: number) => {
+		doc.setFont(config.fontFamily, "normal");
+		doc.setFontSize(8);
+		setColor(140, 145, 165);
+		doc.text(label, W - M - 38, yy, { align: "right" });
+		doc.setFont(config.fontFamily, "bold");
+		setColor(50, 55, 75);
+		doc.text(val, W - M, yy, { align: "right" });
 	};
 
-	addTotalLine("Subtotal", currency(totalSub, cur));
-	if (config.showDiscount && totalDisc > 0) addTotalLine(`Discount (${discPct}%)`, `-${currency(totalDisc, cur)}`);
-	// net total box
-	doc.setFillColor(232, 245, 232);
-	doc.roundedRect(W - MARGIN - 55, ty - 3, 55, 10, 1, 1, "F");
-	addTotalLine("NET TOTAL", currency(totalNet, cur), true);
+	metaRight("Invoice No.", invoiceNumber, y);      y += 5;
+	metaRight("Issue Date", issueDate, y);           y += 5;
+	metaRight("Due Date",   dueDate, y);             y += 5;
+	metaRight("Terms",      payTerms, y);
 
-	// Footer
-	const footerY = 287;
+	// ── Bill To — left column ─────────────────────────────────────────────────
+	let by = y - 10; // align with meta block
+	doc.setFont(config.fontFamily, "bold");
 	doc.setFontSize(7.5);
+	setColor(160, 165, 180);
+	doc.text("BILLED TO", M, by);
+	by += 5;
+	doc.setFont(config.fontFamily, "bold");
+	doc.setFontSize(12);
+	setColor(...P);
+	doc.text(clientName, M, by);
+	by += 5;
+	doc.setFont(config.fontFamily, "normal");
+	doc.setFontSize(9);
+	setColor(100, 105, 125);
+	if (clientEmail && type === "client") { doc.text(clientEmail, M, by); by += 4; }
+	doc.text(`${billing}  ·  ${payTerms}`, M, by);
+
+	y = Math.max(y + 8, by + 8);
+
+	// Period line
 	doc.setFont(config.fontFamily, "italic");
-	doc.setTextColor(160, 170, 190);
-	doc.text(config.footerNote || `Payment due by ${dueDate}. Thank you for your business.`, W / 2, footerY, { align: "center" });
+	doc.setFontSize(8.5);
+	setColor(130, 135, 155);
+	doc.text(`Period: ${dateFrom}  –  ${dateTo}`, M, y);
+	y += 5;
+	rule(y, 0.4);
+	y += 8;
+
+	// ── Line items ────────────────────────────────────────────────────────────
+	const items = lineItems.length > 0 ? lineItems : [];
+
+	for (let i = 0; i < items.length; i++) {
+		const item = items[i];
+
+		// Number
+		doc.setFont(config.fontFamily, "bold");
+		doc.setFontSize(9);
+		setColor(...P);
+		doc.text(`${i + 1}.`, M, y);
+
+		// Title — with leader dots to amount
+		const title   = truncate(item.title, 60);
+		const amtText = `${cur} ${item.subtotal.toFixed(2)}`;
+
+		doc.setFont(config.fontFamily, "bold");
+		doc.setFontSize(9.5);
+		setColor(30, 35, 55);
+		doc.text(title, M + 7, y);
+
+		// Dotted leader
+		const titleW = doc.getTextWidth(title);
+		const amtW   = doc.getTextWidth(amtText);
+		const leaderStart = M + 7 + titleW + 2;
+		const leaderEnd   = W - M - amtW - 2;
+		if (leaderEnd > leaderStart + 4) {
+			doc.setFont(config.fontFamily, "normal");
+			doc.setFontSize(8);
+			setColor(200, 205, 215);
+			const dots = buildLeader(doc, leaderStart, leaderEnd);
+			doc.text(dots, leaderStart, y);
+		}
+
+		// Amount
+		doc.setFont(config.fontFamily, "bold");
+		doc.setFontSize(9.5);
+		setColor(30, 35, 55);
+		doc.text(amtText, W - M, y, { align: "right" });
+		y += 5;
+
+		// Metadata line
+		const meta: string[] = [];
+		if (item.employee) meta.push(item.employee);
+		if (item.completed_at) meta.push(`Completed ${item.completed_at}`);
+		if (config.showHours && item.billable_hours > 0) meta.push(`${item.billable_hours.toFixed(1)} hrs`);
+		if (config.showRate)  meta.push(`@ ${cur} ${item.rate.toFixed(2)}/${rateTypeLabel(item.rate_type).toLowerCase()}`);
+
+		doc.setFont(config.fontFamily, "normal");
+		doc.setFontSize(8);
+		setColor(150, 155, 175);
+		doc.text(meta.join("  ·  "), M + 7, y);
+		y += 7;
+
+		if (y > 260 && i < items.length - 1) {
+			doc.addPage(); y = 20;
+		}
+	}
+
+	if (items.length === 0) {
+		doc.setFont(config.fontFamily, "italic");
+		doc.setFontSize(9);
+		setColor(180, 185, 200);
+		doc.text("No completed tickets found for this period.", M + 7, y);
+		y += 10;
+	}
+
+	rule(y, 0.4);
+	y += 8;
+
+	// ── Totals ────────────────────────────────────────────────────────────────
+	const totalSub  = items.reduce((s, i) => s + i.subtotal, 0);
+	const totalDisc = items.reduce((s, i) => s + i.discount_amount, 0);
+	const totalNet  = items.reduce((s, i) => s + i.net_total, 0);
+	const discPct   = items[0]?.discount_percent ?? 0;
+
+	const totalRow = (label: string, val: string, bold = false) => {
+		doc.setFont(config.fontFamily, bold ? "bold" : "normal");
+		doc.setFontSize(bold ? 10.5 : 9);
+		setColor(bold ? P[0] : 120, bold ? P[1] : 125, bold ? P[2] : 145);
+		doc.text(label, W - M - 55, y, { align: "right" });
+		doc.setFont(config.fontFamily, bold ? "bold" : "normal");
+		setColor(bold ? P[0] : 50, bold ? P[1] : 55, bold ? P[2] : 75);
+		doc.text(val, W - M, y, { align: "right" });
+		y += bold ? 7 : 5;
+	};
+
+	totalRow("Subtotal", currency(totalSub, cur));
+	if (config.showDiscount && totalDisc > 0)
+		totalRow(`Discount (${discPct}%)`, `− ${currency(totalDisc, cur)}`);
+
+	// Rule above total
+	setDraw(...P); doc.setLineWidth(0.4);
+	doc.line(W - M - 65, y - 2, W - M, y - 2);
+	totalRow("TOTAL DUE", currency(totalNet, cur), true);
+
+	// ── Footer ────────────────────────────────────────────────────────────────
+	rule(280, 0.3, 210, 212, 220);
+	doc.setFont(config.fontFamily, "italic");
+	doc.setFontSize(8);
+	setColor(175, 178, 195);
+	doc.text(config.footerNote || `Payment due by ${dueDate}. Thank you for your business.`, W / 2, 285, { align: "center" });
 
 	return doc.output("arraybuffer");
 }
@@ -145,48 +212,21 @@ function hexToRgb(hex: string): [number, number, number] {
 	return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
 }
 
-async function fetchImageAsBase64(url: string): Promise<{ data: string; ext: string }> {
+async function fetchImg(url: string): Promise<{ data: string; ext: string }> {
 	const res = await fetch(url);
-	if (!res.ok) throw new Error("Failed to fetch logo");
+	if (!res.ok) throw new Error("logo fetch failed");
 	const buf = await res.arrayBuffer();
 	const ct  = res.headers.get("content-type") ?? "image/png";
 	const ext = ct.includes("jpeg") || ct.includes("jpg") ? "JPEG" : "PNG";
-	const b64 = Buffer.from(buf).toString("base64");
-	return { data: `data:${ct};base64,${b64}`, ext };
+	return { data: `data:${ct};base64,${Buffer.from(buf).toString("base64")}`, ext };
 }
 
-interface ColDef { key: string; label: string; align: "left" | "center" | "right" }
-
-function buildCols(config: InvoiceConfig): ColDef[] {
-	const cols: ColDef[] = [
-		{ key: "ticket_id",    label: "Ref",     align: "left" },
-		{ key: "title",        label: "Service", align: "left" },
-		{ key: "employee",     label: "By",      align: "left" },
-		{ key: "completed_at", label: "Date",    align: "center" },
-		{ key: "rate_type",    label: "Type",    align: "center" },
-	];
-	if (config.showHours) cols.push({ key: "billable_hours", label: "Hrs", align: "right" });
-	if (config.showRate)  cols.push({ key: "rate",           label: "Rate", align: "right" });
-	cols.push({ key: "subtotal", label: "Amount", align: "right" });
-	return cols;
+function truncate(str: string, max: number): string {
+	return str.length > max ? str.slice(0, max - 1) + "…" : str;
 }
 
-function buildColStyles(cols: ColDef[]): Record<number, any> {
-	const styles: Record<number, any> = {};
-	cols.forEach((c, i) => { styles[i] = { halign: c.align }; });
-	return styles;
-}
-
-function cellValue(item: any, key: string): string {
-	const map: Record<string, string> = {
-		ticket_id:      item.ticket_id.slice(-6).toUpperCase(),
-		title:          item.title,
-		employee:       item.employee,
-		completed_at:   item.completed_at,
-		rate_type:      rateTypeLabel(item.rate_type),
-		billable_hours: item.billable_hours.toFixed(2),
-		rate:           item.rate.toFixed(2),
-		subtotal:       item.subtotal.toFixed(2),
-	};
-	return map[key] ?? "";
+function buildLeader(doc: any, start: number, end: number): string {
+	const dotW = doc.getTextWidth(".");
+	const count = Math.floor((end - start) / dotW);
+	return ".".repeat(Math.max(0, count));
 }

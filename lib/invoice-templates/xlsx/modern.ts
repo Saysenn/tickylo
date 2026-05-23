@@ -1,8 +1,10 @@
 import type ExcelJS from "exceljs";
 import type { InvoiceData, InvoiceConfig } from "../types";
-import { currency, billingCycleLabel, paymentTermsLabel, dueDateFrom, rateTypeLabel } from "../helpers";
+import { currency, paymentTermsLabel, dueDateFrom, rateTypeLabel } from "../helpers";
 
-// Modern: full-width colored header band, alternating shaded rows, accent totals
+// Modern — creative agency
+// Bold org name, editorial column naming (Deliverable / Creative / Fee), generous whitespace,
+// no cell borders on data rows — just bottom-line separators. Feels like a studio sends it.
 
 export async function buildModernXlsx(
 	wb: ExcelJS.Workbook,
@@ -10,134 +12,136 @@ export async function buildModernXlsx(
 	config: InvoiceConfig,
 ) {
 	const { lineItems, invoiceNumber, issueDate, orgName, dateFrom, dateTo, type } = data;
-	const PRIMARY  = config.primaryColor;
-	const ALT_ROW  = "F5F7FF";
-	const TOTAL_BG = "EAF4EA";
+	const PRI  = config.primaryColor;
+	const PALE = "F8F9FC";
 
-	function bdr(): Partial<ExcelJS.Borders> {
-		const s = { style: "thin" as const, color: { argb: "FFE2E8F0" } };
-		return { top: s, left: s, bottom: s, right: s };
-	}
+	const bottom = (c = "E4E8F2"): Partial<ExcelJS.Borders> =>
+		({ bottom: { style: "thin" as const, color: { argb: `FF${c}` } } });
 
 	if (type === "client") {
-		const ws = wb.addWorksheet("Invoice", { pageSetup: { fitToPage: true, fitToWidth: 1 } });
+		const ws = wb.addWorksheet("Invoice");
 		ws.columns = [
-			{ key: "A", width: 12 }, { key: "B", width: 38 }, { key: "C", width: 18 },
-			{ key: "D", width: 12 }, { key: "E", width: 10 }, { key: "F", width: 10 },
-			{ key: "G", width: 12 }, { key: "H", width: 14 },
+			{ key: "A", width: 12 }, { key: "B", width: 40 }, { key: "C", width: 18 },
+			{ key: "D", width: 12 }, { key: "E", width: 10 }, { key: "F", width: 12 },
+			{ key: "G", width: 14 },
 		];
 
-		const first       = lineItems[0];
-		const clientName  = first?.client_name ?? "—";
-		const clientEmail = first?.client_email ?? "";
-		const cur         = first?.currency ?? "USD";
-		const payTerms    = paymentTermsLabel(first?.payment_terms ?? "net_30");
-		const dueDate     = dueDateFrom(first?.payment_terms ?? "net_30", new Date(issueDate));
+		const first      = lineItems[0];
+		const clientName = first?.client_name ?? "—";
+		const cur        = first?.currency ?? "USD";
+		const payTerms   = paymentTermsLabel(first?.payment_terms ?? "net_30");
+		const dueDate    = dueDateFrom(first?.payment_terms ?? "net_30", new Date(issueDate));
 
-		// Row 1: full-width header band
-		ws.mergeCells("A1:H1");
-		const banner = ws.getCell("A1");
-		banner.value = orgName.toUpperCase();
-		banner.font  = { bold: true, size: 15, color: { argb: "FFFFFFFF" } };
-		banner.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: `FF${PRIMARY}` } };
-		banner.alignment = { vertical: "middle", indent: 2 };
+		// ── Studio header — two rows ──────────────────────────────────────────
+		ws.mergeCells("A1:G1");
+		ws.getCell("A1").value = orgName.toUpperCase();
+		ws.getCell("A1").font  = { bold: true, size: 22, color: { argb: `FF${PRI}` } };
 		ws.getRow(1).height = 36;
 
-		// Row 2: INVOICE label on same banner shade but lighter text
-		ws.mergeCells("A2:H2");
-		const sub = ws.getCell("A2");
-		sub.value = `INVOICE  #${invoiceNumber}`;
-		sub.font  = { size: 10, color: { argb: "FFCCD6F6" } };
-		sub.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: `FF${PRIMARY}` } };
-		sub.alignment = { vertical: "middle", indent: 2 };
-		ws.getRow(2).height = 18;
-		ws.getRow(3).height = 12;
+		ws.mergeCells("A2:D2"); ws.mergeCells("E2:G2");
+		ws.getCell("A2").value = `Invoice  #${invoiceNumber}`;
+		ws.getCell("A2").font  = { size: 9, color: { argb: "FFA8AEC8" } };
+		ws.getCell("E2").value = `${dateFrom}  —  ${dateTo}`;
+		ws.getCell("E2").font  = { size: 9, color: { argb: "FFA8AEC8" } };
+		ws.getCell("E2").alignment = { horizontal: "right" };
+		ws.getRow(2).height = 14;
 
-		// Row 4: Bill To | Dates
-		ws.mergeCells("A4:D4"); ws.getCell("A4").value = "BILL TO";
-		ws.getCell("A4").font = { bold: true, size: 8, color: { argb: "FF94A3B8" } };
-		ws.mergeCells("E4:H4"); ws.getCell("E4").value = "DETAILS";
-		ws.getCell("E4").font = { bold: true, size: 8, color: { argb: "FF94A3B8" } };
-		ws.getCell("E4").alignment = { horizontal: "right" };
+		// Full-width primary rule
+		ws.mergeCells("A3:G3");
+		ws.getCell("A3").fill = { type: "pattern", pattern: "solid", fgColor: { argb: `FF${PRI}` } };
+		ws.getRow(3).height = 3;
 
-		ws.mergeCells("A5:D5"); ws.getCell("A5").value = clientName;
-		ws.getCell("A5").font = { bold: true, size: 13, color: { argb: `FF${PRIMARY}` } };
-		ws.mergeCells("E5:H5"); ws.getCell("E5").value = `Period: ${dateFrom} → ${dateTo}`;
-		ws.getCell("E5").font = { size: 10, color: { argb: "FF64748B" } };
+		ws.getRow(4).height = 10;
+
+		// ── Client + meta ─────────────────────────────────────────────────────
+		ws.mergeCells("A5:D5"); ws.mergeCells("E5:G5");
+		ws.getCell("A5").value = clientName;
+		ws.getCell("A5").font  = { bold: true, size: 15, color: { argb: `FF${PRI}` } };
+		ws.getCell("E5").value = `Issued ${issueDate}`;
+		ws.getCell("E5").font  = { size: 9, color: { argb: "FFA8AEC8" } };
 		ws.getCell("E5").alignment = { horizontal: "right" };
+		ws.getRow(5).height = 22;
 
-		ws.mergeCells("A6:D6"); ws.getCell("A6").value = clientEmail || " ";
-		ws.getCell("A6").font = { size: 10, color: { argb: "FF64748B" } };
-		ws.mergeCells("E6:H6"); ws.getCell("E6").value = `Issued: ${issueDate}   Due: ${dueDate}`;
-		ws.getCell("E6").font = { size: 10, color: { argb: "FF64748B" } };
+		ws.mergeCells("A6:D6"); ws.mergeCells("E6:G6");
+		ws.getCell("A6").value = payTerms;
+		ws.getCell("A6").font  = { size: 9, color: { argb: "FFA8AEC8" } };
+		ws.getCell("E6").value = `Due ${dueDate}`;
+		ws.getCell("E6").font  = { size: 9, color: { argb: "FFA8AEC8" } };
 		ws.getCell("E6").alignment = { horizontal: "right" };
+		ws.getRow(6).height = 14;
 
-		ws.mergeCells("A7:D7"); ws.getCell("A7").value = `Terms: ${payTerms}`;
-		ws.getCell("A7").font = { size: 10, italic: true, color: { argb: "FF94A3B8" } };
-		ws.getRow(8).height = 10;
+		ws.getRow(7).height = 8;
 
-		// Header row
-		const colLabels = buildCols(config);
-		const hRow = ws.getRow(9);
-		colLabels.forEach((c, i) => {
+		// ── Column headers — no fill, just bottom rule + small caps style ─────
+		const cols = buildCols(config);
+		const hRow = ws.getRow(8);
+		cols.forEach((c, i) => {
 			const cell = hRow.getCell(i + 1);
-			cell.value = c.label;
-			cell.font  = { bold: true, size: 10, color: { argb: `FF${PRIMARY}` } };
-			cell.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: "FFF1F5F9" } };
-			cell.border = bdr();
-			cell.alignment = { horizontal: c.align, vertical: "middle" };
+			cell.value = c.label.toUpperCase();
+			cell.font  = { size: 7.5, bold: true, color: { argb: "FFC0C6DC" } };
+			cell.alignment = { horizontal: c.align };
+			cell.border = { bottom: { style: "medium" as const, color: { argb: `FF${PRI}` } } };
 		});
-		hRow.height = 22;
+		hRow.height = 16;
 
-		let row = 10;
+		// ── Data rows — bottom borders only, alternating pale background ──────
+		let row = 9;
 		for (const item of lineItems) {
 			const r = ws.getRow(row);
 			const alt = row % 2 === 0;
-			buildRowValues(item, colLabels).forEach((val, i) => {
+			buildRowValues(item, cols).forEach((val, i) => {
 				const cell = r.getCell(i + 1);
 				cell.value = val;
-				cell.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: alt ? `FF${ALT_ROW}` : "FFFFFFFF" } };
-				cell.border = bdr();
-				cell.font  = { size: 10 };
-				if (colLabels[i].key === "ticket_id") cell.font = { name: "Courier New", size: 9, color: { argb: "FF94A3B8" } };
-				if (colLabels[i].align === "right") cell.alignment = { horizontal: "right" };
-				if (colLabels[i].numFmt) cell.numFmt = colLabels[i].numFmt!;
+				cell.font  = { size: 10, color: { argb: "FF252840" } };
+				cell.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: alt ? `FF${PALE}` : "FFFFFFFF" } };
+				cell.border = bottom();
+				if (cols[i].key === "ticket_id") cell.font = { name: "Courier New", size: 8.5, color: { argb: "FFA8AEC8" } };
+				if (cols[i].align === "right") cell.alignment = { horizontal: "right" };
+				if (cols[i].numFmt) cell.numFmt = cols[i].numFmt!;
 			});
 			r.height = 18; row++;
 		}
 
-		// Totals
+		if (lineItems.length === 0) {
+			ws.mergeCells(`A9:G9`);
+			ws.getCell("A9").value = "No completed tickets found for this period.";
+			ws.getCell("A9").font  = { italic: true, size: 9, color: { argb: "FFA8AEC8" } };
+			ws.getCell("A9").alignment = { horizontal: "center" };
+			row = 10;
+		}
+
+		ws.getRow(row).height = 8; row++;
+
+		// ── Totals — right-aligned, no borders ───────────────────────────────
 		const totalSub  = lineItems.reduce((s, i) => s + i.subtotal, 0);
 		const totalDisc = lineItems.reduce((s, i) => s + i.discount_amount, 0);
 		const totalNet  = lineItems.reduce((s, i) => s + i.net_total, 0);
 		const discPct   = lineItems[0]?.discount_percent ?? 0;
-		row++;
 
-		const addTotal = (label: string, val: string, bold = false, bg?: string) => {
-			ws.mergeCells(`A${row}:F${row}`);
+		const addTot = (label: string, val: string, bold = false) => {
+			ws.mergeCells(`A${row}:E${row}`);
 			ws.getCell(`A${row}`).value = label;
-			ws.getCell(`A${row}`).font  = { size: 10, bold, color: { argb: "FF475569" } };
+			ws.getCell(`A${row}`).font  = { size: 9, bold, color: { argb: "FFA8AEC8" } };
 			ws.getCell(`A${row}`).alignment = { horizontal: "right" };
-			ws.mergeCells(`G${row}:H${row}`);
-			const vc = ws.getCell(`G${row}`);
-			vc.value = val; vc.font = { size: 11, bold, color: { argb: bold ? `FF${PRIMARY}` : "FF475569" } };
-			vc.alignment = { horizontal: "right" };
-			if (bg) vc.fill = { type: "pattern", pattern: "solid", fgColor: { argb: bg } };
-			ws.getRow(row).height = 20; row++;
+			ws.mergeCells(`F${row}:G${row}`);
+			ws.getCell(`F${row}`).value = val;
+			ws.getCell(`F${row}`).font  = { size: bold ? 12 : 10, bold, color: { argb: bold ? `FF${PRI}` : "FF252840" } };
+			ws.getCell(`F${row}`).alignment = { horizontal: "right" };
+			ws.getRow(row).height = bold ? 24 : 17; row++;
 		};
 
-		addTotal("Subtotal", currency(totalSub, cur));
-		if (config.showDiscount && totalDisc > 0) addTotal(`Discount (${discPct}%)`, `-${currency(totalDisc, cur)}`);
-		addTotal("NET TOTAL", currency(totalNet, cur), true, `FF${TOTAL_BG}`);
+		addTot("Subtotal", currency(totalSub, cur));
+		if (config.showDiscount && totalDisc > 0) addTot(`Discount ${discPct}%`, `− ${currency(totalDisc, cur)}`);
+		addTot("TOTAL DUE", currency(totalNet, cur), true);
 
-		row++;
-		ws.mergeCells(`A${row}:H${row}`);
-		ws.getCell(`A${row}`).value = config.footerNote || `Payment due by ${dueDate}.`;
-		ws.getCell(`A${row}`).font  = { italic: true, size: 9, color: { argb: "FF94A3B8" } };
+		ws.getRow(row).height = 8; row++;
+		ws.mergeCells(`A${row}:G${row}`);
+		ws.getCell(`A${row}`).value = config.footerNote || "Thank you for your business.";
+		ws.getCell(`A${row}`).font  = { italic: true, size: 8.5, color: { argb: "FFC8CEDF" } };
 		ws.getCell(`A${row}`).alignment = { horizontal: "center" };
 
 	} else {
-		buildModernTally(wb, data, config, PRIMARY, ALT_ROW, bdr);
+		buildModernTally(wb, data, config, PRI, PALE, bottom);
 	}
 }
 
@@ -145,9 +149,9 @@ function buildModernTally(
 	wb: ExcelJS.Workbook,
 	data: InvoiceData,
 	config: InvoiceConfig,
-	PRIMARY: string,
-	ALT_ROW: string,
-	bdr: () => Partial<ExcelJS.Borders>,
+	PRI: string,
+	PALE: string,
+	bottom: (c?: string) => Partial<ExcelJS.Borders>,
 ) {
 	const { lineItems, invoiceNumber, issueDate, orgName, dateFrom, dateTo } = data;
 	const grouped = new Map<string, typeof lineItems>();
@@ -156,55 +160,53 @@ function buildModernTally(
 		grouped.get(item.client_name)!.push(item);
 	}
 
-	const ws = wb.addWorksheet("Full Tally");
+	const ws = wb.addWorksheet("Studio Tally");
 	ws.columns = [
-		{ key: "A", width: 26 }, { key: "B", width: 10 }, { key: "C", width: 12 },
+		{ key: "A", width: 28 }, { key: "B", width: 10 }, { key: "C", width: 12 },
 		{ key: "D", width: 10 }, { key: "E", width: 14 }, { key: "F", width: 14 },
-		{ key: "G", width: 14 }, { key: "H", width: 16 },
+		{ key: "G", width: 16 },
 	];
 
-	ws.mergeCells("A1:H1");
+	ws.mergeCells("A1:G1");
 	ws.getCell("A1").value = orgName.toUpperCase();
-	ws.getCell("A1").font  = { bold: true, size: 14, color: { argb: "FFFFFFFF" } };
-	ws.getCell("A1").fill  = { type: "pattern", pattern: "solid", fgColor: { argb: `FF${PRIMARY}` } };
-	ws.getCell("A1").alignment = { vertical: "middle", indent: 2 };
-	ws.getRow(1).height = 34;
+	ws.getCell("A1").font  = { bold: true, size: 18, color: { argb: `FF${PRI}` } };
+	ws.getRow(1).height = 30;
 
-	ws.mergeCells("A2:H2");
-	ws.getCell("A2").value = `Full Tally — ${dateFrom} to ${dateTo}   ·   ${invoiceNumber}   ·   Issued: ${issueDate}`;
-	ws.getCell("A2").font  = { size: 9, color: { argb: "FFCCD6F6" } };
-	ws.getCell("A2").fill  = { type: "pattern", pattern: "solid", fgColor: { argb: `FF${PRIMARY}` } };
-	ws.getCell("A2").alignment = { vertical: "middle", indent: 2 };
-	ws.getRow(2).height = 16;
-	ws.getRow(3).height = 10;
+	ws.mergeCells("A2:G2");
+	ws.getCell("A2").fill = { type: "pattern", pattern: "solid", fgColor: { argb: `FF${PRI}` } };
+	ws.getRow(2).height = 3;
 
-	const cols = ["Client", "Currency", "Billing Cycle", "Tickets", "Hours", "Subtotal", "Discount", "Net Payable"];
-	const hRow = ws.getRow(4);
-	cols.forEach((h, i) => {
+	ws.mergeCells("A3:G3");
+	ws.getCell("A3").value = `Full Tally  ·  ${invoiceNumber}  ·  ${dateFrom} — ${dateTo}  ·  Issued ${issueDate}`;
+	ws.getCell("A3").font  = { size: 8.5, color: { argb: "FFA8AEC8" } };
+	ws.getRow(3).height = 14; ws.getRow(4).height = 8;
+
+	const hdrs = ["Client", "Currency", "Cycle", "Deliverables", "Hours", "Subtotal", "Net Fee"];
+	const hRow = ws.getRow(5);
+	hdrs.forEach((h, i) => {
 		const cell = hRow.getCell(i + 1);
-		cell.value = h; cell.font = { bold: true, size: 10, color: { argb: `FF${PRIMARY}` } };
-		cell.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: "FFF1F5F9" } };
-		cell.border = bdr();
-		cell.alignment = { horizontal: i >= 3 ? "right" : "left", vertical: "middle" };
+		cell.value = h.toUpperCase(); cell.font = { size: 7.5, bold: true, color: { argb: "FFC0C6DC" } };
+		cell.alignment = { horizontal: i >= 3 ? "right" : "left" };
+		cell.border = { bottom: { style: "medium" as const, color: { argb: `FF${PRI}` } } };
 	});
-	hRow.height = 22;
+	hRow.height = 16;
 
-	let row = 5;
+	let row = 6;
 	for (const [clientName, items] of grouped) {
-		const cur = items[0]?.currency ?? "USD";
+		const cur   = items[0]?.currency ?? "USD";
 		const hours = Math.round(items.reduce((s, i) => s + i.billable_hours, 0) * 100) / 100;
 		const sub   = Math.round(items.reduce((s, i) => s + i.subtotal, 0) * 100) / 100;
-		const disc  = Math.round(items.reduce((s, i) => s + i.discount_amount, 0) * 100) / 100;
 		const net   = Math.round(items.reduce((s, i) => s + i.net_total, 0) * 100) / 100;
-		const vals  = [clientName, cur, billingCycleLabel(items[0]?.billing_cycle ?? "per_ticket"), items.length, hours, sub, disc, net];
+		const alt   = row % 2 === 0;
+		const vals  = [clientName, cur, items[0]?.billing_cycle ?? "per_ticket", items.length, hours, sub, net];
 		const r = ws.getRow(row);
 		vals.forEach((val, i) => {
 			const cell = r.getCell(i + 1);
-			cell.value = val; cell.font = { size: 10 };
-			cell.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: row % 2 === 0 ? `FF${ALT_ROW}` : "FFFFFFFF" } };
-			cell.border = bdr();
+			cell.value = val; cell.font = { size: 10, color: { argb: "FF252840" } };
+			cell.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: alt ? `FF${PALE}` : "FFFFFFFF" } };
+			cell.border = bottom();
 			if (i >= 3) cell.alignment = { horizontal: "right" };
-			if (i === 7) cell.font = { size: 10, bold: true, color: { argb: `FF${PRIMARY}` } };
+			if (i === 6) cell.font = { size: 10, bold: true, color: { argb: `FF${PRI}` } };
 		});
 		r.height = 18; row++;
 	}
@@ -214,15 +216,14 @@ interface ColDef { key: string; label: string; align: "left" | "right"; numFmt?:
 
 function buildCols(config: InvoiceConfig): ColDef[] {
 	const cols: ColDef[] = [
-		{ key: "ticket_id",    label: "Ticket #",  align: "left" },
-		{ key: "title",        label: "Description",align: "left" },
-		{ key: "employee",     label: "Assignee",  align: "left" },
-		{ key: "completed_at", label: "Date",      align: "left" },
-		{ key: "rate_type",    label: "Type",      align: "left" },
+		{ key: "ticket_id",    label: "Ref",         align: "left" },
+		{ key: "title",        label: "Deliverable", align: "left" },
+		{ key: "employee",     label: "Creative",    align: "left" },
+		{ key: "completed_at", label: "Date",        align: "left" },
 	];
-	if (config.showHours) cols.push({ key: "billable_hours", label: "Hrs", align: "right" });
-	if (config.showRate)  cols.push({ key: "rate", label: "Rate", align: "right", numFmt: "#,##0.00" });
-	cols.push({ key: "subtotal", label: "Amount", align: "right", numFmt: "#,##0.00" });
+	if (config.showHours) cols.push({ key: "billable_hours", label: "Hours", align: "right" });
+	if (config.showRate)  cols.push({ key: "rate",           label: "Rate",  align: "right", numFmt: "#,##0.00" });
+	cols.push({ key: "subtotal", label: "Fee", align: "right", numFmt: "#,##0.00" });
 	return cols;
 }
 
