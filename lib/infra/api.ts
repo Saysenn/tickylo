@@ -433,6 +433,8 @@ class APIService {
 			}>(`${apiVersion}/invoices`, params),
 		export: (id: string) =>
 			axiosService.instance.get(`/v1/invoices/${id}/export`, { responseType: "blob" }),
+		delete: (id: string) =>
+			axiosService.delete(`${apiVersion}/invoices/${id}`),
 	};
 
 	public orgLogo = {

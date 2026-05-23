@@ -47,23 +47,29 @@ export async function buildClassicPdf(data: InvoiceData, config: InvoiceConfig):
 	ink(...P);
 	doc.text(orgName, M, y);
 
-	// Stamp box top-right
-	const bW = 40, bH = 14, bX = W - M - bW, bY = y - 11;
+	// Stamp box top-right — wider + wrapping invoice number
+	const bW = 58, bH = 18, bX = W - M - bW, bY = y - 11;
 	stroke(...P, 0.4);
 	doc.rect(bX, bY, bW, bH);
 
 	doc.setFont(config.fontFamily, "normal");
-	doc.setFontSize(7);
+	doc.setFontSize(6.5);
 	ink(155, 158, 175);
 	doc.text("NO.", bX + 2, bY + 5);
+
+	// Wrap invoice number to fit within box
 	doc.setFont(config.fontFamily, "bold");
-	doc.setFontSize(8);
+	doc.setFontSize(6.5);
 	ink(28, 31, 50);
-	doc.text(invoiceNumber, bX + bW - 2, bY + 5, { align: "right" });
+	const numLines = doc.splitTextToSize(invoiceNumber, bW - 4);
+	numLines.slice(0, 2).forEach((line: string, i: number) => {
+		doc.text(line, bX + bW - 2, bY + 5 + i * 4.5, { align: "right" });
+	});
+
 	doc.setFont(config.fontFamily, "normal");
-	doc.setFontSize(8);
+	doc.setFontSize(7.5);
 	ink(28, 31, 50);
-	doc.text(issueDate, bX + bW - 2, bY + 11, { align: "right" });
+	doc.text(issueDate, bX + bW - 2, bY + 14, { align: "right" });
 
 	y += 6;
 	stroke(...P, 0.5);
@@ -117,11 +123,11 @@ export async function buildClassicPdf(data: InvoiceData, config: InvoiceConfig):
 	// ── Table header ──────────────────────────────────────────────────────────
 	// Columns: x positions (right-aligned cols use rx)
 	const COL = {
-		num:  { x: M,         rx: M + 6   },
+		num:  { x: M,       rx: M + 6  },
 		desc: { x: M + 9              },
-		emp:  { x: M + 88             },
-		date: { x: M + 118            },
-		hrs:  { rx: M + 150           },
+		emp:  { x: M + 85             },   // 85→122 = 37mm for assignee names
+		date: { x: M + 122            },   // was 118, pushed right to avoid overlap
+		hrs:  { rx: M + 154           },   // adjusted
 		amt:  { rx: W - M             },
 	};
 
@@ -162,7 +168,7 @@ export async function buildClassicPdf(data: InvoiceData, config: InvoiceConfig):
 		doc.setFont(config.fontFamily, "normal");
 		doc.setFontSize(8);
 		ink(85, 88, 108);
-		if (item.employee)     doc.text(truncate(item.employee, 20),    COL.emp.x,  y);
+		if (item.employee)     doc.text(truncate(item.employee, 18),    COL.emp.x,  y);
 		if (item.completed_at) doc.text(item.completed_at,              COL.date.x, y);
 
 		if (config.showHours && item.billable_hours > 0) {
@@ -208,10 +214,11 @@ export async function buildClassicPdf(data: InvoiceData, config: InvoiceConfig):
 	};
 
 	totRow("SUB TOTAL", currency(totalSub, cur));
-	if (config.showDiscount && totalDisc > 0) totRow(`DISCOUNT (${discPct}%)`, `− ${currency(totalDisc, cur)}`);
+	if (config.showDiscount && totalDisc > 0) totRow(`DISCOUNT (${discPct}%)`, `-${currency(totalDisc, cur)}`);
 
-	hline(y - 1, 200, 203, 212, 0.25);
-	y += 2;
+	y += 3;
+	hline(y, 200, 203, 212, 0.25);
+	y += 6;
 	totRow("TOTAL AMOUNT", currency(totalNet, cur), true);
 
 	// ── Footer ────────────────────────────────────────────────────────────────

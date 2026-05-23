@@ -69,17 +69,24 @@ export async function buildModernPdf(data: InvoiceData, config: InvoiceConfig): 
 	ink(25, 28, 48);
 	doc.text(clientName, M, y);
 
+	// Invoice number on its own line — small mono style, right-aligned
+	doc.setFont(config.fontFamily, "normal");
+	doc.setFontSize(6.5);
+	ink(90, 93, 112);
+	doc.text(invoiceNumber, W - M, y, { align: "right" });
+
+	y += 5;
+
 	// Invoice meta — right block, label + value pairs
 	const metaRow = (label: string, val: string, yy: number) => {
 		doc.setFont(config.fontFamily, "normal");
 		doc.setFontSize(8);
 		ink(120, 123, 142);
-		doc.text(label, W - M - 36, yy);
+		doc.text(label, W - M - 34, yy);
 		ink(28, 31, 50);
 		doc.text(val, W - M, yy, { align: "right" });
 	};
 
-	metaRow("Invoice No:", invoiceNumber, y);    y += 5;
 	if (clientEmail && type === "client") {
 		doc.setFont(config.fontFamily, "normal");
 		doc.setFontSize(8);
@@ -101,9 +108,9 @@ export async function buildModernPdf(data: InvoiceData, config: InvoiceConfig): 
 	// ── Table ─────────────────────────────────────────────────────────────────
 	const COL = {
 		desc: { x: M              },
-		emp:  { x: M + 98         },
-		hrs:  { rx: M + 145       },
-		rate: { rx: M + 164       },
+		emp:  { x: M + 90         },   // was M+98, gives more description room
+		hrs:  { rx: M + 138       },   // was M+145
+		rate: { rx: M + 157       },   // was M+164, now 19mm from amt — no overlap
 		amt:  { rx: W - M         },
 	};
 
@@ -189,10 +196,11 @@ export async function buildModernPdf(data: InvoiceData, config: InvoiceConfig): 
 	};
 
 	totRow("Subtotal", currency(totalSub, cur));
-	if (config.showDiscount && totalDisc > 0) totRow(`Discount (${discPct}%)`, `− ${currency(totalDisc, cur)}`);
+	if (config.showDiscount && totalDisc > 0) totRow(`Discount (${discPct}%)`, `-${currency(totalDisc, cur)}`);
 
-	hline(y - 1, 188, 191, 202, 0.3);
-	y += 2;
+	y += 3;
+	hline(y, 188, 191, 202, 0.3);
+	y += 6;
 	totRow("Total", currency(totalNet, cur), true);
 
 	// ── Footer — Pay by bank / Terms ─────────────────────────────────────────

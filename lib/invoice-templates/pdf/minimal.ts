@@ -153,12 +153,13 @@ export async function buildMinimalPdf(data: InvoiceData, config: InvoiceConfig):
 	};
 
 	totRow("subtotal", totalSub.toFixed(2));
-	if (config.showDiscount && totalDisc > 0) totRow(`discount  ${discPct}%`, `− ${totalDisc.toFixed(2)}`);
+	if (config.showDiscount && totalDisc > 0) totRow(`discount  ${discPct}%`, `-${totalDisc.toFixed(2)}`);
 
 	// Accent rule above total
+	y += 3;
 	stroke(...P, 0.35);
-	doc.line(W - M - 52, y - 1, W - M, y - 1);
-	y += 2;
+	doc.line(W - M - 52, y, W - M, y);
+	y += 6;
 	totRow(`total  ${cur}`, totalNet.toFixed(2), true);
 
 	// ── Footer ────────────────────────────────────────────────────────────────
