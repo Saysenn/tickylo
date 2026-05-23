@@ -7,7 +7,15 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Combobox } from "@/components/ui/combobox";
 import { cn } from "@/lib/utils/cn";
-import { Download, Loader2, FileText, BarChart2, X } from "lucide-react";
+import { Download, FileText, BarChart2, X, FileSpreadsheet, LayoutTemplate, Check } from "lucide-react";
+import { TEMPLATES } from "@/lib/invoice-templates";
+import type { TemplateDefinition } from "@/lib/invoice-templates";
+import {
+	DialogRoot,
+	DialogContent,
+	DialogHeader,
+	DialogTitle,
+} from "@/components/ui/dialog";
 
 interface Props {
 	orgName: string;
@@ -58,7 +66,119 @@ interface SessionInvoice {
 
 const inputCls = "h-9 w-full rounded-md border border-border bg-background px-3 text-sm focus:outline-none focus:ring-1 focus:ring-mint";
 
-export function InvoiceSection({ orgName, orgLogoUrl }: Props) {
+// ── Template picker dialog ────────────────────────────────────────────────────
+
+function TemplatePicker({
+	open,
+	onClose,
+	activeId,
+	defaultId,
+	onSelect,
+}: {
+	open: boolean;
+	onClose: () => void;
+	activeId: string;
+	defaultId: string;
+	onSelect: (id: string) => void;
+}) {
+	const xlsxTemplates = TEMPLATES.filter((t) => t.format === "xlsx");
+	const pdfTemplates  = TEMPLATES.filter((t) => t.format === "pdf");
+
+	return (
+		<DialogRoot open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
+			<DialogContent className="max-w-2xl">
+				<DialogHeader>
+					<DialogTitle>Choose export template</DialogTitle>
+				</DialogHeader>
+				<p className="text-xs text-ink-3 -mt-1">Overrides your default for this export only. Your default is <span className="font-medium text-ink">{TEMPLATES.find((t) => t.id === defaultId)?.name ?? defaultId}</span>.</p>
+
+				<div className="space-y-4 mt-2">
+					<div>
+						<div className="flex items-center gap-2 mb-2">
+							<FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
+							<p className="text-xs font-semibold text-ink-2 uppercase tracking-widest">Excel / XLSX</p>
+						</div>
+						<div className="grid grid-cols-3 gap-2">
+							{xlsxTemplates.map((t) => (
+								<TemplateOption
+									key={t.id}
+									template={t}
+									isActive={activeId === t.id}
+									isDefault={defaultId === t.id}
+									onSelect={() => { onSelect(t.id); onClose(); }}
+								/>
+							))}
+						</div>
+					</div>
+
+					<div>
+						<div className="flex items-center gap-2 mb-2">
+							<FileText className="w-3.5 h-3.5 text-rose-500" />
+							<p className="text-xs font-semibold text-ink-2 uppercase tracking-widest">PDF</p>
+						</div>
+						<div className="grid grid-cols-3 gap-2">
+							{pdfTemplates.map((t) => (
+								<TemplateOption
+									key={t.id}
+									template={t}
+									isActive={activeId === t.id}
+									isDefault={defaultId === t.id}
+									onSelect={() => { onSelect(t.id); onClose(); }}
+								/>
+							))}
+						</div>
+					</div>
+				</div>
+			</DialogContent>
+		</DialogRoot>
+	);
+}
+
+function TemplateOption({
+	template,
+	isActive,
+	isDefault,
+	onSelect,
+}: {
+	template: TemplateDefinition;
+	isActive: boolean;
+	isDefault: boolean;
+	onSelect: () => void;
+}) {
+	const isXlsx = template.format === "xlsx";
+	return (
+		<button
+			type="button"
+			onClick={onSelect}
+			className={cn(
+				"relative rounded-xl border bg-background p-3 text-left transition-all hover:border-mint/60 hover:shadow-sm",
+				isActive && "border-mint ring-1 ring-mint/30",
+			)}
+		>
+			{isActive && (
+				<span className="absolute top-2 right-2 w-4 h-4 rounded-full bg-mint flex items-center justify-center">
+					<Check className="w-2.5 h-2.5 text-white" strokeWidth={3} />
+				</span>
+			)}
+			<div className={cn(
+				"w-7 h-7 rounded-lg flex items-center justify-center mb-2",
+				isXlsx ? "bg-emerald-500/10" : "bg-rose-500/10",
+			)}>
+				{isXlsx
+					? <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
+					: <FileText className="w-3.5 h-3.5 text-rose-500" />
+				}
+			</div>
+			<p className="text-xs font-semibold text-ink">{template.name}</p>
+			{isDefault && <p className="text-[10px] text-mint mt-0.5">Your default</p>}
+			<p className="text-[10px] text-ink-3 mt-0.5 leading-relaxed">{template.description}</p>
+		</button>
+	);
+}
+
+// ── Main component ────────────────────────────────────────────────────────────
+
+export function InvoiceSection({ orgName }: Props) {
 	const [invoiceType, setInvoiceType] = useState<"client" | "tally">("client");
 	const [clientId, setClientId]       = useState("");
 	const [dateFrom, setDateFrom]       = useState("");
@@ -69,8 +189,10 @@ export function InvoiceSection({ orgName, orgLogoUrl }: Props) {
 			return stored ? JSON.parse(stored) : [];
 		} catch { return []; }
 	});
-	const [exportingId, setExportingId] = useState<string | null>(null);
+	const [exportingId, setExportingId]   = useState<string | null>(null);
 	const [exportErrors, setExportErrors] = useState<Record<string, string>>({});
+	const [templatePickerOpen, setTemplatePickerOpen] = useState(false);
+	const [activeTemplateId, setActiveTemplateId]     = useState<string>("classic-xlsx");
 
 	useEffect(() => {
 		try { localStorage.setItem("tw_invoice_sessions", JSON.stringify(sessions)); } catch {}
@@ -84,6 +206,18 @@ export function InvoiceSection({ orgName, orgLogoUrl }: Props) {
 		staleTime: 60_000,
 	});
 	const clients: any[] = (clientsData as any)?.data ?? [];
+
+	const { data: orgSettings } = useQuery({
+		queryKey: ["org-settings"],
+		queryFn: () => APIService.orgSettings.get(),
+		staleTime: 300_000,
+	});
+	const defaultTemplateId = (orgSettings as any)?.invoice_template ?? "classic-xlsx";
+
+	// Sync active template when org settings load
+	useEffect(() => {
+		if (defaultTemplateId) setActiveTemplateId(defaultTemplateId);
+	}, [defaultTemplateId]);
 
 	const { mutateAsync: fetchPreview, isPending: isGenerating } = useMutation({
 		mutationFn: () =>
@@ -120,7 +254,7 @@ export function InvoiceSection({ orgName, orgLogoUrl }: Props) {
 				date_to: invoice.dateTo,
 				tz_offset: tzOffset,
 				org_name: orgName,
-				org_logo: orgLogoUrl,
+				template_id: activeTemplateId,
 			});
 			const blob = response.data as Blob;
 			const url = URL.createObjectURL(blob);
@@ -147,178 +281,212 @@ export function InvoiceSection({ orgName, orgLogoUrl }: Props) {
 		if (type === "tally") setClientId("");
 	};
 
+	const activeTemplate = TEMPLATES.find((t) => t.id === activeTemplateId);
+
 	return (
-		<div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+		<>
+			<TemplatePicker
+				open={templatePickerOpen}
+				onClose={() => setTemplatePickerOpen(false)}
+				activeId={activeTemplateId}
+				defaultId={defaultTemplateId}
+				onSelect={setActiveTemplateId}
+			/>
 
-			{/* ── LEFT: Configuration ── */}
-			<div className="rounded-xl border bg-background p-5 space-y-5">
-				<div>
-					<p className="text-sm font-semibold text-ink">Invoice Configuration</p>
-					<p className="text-xs text-ink-3 mt-0.5">Set your filters and generate an invoice.</p>
-				</div>
+			<div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
 
-				{/* Segmented toggle */}
-				<div className="flex rounded-lg border border-border overflow-hidden text-sm">
-					<button
-						type="button"
-						onClick={() => handleTypeChange("client")}
-						className={cn(
-							"flex-1 flex items-center justify-center gap-2 py-2 px-3 transition-colors",
-							invoiceType === "client"
-								? "bg-mint text-white font-medium"
-								: "bg-background text-ink-3 hover:text-ink hover:bg-accent/50",
-						)}
-					>
-						<FileText className="w-3.5 h-3.5" />
-						Single Client
-					</button>
-					<button
-						type="button"
-						onClick={() => handleTypeChange("tally")}
-						className={cn(
-							"flex-1 flex items-center justify-center gap-2 py-2 px-3 border-l border-border transition-colors",
-							invoiceType === "tally"
-								? "bg-mint text-white font-medium"
-								: "bg-background text-ink-3 hover:text-ink hover:bg-accent/50",
-						)}
-					>
-						<BarChart2 className="w-3.5 h-3.5" />
-						Full Tally
-					</button>
-				</div>
-
-				{invoiceType === "client" && (
-					<div className="space-y-1.5">
-						<Label>Client</Label>
-						<Combobox
-							options={clients.map((c: any) => ({
-								value: c.id,
-								label: c.deleted_at ? `${c.name} [Deactivated]` : c.name,
-							}))}
-							value={clientId}
-							onChange={setClientId}
-							placeholder="Select a client…"
-							searchPlaceholder="Search clients…"
-							emptyText="No clients found."
-						/>
+				{/* ── LEFT: Configuration ── */}
+				<div className="rounded-xl border bg-background p-5 space-y-5">
+					<div>
+						<p className="text-sm font-semibold text-ink">Invoice Configuration</p>
+						<p className="text-xs text-ink-3 mt-0.5">Set your filters and generate an invoice.</p>
 					</div>
-				)}
 
-				<div className="grid grid-cols-2 gap-3">
-					<div className="space-y-1.5">
-						<Label htmlFor="inv-from">From</Label>
-						<input
-							id="inv-from"
-							type="date"
-							value={dateFrom}
-							onChange={(e) => setDateFrom(e.target.value)}
-							className={inputCls}
-						/>
+					{/* Segmented toggle */}
+					<div className="flex rounded-lg border border-border overflow-hidden text-sm">
+						<button
+							type="button"
+							onClick={() => handleTypeChange("client")}
+							className={cn(
+								"flex-1 flex items-center justify-center gap-2 py-2 px-3 transition-colors",
+								invoiceType === "client"
+									? "bg-mint text-white font-medium"
+									: "bg-background text-ink-3 hover:text-ink hover:bg-accent/50",
+							)}
+						>
+							<FileText className="w-3.5 h-3.5" />
+							Single Client
+						</button>
+						<button
+							type="button"
+							onClick={() => handleTypeChange("tally")}
+							className={cn(
+								"flex-1 flex items-center justify-center gap-2 py-2 px-3 border-l border-border transition-colors",
+								invoiceType === "tally"
+									? "bg-mint text-white font-medium"
+									: "bg-background text-ink-3 hover:text-ink hover:bg-accent/50",
+							)}
+						>
+							<BarChart2 className="w-3.5 h-3.5" />
+							Full Tally
+						</button>
 					</div>
-					<div className="space-y-1.5">
-						<Label htmlFor="inv-to">To</Label>
-						<input
-							id="inv-to"
-							type="date"
-							value={dateTo}
-							onChange={(e) => setDateTo(e.target.value)}
-							className={inputCls}
-						/>
-					</div>
-				</div>
 
-				<Button
-					className="w-full"
-					disabled={!canGenerate || isGenerating}
-					isLoading={isGenerating}
-					onClick={() => fetchPreview()}
-				>
-					Generate Invoice
-				</Button>
-
-				{invoiceType === "tally" && (
-					<p className="text-xs text-ink-3 leading-relaxed">
-						Exports all clients&apos; completed tickets for the period into a two-sheet workbook — line items and a summary.
-					</p>
-				)}
-			</div>
-
-			{/* ── RIGHT: Session invoices ── */}
-			<div className="rounded-xl border bg-background min-h-[320px] flex flex-col">
-				<div className="px-5 py-4 border-b">
-					<p className="text-sm font-semibold text-ink">Generated This Session</p>
-					<p className="text-xs text-ink-3 mt-0.5">Saved locally in your browser. Export to keep a permanent copy.</p>
-				</div>
-
-				{sessions.length === 0 ? (
-					<div className="flex-1 flex flex-col items-center justify-center gap-2 px-6 py-16 text-center">
-						<div className="w-10 h-10 rounded-full bg-accent/60 flex items-center justify-center">
-							<FileText className="w-5 h-5 text-ink-3" />
+					{invoiceType === "client" && (
+						<div className="space-y-1.5">
+							<Label>Client</Label>
+							<Combobox
+								options={clients.map((c: any) => ({
+									value: c.id,
+									label: c.deleted_at ? `${c.name} [Deactivated]` : c.name,
+								}))}
+								value={clientId}
+								onChange={setClientId}
+								placeholder="Select a client…"
+								searchPlaceholder="Search clients…"
+								emptyText="No clients found."
+							/>
 						</div>
-						<p className="text-sm font-medium text-ink-2">No invoices yet</p>
-						<p className="text-xs text-ink-3">
-							Configure and click Generate Invoice to get started.
-						</p>
+					)}
+
+					<div className="grid grid-cols-2 gap-3">
+						<div className="space-y-1.5">
+							<Label htmlFor="inv-from">From</Label>
+							<input
+								id="inv-from"
+								type="date"
+								value={dateFrom}
+								onChange={(e) => setDateFrom(e.target.value)}
+								className={inputCls}
+							/>
+						</div>
+						<div className="space-y-1.5">
+							<Label htmlFor="inv-to">To</Label>
+							<input
+								id="inv-to"
+								type="date"
+								value={dateTo}
+								onChange={(e) => setDateTo(e.target.value)}
+								className={inputCls}
+							/>
+						</div>
 					</div>
-				) : (
-					<ul className="divide-y overflow-y-auto">
-						{sessions.map((inv) => {
-							const totalNet      = inv.data.summary.reduce((s, i) => s + i.net_payable, 0);
-							const totalHours    = inv.data.summary.reduce((s, i) => s + i.total_billable_hours, 0);
-							const currency      = inv.data.line_items[0]?.currency ?? inv.data.summary[0]?.currency ?? "USD";
-							const ticketCount   = inv.data.line_items.length;
-							const isExporting   = exportingId === inv.id;
 
-							return (
-								<li key={inv.id} className="px-5 py-4 flex items-start gap-4">
-									<div className="mt-0.5 w-8 h-8 rounded-lg bg-accent/60 flex items-center justify-center shrink-0">
-										{inv.type === "tally"
-											? <BarChart2 className="w-4 h-4 text-ink-3" />
-											: <FileText className="w-4 h-4 text-ink-3" />
-										}
-									</div>
+					{/* Template selector */}
+					<div className="flex items-center justify-between rounded-lg border border-border px-3 py-2.5">
+						<div className="flex items-center gap-2 min-w-0">
+							{activeTemplate?.format === "pdf"
+								? <FileText className="w-3.5 h-3.5 text-rose-500 shrink-0" />
+								: <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+							}
+							<div className="min-w-0">
+								<p className="text-xs font-medium text-ink truncate">{activeTemplate?.name ?? "Classic"} <span className="text-ink-3">({activeTemplate?.format?.toUpperCase() ?? "XLSX"})</span></p>
+								<p className="text-[10px] text-ink-3">Template for export</p>
+							</div>
+						</div>
+						<button
+							type="button"
+							onClick={() => setTemplatePickerOpen(true)}
+							className="flex items-center gap-1 text-xs text-mint font-medium hover:underline shrink-0 ml-2"
+						>
+							<LayoutTemplate className="w-3 h-3" />
+							Change
+						</button>
+					</div>
 
-									<div className="flex-1 min-w-0">
-										<p className="text-sm font-medium text-ink truncate">{inv.clientName}</p>
-										<p className="text-xs text-ink-3 mt-0.5">{inv.dateFrom} — {inv.dateTo}</p>
-										<div className="flex items-center gap-3 mt-1.5 text-xs text-ink-3">
-											<span>{ticketCount} ticket{ticketCount !== 1 ? "s" : ""}</span>
-											<span>·</span>
-											<span>{totalHours.toFixed(1)} hrs</span>
-											<span>·</span>
-											<span className="font-medium text-ink">{currency} {totalNet.toFixed(2)}</span>
+					<Button
+						className="w-full"
+						disabled={!canGenerate || isGenerating}
+						isLoading={isGenerating}
+						onClick={() => fetchPreview()}
+					>
+						Generate Invoice
+					</Button>
+
+					{invoiceType === "tally" && (
+						<p className="text-xs text-ink-3 leading-relaxed">
+							Exports all clients&apos; completed tickets for the period into a two-sheet workbook — line items and a summary.
+						</p>
+					)}
+				</div>
+
+				{/* ── RIGHT: Session invoices ── */}
+				<div className="rounded-xl border bg-background min-h-[320px] flex flex-col">
+					<div className="px-5 py-4 border-b">
+						<p className="text-sm font-semibold text-ink">Generated This Session</p>
+						<p className="text-xs text-ink-3 mt-0.5">Saved locally in your browser. Export to keep a permanent copy.</p>
+					</div>
+
+					{sessions.length === 0 ? (
+						<div className="flex-1 flex flex-col items-center justify-center gap-2 px-6 py-16 text-center">
+							<div className="w-10 h-10 rounded-full bg-accent/60 flex items-center justify-center">
+								<FileText className="w-5 h-5 text-ink-3" />
+							</div>
+							<p className="text-sm font-medium text-ink-2">No invoices yet</p>
+							<p className="text-xs text-ink-3">
+								Configure and click Generate Invoice to get started.
+							</p>
+						</div>
+					) : (
+						<ul className="divide-y overflow-y-auto">
+							{sessions.map((inv) => {
+								const totalNet    = inv.data.summary.reduce((s, i) => s + i.net_payable, 0);
+								const totalHours  = inv.data.summary.reduce((s, i) => s + i.total_billable_hours, 0);
+								const currency    = inv.data.line_items[0]?.currency ?? inv.data.summary[0]?.currency ?? "USD";
+								const ticketCount = inv.data.line_items.length;
+								const isExporting = exportingId === inv.id;
+
+								return (
+									<li key={inv.id} className="px-5 py-4 flex items-start gap-4">
+										<div className="mt-0.5 w-8 h-8 rounded-lg bg-accent/60 flex items-center justify-center shrink-0">
+											{inv.type === "tally"
+												? <BarChart2 className="w-4 h-4 text-ink-3" />
+												: <FileText className="w-4 h-4 text-ink-3" />
+											}
 										</div>
-										{exportErrors[inv.id] && (
-											<p className="text-xs text-destructive mt-1">{exportErrors[inv.id]}</p>
-										)}
-									</div>
 
-									<div className="flex items-center gap-1 shrink-0">
-										<Button
-											size="sm"
-											variant="outline"
-											disabled={isExporting}
-											isLoading={isExporting}
-											onClick={() => handleExport(inv)}
-										>
-											{!isExporting && <Download className="w-3.5 h-3.5" />}
-											Export
-										</Button>
-										<Button
-											size="icon-sm"
-											variant="ghost"
-											className="text-ink-3 hover:text-destructive"
-											onClick={() => setSessions((prev) => prev.filter((s) => s.id !== inv.id))}
-										>
-											<X className="w-3.5 h-3.5" />
-										</Button>
-									</div>
-								</li>
-							);
-						})}
-					</ul>
-				)}
+										<div className="flex-1 min-w-0">
+											<p className="text-sm font-medium text-ink truncate">{inv.clientName}</p>
+											<p className="text-xs text-ink-3 mt-0.5">{inv.dateFrom} — {inv.dateTo}</p>
+											<div className="flex items-center gap-3 mt-1.5 text-xs text-ink-3">
+												<span>{ticketCount} ticket{ticketCount !== 1 ? "s" : ""}</span>
+												<span>·</span>
+												<span>{totalHours.toFixed(1)} hrs</span>
+												<span>·</span>
+												<span className="font-medium text-ink">{currency} {totalNet.toFixed(2)}</span>
+											</div>
+											{exportErrors[inv.id] && (
+												<p className="text-xs text-destructive mt-1">{exportErrors[inv.id]}</p>
+											)}
+										</div>
+
+										<div className="flex items-center gap-1 shrink-0">
+											<Button
+												size="sm"
+												variant="outline"
+												disabled={isExporting}
+												isLoading={isExporting}
+												onClick={() => handleExport(inv)}
+											>
+												{!isExporting && <Download className="w-3.5 h-3.5" />}
+												Export
+											</Button>
+											<Button
+												size="icon-sm"
+												variant="ghost"
+												className="text-ink-3 hover:text-destructive"
+												onClick={() => setSessions((prev) => prev.filter((s) => s.id !== inv.id))}
+											>
+												<X className="w-3.5 h-3.5" />
+											</Button>
+										</div>
+									</li>
+								);
+							})}
+						</ul>
+					)}
+				</div>
 			</div>
-		</div>
+		</>
 	);
 }

@@ -39,6 +39,10 @@ model Organization {
   had_trial              Boolean   @default(false)
   is_internal            Boolean   @default(false)       // bypasses all billing gates (test/internal accounts)
 
+  // Invoice templates
+  invoice_template  String  @default("classic-xlsx")
+  invoice_config    Json?
+
   users            User[]
   join_requests    UserJoinRequest[]
   work_schedule    WorkSchedule?

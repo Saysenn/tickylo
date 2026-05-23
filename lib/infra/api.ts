@@ -327,7 +327,7 @@ class APIService {
 	public invoice = {
 		preview: (params: { type: string; client_id?: string; date_from: string; date_to: string; tz_offset?: number }) =>
 			axiosService.get(`${apiVersion}/reports/invoice`, params),
-		export: (data: { type: string; client_id?: string; date_from: string; date_to: string; tz_offset?: number; org_name: string; org_logo?: string }) =>
+		export: (data: { type: string; client_id?: string; date_from: string; date_to: string; tz_offset?: number; org_name: string; template_id?: string }) =>
 			axiosService.instance.post(`/v1/reports/invoice/export`, data, { responseType: "blob" }),
 	};
 
@@ -408,8 +408,32 @@ class APIService {
 	// Org Settings
 	// ---------------------------------------------------------------------------
 	public orgSettings = {
-		get: () => axiosService.get<{ attachments_enabled: boolean; departments_enabled: boolean; extension_enabled: boolean; admins_can_work_on_tickets: boolean; include_admins_in_summary: boolean; org_join_code: string; name: string; plan: string; is_internal: boolean }>(`${apiVersion}/org/settings`),
-		update: (data: { attachments_enabled?: boolean; departments_enabled?: boolean; extension_enabled?: boolean; admins_can_work_on_tickets?: boolean; include_admins_in_summary?: boolean }) => axiosService.patch(`${apiVersion}/org/settings`, data),
+		get: () => axiosService.get<{
+			attachments_enabled: boolean; departments_enabled: boolean; extension_enabled: boolean;
+			admins_can_work_on_tickets: boolean; include_admins_in_summary: boolean;
+			org_join_code: string; name: string; plan: string; is_internal: boolean;
+			logo_url: string | null; invoice_template: string; invoice_config: Record<string, unknown> | null;
+		}>(`${apiVersion}/org/settings`),
+		update: (data: {
+			attachments_enabled?: boolean; departments_enabled?: boolean; extension_enabled?: boolean;
+			admins_can_work_on_tickets?: boolean; include_admins_in_summary?: boolean;
+			logo_url?: string | null; invoice_template?: string; invoice_config?: Record<string, unknown> | null;
+		}) => axiosService.patch(`${apiVersion}/org/settings`, data),
+	};
+
+	public orgLogo = {
+		upload: async (file: File): Promise<{ logo_url: string }> => {
+			const formData = new FormData();
+			formData.append("file", file);
+			const res = await fetch("/api/v1/org/logo", { method: "POST", body: formData, credentials: "include" });
+			if (!res.ok) {
+				const json = await res.json().catch(() => ({}));
+				throw Object.assign(new Error(json?.error ?? "Upload failed"), { response: { data: json } });
+			}
+			const json = await res.json();
+			return json.data;
+		},
+		remove: () => axiosService.delete(`${apiVersion}/org/logo`),
 	};
 
 	// ---------------------------------------------------------------------------

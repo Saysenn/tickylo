@@ -5,7 +5,6 @@
 3. **Email → Ticket** — Inbound webhook → AI parse → ticket (Enterprise).
 4. **AI Ticket Assistance** — Plain text → auto-fill fields + chatbot (Enterprise).
 5. **Client Portal** — Client logs in to view their own tickets and invoice history.
-6. **Invoice Templates** — Customizable invoice templates (Enterprise). Found in settings or a new menu on main sidebar.
 
 # one liner flow
 
