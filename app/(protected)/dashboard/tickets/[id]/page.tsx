@@ -1456,6 +1456,7 @@ function EditTicketDialog({ ticket, open, onOpenChange, onSave, isEmployee = fal
 				await onSave({
 					title: title.trim(),
 					description: description.trim() || null,
+					ticket_type: ticketType,
 					priority,
 					implementation_plan: implementationPlan.trim() || null,
 					rollback_plan:       rollbackPlan.trim()       || null,
@@ -1508,19 +1509,35 @@ function EditTicketDialog({ ticket, open, onOpenChange, onSave, isEmployee = fal
 						<div className="flex-1 border-t border-border/40" />
 					</div>
 					{isEmployee ? (
-						<div className="space-y-1.5">
-							<Label htmlFor="edit-priority">Priority</Label>
-							<Combobox
-								options={[
-									{ value: "low", label: "Low" },
-									{ value: "medium", label: "Medium" },
-									{ value: "high", label: "High" },
-									{ value: "critical", label: "Critical" },
-								]}
-								value={priority}
-								onChange={setPriority}
-								placeholder="Select priority…"
-							/>
+						<div className="grid grid-cols-2 gap-4">
+							<div className="space-y-1.5">
+								<Label htmlFor="edit-type">Type</Label>
+								<Combobox
+									options={[
+										{ value: "internal_task", label: "Internal Task" },
+										{ value: "request", label: "Request" },
+										{ value: "incident", label: "Incident" },
+										{ value: "change", label: "Request for Change" },
+									]}
+									value={ticketType}
+									onChange={setTicketType}
+									placeholder="Select type…"
+								/>
+							</div>
+							<div className="space-y-1.5">
+								<Label htmlFor="edit-priority">Priority</Label>
+								<Combobox
+									options={[
+										{ value: "low", label: "Low" },
+										{ value: "medium", label: "Medium" },
+										{ value: "high", label: "High" },
+										{ value: "critical", label: "Critical" },
+									]}
+									value={priority}
+									onChange={setPriority}
+									placeholder="Select priority…"
+								/>
+							</div>
 						</div>
 					) : (
 						<>
