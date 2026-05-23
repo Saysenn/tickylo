@@ -2,9 +2,9 @@ import type ExcelJS from "exceljs";
 import type { InvoiceData, InvoiceConfig } from "../types";
 import { currency, paymentTermsLabel, dueDateFrom, rateTypeLabel } from "../helpers";
 
-// Minimal — freelancer / independent
-// Looks like a typed letter. No fill, no borders. Just text, a couple of rules, and whitespace.
-// Column headers are lowercase. Feels handcrafted, not generated.
+// Minimal — Premium Consultant Letter Style
+// Org name in primary color. Thick primary rule below header. Label/value letter block.
+// Items with subtle hair borders. Primary-tint total row. Clean footer with "thank you."
 
 export async function buildMinimalXlsx(
 	wb: ExcelJS.Workbook,
@@ -13,90 +13,127 @@ export async function buildMinimalXlsx(
 ) {
 	const { lineItems, invoiceNumber, issueDate, orgName, dateFrom, dateTo, type } = data;
 	const PRI = config.primaryColor;
+	const [pr, pg, pb] = hexToRgb(PRI);
+	const TINT_INFO  = tintHex(pr, pg, pb, 0.94); // label bg
+	const TINT_TOTAL = tintHex(pr, pg, pb, 0.88); // total row
+	const TINT_FOOT  = tintHex(pr, pg, pb, 0.95); // footer row
 
-	const rule = (ws: ExcelJS.Worksheet, row: number, cols: number, color = PRI, weight: ExcelJS.BorderStyle = "thin") => {
-		for (let c = 1; c <= cols; c++) {
-			const cell = ws.getRow(row).getCell(c);
-			cell.border = { bottom: { style: weight, color: { argb: `FF${color}` } } };
-		}
-	};
+	const priArgb = `FF${PRI}`;
+	const white   = "FFFFFFFF";
+	const fill    = (argb: string): ExcelJS.Fill => ({ type: "pattern", pattern: "solid", fgColor: { argb } });
+	const bdr     = (style: ExcelJS.BorderStyle, argb: string): ExcelJS.Border => ({ style, color: { argb } });
 
 	if (type === "client") {
-		const ws = wb.addWorksheet("Invoice");
+		const ws = wb.addWorksheet("Invoice", { pageSetup: { fitToPage: true, fitToWidth: 1, orientation: "portrait" } });
 		ws.columns = [
-			{ key: "A", width: 14 }, { key: "B", width: 42 }, { key: "C", width: 16 },
-			{ key: "D", width: 12 }, { key: "E", width: 10 }, { key: "F", width: 14 },
+			{ key: "A", width: 12 }, { key: "B", width: 44 }, { key: "C", width: 14 },
+			{ key: "D", width: 11 }, { key: "E", width: 10 }, { key: "F", width: 15 },
 		];
 		const COLS = 6;
 
 		const first      = lineItems[0];
-		const clientName = first?.client_name ?? "—";
+		const clientName = first?.client_name  ?? "";
 		const clientEmail= first?.client_email ?? "";
-		const cur        = first?.currency ?? "USD";
+		const cur        = first?.currency      ?? "USD";
 		const payTerms   = paymentTermsLabel(first?.payment_terms ?? "net_30");
 		const dueDate    = dueDateFrom(first?.payment_terms ?? "net_30", new Date(issueDate));
 
-		// Org name
+		ws.headerFooter.oddHeader = `&L&"Bootshaus Regular,Bold"&14${orgName}&R&"Roboto,Regular"&8invoice  #${invoiceNumber}`;
+		ws.headerFooter.oddFooter = `&L&"Roboto,Italic"&8${payTerms}&C&8Page &P of &N&R&"Roboto,Italic"&8due ${dueDate}`;
+
+		// ── Row 1: Org name in primary ────────────────────────────────────────────
 		ws.mergeCells("A1:F1");
-		ws.getCell("A1").value = orgName;
-		ws.getCell("A1").font  = { bold: true, size: 16, color: { argb: `FF${PRI}` } };
-		ws.getRow(1).height = 28;
+		applyCell(ws.getCell("A1"), {
+			value: orgName,
+			font: { name: "Bootshaus Regular", bold: true, size: 18, color: { argb: priArgb } },
+			alignment: { vertical: "bottom", indent: 1 },
+		});
+		ws.getRow(1).height = 32;
 
-		// Single rule
-		rule(ws, 2, COLS, PRI, "medium");
-		ws.getRow(2).height = 2;
-		ws.getRow(3).height = 10;
+		// ── Row 2: Thick primary rule ─────────────────────────────────────────────
+		for (let c = 1; c <= COLS; c++) ws.getRow(2).getCell(c).fill = fill(priArgb);
+		ws.getRow(2).height = 3;
 
-		// Label + value rows — like a letter header
+		// ── Row 3: invoice label right-aligned ───────────────────────────────────
+		ws.mergeCells("A3:C3"); ws.mergeCells("D3:F3");
+		applyCell(ws.getCell("A3"), {
+			value: `invoice  #${invoiceNumber}`,
+			font: { name: "Roboto", size: 8, color: { argb: "FFCCD1E4" } },
+			alignment: { vertical: "middle", indent: 1 },
+		});
+		applyCell(ws.getCell("D3"), {
+			value: issueDate,
+			font: { name: "Roboto", size: 8, color: { argb: "FFCCD1E4" } },
+			alignment: { horizontal: "right", vertical: "middle", indent: 1 },
+		});
+		ws.getRow(3).height = 16;
+
+		ws.getRow(4).height = 10;
+
+		// ── Rows 5–12: Letter header block ────────────────────────────────────────
+		const infoFill = fill(`FF${TINT_INFO}`);
+
 		const lv = (label: string, val: string, row: number) => {
-			ws.mergeCells(`A${row}:A${row}`);
-			ws.getCell(`A${row}`).value = label;
-			ws.getCell(`A${row}`).font  = { size: 8.5, color: { argb: "FFC0C5D5" } };
+			applyCell(ws.getCell(`A${row}`), {
+				value: label,
+				font: { name: "Bootshaus Regular", size: 8, color: { argb: priArgb } },
+				fill: infoFill,
+				alignment: { vertical: "middle", indent: 1 },
+			});
 			ws.mergeCells(`B${row}:F${row}`);
-			ws.getCell(`B${row}`).value = val;
-			ws.getCell(`B${row}`).font  = { size: 9.5, color: { argb: "FF252840" } };
-			ws.getRow(row).height = 14;
+			applyCell(ws.getCell(`B${row}`), {
+				value: val,
+				font: { name: "Roboto", size: 9.5, color: { argb: "FF252840" } },
+				fill: infoFill,
+				alignment: { vertical: "middle", indent: 1 },
+			});
+			ws.getRow(row).height = 15;
 		};
 
-		lv("to",      clientName, 4);
-		lv("",        clientEmail || " ", 5);
-		lv("date",    issueDate, 7);
-		lv("due",     dueDate, 8);
-		lv("invoice", invoiceNumber, 9);
-		lv("period",  `${dateFrom}  —  ${dateTo}`, 10);
-		lv("terms",   payTerms, 11);
+		lv("to",      clientName,  5);
+		if (clientEmail) lv("",   clientEmail, 6);
+		lv("date",    issueDate,   7);
+		lv("due",     dueDate,     8);
+		lv("ref",     invoiceNumber, 9);
+		lv("period",  `${dateFrom} to ${dateTo}`, 10);
+		lv("terms",   payTerms,    11);
 
-		ws.getRow(3).height = 8;
-		ws.getRow(6).height = 6;
+		if (!clientEmail) {
+			ws.getRow(6).height = 0; // collapse empty email row if not set
+		}
 
 		ws.getRow(12).height = 8;
-		rule(ws, 12, COLS, "D8DCE8");
 
-		ws.getRow(13).height = 8;
+		// Primary accent rule before items
+		for (let c = 1; c <= COLS; c++) {
+			ws.getRow(12).getCell(c).border = { bottom: bdr("thin", `FF${PRI}`) };
+		}
 
-		// Column headers — lowercase, no fill
+		ws.getRow(13).height = 6;
+
+		// ── Row 14: Column headers — lowercase, primary bottom rule ───────────────
 		const cols = buildCols(config);
 		const hRow = ws.getRow(14);
-		cols.forEach((c, i) => {
+		cols.forEach((col, i) => {
 			const cell = hRow.getCell(i + 1);
-			cell.value = c.label;
-			cell.font  = { size: 8, color: { argb: "FFD0D5E5" } };
-			cell.alignment = { horizontal: c.align };
-			cell.border = { bottom: { style: "medium" as const, color: { argb: `FF${PRI}` } } };
+			cell.value  = col.label;
+			cell.font   = { name: "Bootshaus Regular", size: 8, color: { argb: "FFCCD1E4" } };
+			cell.border = { bottom: bdr("medium", `FF${PRI}`) };
+			cell.alignment = { horizontal: col.align, vertical: "middle", indent: col.align === "left" ? 1 : 0 };
 		});
-		hRow.height = 14;
+		hRow.height = 15;
 
-		// Data rows — no fill, no borders, just readable text
+		// ── Data rows ─────────────────────────────────────────────────────────────
 		let row = 15;
 		for (const item of lineItems) {
 			const r = ws.getRow(row);
 			buildRowValues(item, cols).forEach((val, i) => {
 				const cell = r.getCell(i + 1);
-				cell.value = val;
-				cell.font  = { size: 10, color: { argb: "FF252840" } };
-				cell.border = { bottom: { style: "hair" as const, color: { argb: "FFE8EBF4" } } };
-				if (cols[i].key === "ticket_id") cell.font = { name: "Courier New", size: 9, color: { argb: "FFC0C5D5" } };
-				if (cols[i].align === "right") cell.alignment = { horizontal: "right" };
+				cell.value  = val;
+				cell.font   = { name: "Roboto", size: 10, color: { argb: "FF252840" } };
+				cell.border = { bottom: bdr("hair", "FFEEF0F8") };
+				cell.alignment = { horizontal: cols[i].align, vertical: "middle", indent: cols[i].align === "left" ? 1 : 0 };
+				if (cols[i].key === "ticket_id") cell.font = { name: "Courier New", size: 9, color: { argb: "FFCCD1E4" } };
 				if (cols[i].numFmt) cell.numFmt = cols[i].numFmt!;
 			});
 			r.height = 17; row++;
@@ -104,45 +141,75 @@ export async function buildMinimalXlsx(
 
 		if (lineItems.length === 0) {
 			ws.mergeCells(`A${row}:F${row}`);
-			ws.getCell(`A${row}`).value = "no tickets found for this period.";
-			ws.getCell(`A${row}`).font  = { italic: true, size: 9, color: { argb: "FFC0C5D5" } };
+			applyCell(ws.getCell(`A${row}`), {
+				value: "no tickets found for this period.",
+				font: { name: "Roboto", italic: true, size: 9, color: { argb: "FFCCD1E4" } },
+				alignment: { horizontal: "center" },
+			});
 			row++;
 		}
 
 		// Spacer + light rule
 		ws.getRow(row).height = 8; row++;
-		rule(ws, row, COLS, "D8DCE8"); ws.getRow(row).height = 2; row++;
+		for (let c = 1; c <= COLS; c++) {
+			ws.getRow(row).getCell(c).border = { bottom: bdr("thin", "FFE0E4F0") };
+		}
+		ws.getRow(row).height = 2; row++;
 		ws.getRow(row).height = 8; row++;
 
-		// Totals
+		// ── Totals ────────────────────────────────────────────────────────────────
 		const totalSub  = lineItems.reduce((s, i) => s + i.subtotal, 0);
 		const totalDisc = lineItems.reduce((s, i) => s + i.discount_amount, 0);
 		const totalNet  = lineItems.reduce((s, i) => s + i.net_total, 0);
 		const discPct   = lineItems[0]?.discount_percent ?? 0;
 
-		const totRow = (label: string, val: string, bold = false) => {
+		const totRow = (label: string, val: string, isTotal = false) => {
 			ws.mergeCells(`A${row}:D${row}`);
-			ws.getCell(`A${row}`).value = label;
-			ws.getCell(`A${row}`).font  = { size: 9, bold, color: { argb: "FFC0C5D5" } };
-			ws.getCell(`A${row}`).alignment = { horizontal: "right" };
+			applyCell(ws.getCell(`A${row}`), {
+				value: label,
+				font: { name: isTotal ? "Bootshaus Regular" : "Roboto", size: 9, bold: isTotal, color: { argb: isTotal ? priArgb : "FFCCD1E4" } },
+				fill: fill(isTotal ? `FF${TINT_TOTAL}` : white),
+				alignment: { horizontal: "right" },
+			});
 			ws.mergeCells(`E${row}:F${row}`);
-			ws.getCell(`E${row}`).value = val;
-			ws.getCell(`E${row}`).font  = { size: bold ? 12 : 10, bold, color: { argb: bold ? `FF${PRI}` : "FF252840" } };
-			ws.getCell(`E${row}`).alignment = { horizontal: "right" };
-			ws.getRow(row).height = bold ? 22 : 16; row++;
+			applyCell(ws.getCell(`E${row}`), {
+				value: val,
+				font: { name: "Roboto", size: isTotal ? 13 : 10, bold: isTotal, color: { argb: isTotal ? priArgb : "FF252840" } },
+				fill: fill(isTotal ? `FF${TINT_TOTAL}` : white),
+				alignment: { horizontal: "right", indent: 1 },
+				border: isTotal ? { bottom: bdr("medium", `FF${PRI}`) } : undefined,
+			});
+			ws.getRow(row).height = isTotal ? 26 : 16; row++;
 		};
 
 		totRow("subtotal", currency(totalSub, cur));
-		if (config.showDiscount && totalDisc > 0) totRow(`discount  ${discPct}%`, `− ${currency(totalDisc, cur)}`);
+		if (config.showDiscount && totalDisc > 0) totRow(`discount  ${discPct}%`, `-${currency(totalDisc, cur)}`);
 		totRow(`total  ${cur}`, totalNet.toFixed(2), true);
 
-		ws.getRow(row).height = 10; row++;
+		// ── Footer ────────────────────────────────────────────────────────────────
+		ws.getRow(row).height = 12; row++;
+
+		const footFill = fill(`FF${TINT_FOOT}`);
 		ws.mergeCells(`A${row}:F${row}`);
-		ws.getCell(`A${row}`).value = config.footerNote || "thank you.";
-		ws.getCell(`A${row}`).font  = { italic: true, size: 8.5, color: { argb: "FFD0D5E5" } };
+		applyCell(ws.getCell(`A${row}`), {
+			value: config.footerNote || "thank you.",
+			font: { name: "Roboto", italic: true, size: 9, color: { argb: "FFADB3CC" } },
+			fill: footFill,
+			alignment: { horizontal: "center", vertical: "middle" },
+		});
+		ws.getRow(row).height = 16; row++;
+
+		ws.mergeCells(`A${row}:F${row}`);
+		applyCell(ws.getCell(`A${row}`), {
+			value: `${orgName}  |  due ${dueDate}  |  ${payTerms}`,
+			font: { name: "Roboto", size: 7.5, color: { argb: "FFCCD1E4" } },
+			fill: footFill,
+			alignment: { horizontal: "center", vertical: "middle" },
+		});
+		ws.getRow(row).height = 13;
 
 	} else {
-		buildMinimalTally(wb, data, config, PRI);
+		buildMinimalTally(wb, data, config, PRI, pr, pg, pb);
 	}
 }
 
@@ -151,87 +218,197 @@ function buildMinimalTally(
 	data: InvoiceData,
 	config: InvoiceConfig,
 	PRI: string,
+	pr: number, pg: number, pb: number,
 ) {
 	const { lineItems, invoiceNumber, issueDate, orgName, dateFrom, dateTo } = data;
-	const grouped = new Map<string, typeof lineItems>();
-	for (const item of lineItems) {
-		if (!grouped.has(item.client_name)) grouped.set(item.client_name, []);
-		grouped.get(item.client_name)!.push(item);
-	}
+	const TINT_TOTAL = tintHex(pr, pg, pb, 0.88);
+	const TINT_FOOT  = tintHex(pr, pg, pb, 0.95);
 
-	const ws = wb.addWorksheet("Tally");
-	ws.columns = [
-		{ key: "A", width: 30 }, { key: "B", width: 10 }, { key: "C", width: 12 },
-		{ key: "D", width: 10 }, { key: "E", width: 14 }, { key: "F", width: 16 },
-	];
+	const priArgb = `FF${PRI}`;
+	const white   = "FFFFFFFF";
+	const fill    = (argb: string): ExcelJS.Fill => ({ type: "pattern", pattern: "solid", fgColor: { argb } });
+	const bdr     = (style: ExcelJS.BorderStyle, argb: string): ExcelJS.Border => ({ style, color: { argb } });
 
-	ws.mergeCells("A1:F1");
-	ws.getCell("A1").value = orgName;
-	ws.getCell("A1").font  = { bold: true, size: 14, color: { argb: `FF${PRI}` } };
-	ws.getRow(1).height = 26;
+	const cols = buildCols(config, true);
+	const COLS = cols.length;
+	const lastCol = String.fromCharCode(64 + COLS);
+	const halfCol = String.fromCharCode(64 + Math.floor(COLS / 2));
 
-	for (let c = 1; c <= 6; c++) {
-		ws.getRow(2).getCell(c).border = { bottom: { style: "medium", color: { argb: `FF${PRI}` } } };
-	}
-	ws.getRow(2).height = 2;
+	const ws = wb.addWorksheet("Tally", { pageSetup: { fitToPage: true, fitToWidth: 1, orientation: "portrait" } });
+	const widths = [20, 10, 36, 12, 10, 12, 14];
+	ws.columns = widths.slice(0, COLS).map((w) => ({ width: w }));
 
-	ws.mergeCells("A3:F3");
-	ws.getCell("A3").value = `full tally  ·  ${invoiceNumber}  ·  ${dateFrom} — ${dateTo}  ·  issued ${issueDate}`;
-	ws.getCell("A3").font  = { size: 8, color: { argb: "FFC0C5D5" } };
-	ws.getRow(3).height = 14; ws.getRow(4).height = 8;
+	ws.headerFooter.oddHeader = `&L&"Bootshaus Regular,Bold"&14${orgName}&R&"Roboto,Regular"&8full tally`;
+	ws.headerFooter.oddFooter = `&C&"Roboto,Italic"&8${dateFrom} to ${dateTo}  |  page &P of &N`;
 
-	const hdrs = ["client", "currency", "cycle", "items", "hours", "net payable"];
-	const hRow = ws.getRow(5);
-	hdrs.forEach((h, i) => {
-		const cell = hRow.getCell(i + 1);
-		cell.value = h; cell.font = { size: 8, color: { argb: "FFD0D5E5" } };
-		cell.alignment = { horizontal: i >= 3 ? "right" : "left" };
-		cell.border = { bottom: { style: "medium" as const, color: { argb: `FF${PRI}` } } };
+	ws.mergeCells(`A1:${lastCol}1`);
+	applyCell(ws.getCell("A1"), {
+		value: orgName,
+		font: { name: "Bootshaus Regular", bold: true, size: 16, color: { argb: priArgb } },
+		alignment: { vertical: "bottom", indent: 1 },
 	});
-	hRow.height = 14;
+	ws.getRow(1).height = 28;
 
+	for (let c = 1; c <= COLS; c++) ws.getRow(2).getCell(c).fill = fill(priArgb);
+	ws.getRow(2).height = 3;
+
+	ws.mergeCells(`A3:${halfCol}3`); ws.mergeCells(`${String.fromCharCode(halfCol.charCodeAt(0) + 1)}3:${lastCol}3`);
+	applyCell(ws.getCell("A3"), {
+		value: `full tally  |  ${invoiceNumber}`,
+		font: { name: "Roboto", size: 8, color: { argb: "FFCCD1E4" } },
+		alignment: { vertical: "middle", indent: 1 },
+	});
+	applyCell(ws.getCell(`${String.fromCharCode(halfCol.charCodeAt(0) + 1)}3`), {
+		value: `${dateFrom} to ${dateTo}  |  issued ${issueDate}`,
+		font: { name: "Roboto", size: 8, color: { argb: "FFCCD1E4" } },
+		alignment: { horizontal: "right", vertical: "middle", indent: 1 },
+	});
+	ws.getRow(3).height = 15;
+	ws.getRow(4).height = 8;
+
+	const hRow = ws.getRow(5);
+	cols.forEach((col, i) => {
+		const cell = hRow.getCell(i + 1);
+		cell.value  = col.label;
+		cell.font   = { name: "Bootshaus Regular", size: 8, color: { argb: "FFCCD1E4" } };
+		cell.border = { bottom: bdr("medium", `FF${PRI}`) };
+		cell.alignment = { horizontal: col.align, vertical: "middle", indent: col.align === "left" ? 1 : 0 };
+	});
+	hRow.height = 15;
+
+	const cur = lineItems[0]?.currency ?? "USD";
 	let row = 6;
-	for (const [clientName, items] of grouped) {
-		const cur   = items[0]?.currency ?? "USD";
-		const hours = Math.round(items.reduce((s, i) => s + i.billable_hours, 0) * 100) / 100;
-		const net   = Math.round(items.reduce((s, i) => s + i.net_total, 0) * 100) / 100;
-		const vals  = [clientName, cur, items[0]?.billing_cycle ?? "per_ticket", items.length, hours, net];
+	for (const item of lineItems) {
 		const r = ws.getRow(row);
-		vals.forEach((val, i) => {
+		buildRowValues(item, cols).forEach((val, i) => {
 			const cell = r.getCell(i + 1);
-			cell.value = val; cell.font = { size: 10, color: { argb: "FF252840" } };
-			cell.border = { bottom: { style: "hair" as const, color: { argb: "FFE8EBF4" } } };
-			if (i >= 3) cell.alignment = { horizontal: "right" };
-			if (i === 5) cell.font = { size: 10, bold: true, color: { argb: `FF${PRI}` } };
+			cell.value  = val;
+			cell.font   = { name: "Roboto", size: 10, color: { argb: "FF252840" } };
+			cell.border = { bottom: bdr("hair", "FFEEF0F8") };
+			cell.alignment = { horizontal: cols[i].align, vertical: "middle", indent: cols[i].align === "left" ? 1 : 0 };
+			if (cols[i].key === "ticket_id") cell.font = { name: "Courier New", size: 9, color: { argb: "FFCCD1E4" } };
+			if (cols[i].numFmt) cell.numFmt = cols[i].numFmt!;
 		});
-		r.height = 17; row++;
+		r.height = 18; row++;
 	}
+
+	if (lineItems.length === 0) {
+		ws.mergeCells(`A${row}:${lastCol}${row}`);
+		applyCell(ws.getCell(`A${row}`), {
+			value: "no tickets found for this period.",
+			font: { name: "Roboto", italic: true, size: 9, color: { argb: "FFCCD1E4" } },
+			alignment: { horizontal: "center" },
+		});
+		row++;
+	}
+
+	// Totals
+	const totalSub  = lineItems.reduce((s, i) => s + i.subtotal, 0);
+	const totalDisc = lineItems.reduce((s, i) => s + i.discount_amount, 0);
+	const totalNet  = lineItems.reduce((s, i) => s + i.net_total, 0);
+	const discPct   = lineItems[0]?.discount_percent ?? 0;
+
+	ws.getRow(row).height = 8; row++;
+	const prevCol = String.fromCharCode(64 + COLS - 1);
+
+	const totRow = (label: string, val: string, isTotal = false) => {
+		ws.mergeCells(`A${row}:${prevCol}${row}`);
+		applyCell(ws.getCell(`A${row}`), {
+			value: label,
+			font: { name: isTotal ? "Bootshaus Regular" : "Roboto", size: 9, bold: isTotal, color: { argb: isTotal ? priArgb : "FFCCD1E4" } },
+			fill: fill(isTotal ? `FF${TINT_TOTAL}` : white),
+			alignment: { horizontal: "right" },
+		});
+		applyCell(ws.getCell(`${lastCol}${row}`), {
+			value: val,
+			font: { name: "Roboto", size: isTotal ? 13 : 10, bold: isTotal, color: { argb: isTotal ? priArgb : "FF252840" } },
+			fill: fill(isTotal ? `FF${TINT_TOTAL}` : white),
+			alignment: { horizontal: "right", indent: 1 },
+			border: isTotal ? { bottom: bdr("medium", `FF${PRI}`) } : undefined,
+		});
+		ws.getRow(row).height = isTotal ? 26 : 16; row++;
+	};
+
+	totRow("subtotal", currency(totalSub, cur));
+	if (config.showDiscount && totalDisc > 0) totRow(`discount  ${discPct}%`, `-${currency(totalDisc, cur)}`);
+	totRow(`total  ${cur}`, totalNet.toFixed(2), true);
+
+	// Footer
+	ws.getRow(row).height = 12; row++;
+	const footFill = fill(`FF${TINT_FOOT}`);
+	ws.mergeCells(`A${row}:${halfCol}${row}`); ws.mergeCells(`${String.fromCharCode(halfCol.charCodeAt(0) + 1)}${row}:${lastCol}${row}`);
+	applyCell(ws.getCell(`A${row}`), {
+		value: orgName,
+		font: { name: "Roboto", italic: true, size: 8, color: { argb: "FFADB3CC" } },
+		fill: footFill,
+		alignment: { vertical: "middle", indent: 1 },
+	});
+	applyCell(ws.getCell(`${String.fromCharCode(halfCol.charCodeAt(0) + 1)}${row}`), {
+		value: `issued ${issueDate}  |  ${dateFrom} to ${dateTo}`,
+		font: { name: "Roboto", size: 8, color: { argb: "FFCCD1E4" } },
+		fill: footFill,
+		alignment: { horizontal: "right", vertical: "middle", indent: 1 },
+	});
+	ws.getRow(row).height = 14;
 }
+
+// ── Column definitions ─────────────────────────────────────────────────────────
 
 interface ColDef { key: string; label: string; align: "left" | "right"; numFmt?: string }
 
-function buildCols(config: InvoiceConfig): ColDef[] {
-	const cols: ColDef[] = [
+function buildCols(config: InvoiceConfig, isTally = false): ColDef[] {
+	const cols: ColDef[] = [];
+	if (isTally) cols.push({ key: "client_name", label: "client", align: "left" });
+	cols.push(
 		{ key: "ticket_id",    label: "ref",         align: "left" },
 		{ key: "title",        label: "description", align: "left" },
-		{ key: "employee",     label: "by",          align: "left" },
 		{ key: "completed_at", label: "date",        align: "left" },
-	];
-	if (config.showHours) cols.push({ key: "billable_hours", label: "hrs",    align: "right" });
+	);
+	if (config.showHours) cols.push({ key: "billable_hours", label: "hrs", align: "right" });
+	if (config.showRate)  cols.push({ key: "rate",           label: "rate", align: "right", numFmt: "#,##0.00" });
 	cols.push({ key: "subtotal", label: "amount", align: "right", numFmt: "#,##0.00" });
 	return cols;
 }
 
 function buildRowValues(item: any, cols: ColDef[]): any[] {
 	const map: Record<string, any> = {
+		client_name:    item.client_name,
 		ticket_id:      item.ticket_id.slice(-6).toUpperCase(),
 		title:          item.title,
-		employee:       item.employee,
 		completed_at:   item.completed_at,
-		rate_type:      rateTypeLabel(item.rate_type),
 		billable_hours: item.billable_hours,
 		rate:           item.rate,
 		subtotal:       item.subtotal,
 	};
 	return cols.map((c) => map[c.key]);
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+function hexToRgb(hex: string): [number, number, number] {
+	const n = parseInt(hex, 16);
+	return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+}
+
+function tintHex(r: number, g: number, b: number, factor: number): string {
+	const tr = Math.round(r + (255 - r) * factor);
+	const tg = Math.round(g + (255 - g) * factor);
+	const tb = Math.round(b + (255 - b) * factor);
+	return [tr, tg, tb].map((v) => v.toString(16).padStart(2, "0")).join("").toUpperCase();
+}
+
+function applyCell(cell: ExcelJS.Cell, opts: {
+	value?:     ExcelJS.CellValue;
+	font?:      Partial<ExcelJS.Font>;
+	fill?:      ExcelJS.Fill;
+	alignment?: Partial<ExcelJS.Alignment>;
+	border?:    Partial<ExcelJS.Borders>;
+	numFmt?:    string;
+}) {
+	if (opts.value     !== undefined) cell.value     = opts.value;
+	if (opts.font)                    cell.font       = opts.font as ExcelJS.Font;
+	if (opts.fill)                    cell.fill       = opts.fill;
+	if (opts.alignment)               cell.alignment  = opts.alignment as ExcelJS.Alignment;
+	if (opts.border)                  cell.border     = opts.border as ExcelJS.Borders;
+	if (opts.numFmt)                  cell.numFmt     = opts.numFmt;
 }

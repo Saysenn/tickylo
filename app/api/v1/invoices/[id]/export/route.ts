@@ -1,4 +1,6 @@
 import { NextRequest } from "next/server";
+import { readFileSync } from "fs";
+import { join } from "path";
 import { errorResponse } from "@/lib/utils/response";
 import { requireAdmin } from "@/lib/auth/require-admin";
 import { prisma } from "@/lib/infra/prisma";
@@ -6,6 +8,16 @@ import { getOrgForGate, requireFeature } from "@/lib/utils/plan-gate.server";
 import ExcelJS from "exceljs";
 import { TEMPLATES, DEFAULT_CONFIG, getTemplate } from "@/lib/invoice-templates";
 import type { InvoiceConfig, InvoiceData } from "@/lib/invoice-templates";
+
+function loadFonts(): Record<string, string> {
+	const fonts: Record<string, string> = {};
+	const load = (file: string, id: string) => {
+		try { fonts[id] = readFileSync(join(process.cwd(), "public", file)).toString("base64"); } catch {}
+	};
+	load("Bootshaus-Regular.ttf", "Bootshaus");
+	load("Roboto-VariableFont_wdth,wght.ttf", "Roboto");
+	return fonts;
+}
 
 export async function GET(
 	_req: NextRequest,
@@ -36,7 +48,7 @@ export async function GET(
 
 		const template = getTemplate(invoice.template_id) ?? TEMPLATES[0];
 		const rawConfig = (orgFull?.invoice_config ?? {}) as Partial<InvoiceConfig>;
-		const config: InvoiceConfig = { ...DEFAULT_CONFIG, ...rawConfig };
+		const config: InvoiceConfig = { ...DEFAULT_CONFIG, ...rawConfig, fonts: loadFonts() };
 
 		const whereClause: any = {
 			org_id: orgId,

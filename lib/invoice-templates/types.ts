@@ -10,6 +10,8 @@ export interface InvoiceConfig {
 	showHours: boolean;
 	showRate: boolean;
 	showDiscount: boolean;
+	// pre-loaded font data from API routes (base64 TTF) keyed by font id
+	fonts?: Record<string, string>;
 	[key: string]: unknown;
 }
 
