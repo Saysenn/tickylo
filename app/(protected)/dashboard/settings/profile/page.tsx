@@ -2,7 +2,6 @@ import { createClient } from "@/lib/supabase/server";
 import { Suspense } from "react";
 import { ProfileMetaSection } from "@/components/dashboard/settings/profile-meta-section";
 import { TwoFactorSettings } from "@/components/dashboard/settings/two-factor-settings";
-import { ShiftSettingsSection } from "@/components/dashboard/settings/shift-settings-section";
 import { SettingsTabNav } from "@/components/dashboard/settings/settings-tab-nav";
 import { OnboardingTourSection } from "@/components/dashboard/settings/onboarding-tour-section";
 
@@ -10,7 +9,6 @@ export const metadata = { title: "Profile · Settings" };
 
 const TABS = [
 	{ key: "personal", label: "Personal" },
-	{ key: "shift",    label: "Shift" },
 	{ key: "security", label: "Security" },
 ];
 
@@ -38,7 +36,6 @@ export default async function ProfileSettingsPage({
 						<OnboardingTourSection />
 					</>
 				)}
-				{tab === "shift"    && <ShiftSettingsSection isAdmin={isAdmin} />}
 				{tab === "security" && <TwoFactorSettings />}
 			</div>
 		</div>
