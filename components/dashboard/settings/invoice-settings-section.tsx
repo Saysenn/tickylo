@@ -27,57 +27,58 @@ function fontStack(f: string) {
 // ── XLSX: Classic — corporate/legal ──────────────────────────────────────────
 function XlsxClassicPreview({ config, orgName }: { config: InvoiceConfig; orgName: string }) {
 	const p = `#${config.primaryColor}`;
+	const tdBase: React.CSSProperties = { padding: "4px 5px", borderBottom: "1px solid #d8dce8", fontSize: 9, color: "#2a2d47" };
 	return (
-		<div style={{ fontFamily: fontStack(config.fontFamily), fontSize: 11 }}>
-			<div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 4 }}>
-				<span style={{ fontWeight: 700, fontSize: 16, color: p }}>{orgName}</span>
-				<span style={{ fontWeight: 700, fontSize: 20, color: p }}>INVOICE</span>
+		<div style={{ fontFamily: fontStack(config.fontFamily), fontSize: 10 }}>
+			<div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 4 }}>
+				<span style={{ fontWeight: 700, fontSize: 15, color: p }}>{orgName}</span>
+				<span style={{ fontWeight: 700, fontSize: 18, color: p }}>INVOICE</span>
 			</div>
-			<div style={{ height: 2, background: p, marginBottom: 10 }} />
-			<div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10 }}>
+			<div style={{ height: 2, background: p, marginBottom: 8 }} />
+			<div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
 				<div>
-					<div style={{ fontSize: 7, color: "#a0a5bc", fontWeight: 700, marginBottom: 3 }}>BILLED TO</div>
-					<div style={{ fontWeight: 700, fontSize: 13, color: p }}>Acme Corporation</div>
-					<div style={{ fontSize: 9, color: "#8890a8" }}>billing@acme.com</div>
-					<div style={{ fontSize: 8, color: "#a0a5bc", fontStyle: "italic", marginTop: 2 }}>Per Ticket  ·  Net 30</div>
+					<div style={{ fontSize: 7, color: "#a0a5bc", fontWeight: 700, marginBottom: 2 }}>BILL TO</div>
+					<div style={{ fontWeight: 700, fontSize: 11, color: p }}>Acme Corporation</div>
+					<div style={{ fontSize: 8.5, color: "#8890a8" }}>billing@acme.com</div>
+					<div style={{ fontSize: 7.5, color: "#a0a5bc", fontStyle: "italic", marginTop: 2 }}>Per Ticket  ·  Net 30</div>
 				</div>
-				<div style={{ textAlign: "right", fontSize: 8.5 }}>
+				<div style={{ textAlign: "right", fontSize: 8 }}>
 					<div style={{ color: "#9ba0b8" }}>Invoice No. <span style={{ fontWeight: 700, color: "#2a2d47" }}>#TW-ORG-001</span></div>
 					<div style={{ color: "#9ba0b8", marginTop: 2 }}>Issue Date <span style={{ fontWeight: 700, color: "#2a2d47" }}>2026-05-23</span></div>
 					<div style={{ color: "#9ba0b8", marginTop: 2 }}>Due Date <span style={{ fontWeight: 700, color: "#2a2d47" }}>2026-06-22</span></div>
 				</div>
 			</div>
-			<div style={{ fontSize: 8, color: "#a0a5bc", fontStyle: "italic", marginBottom: 6 }}>Period: 2026-05-01 — 2026-05-31</div>
-			<table style={{ width: "100%", borderCollapse: "collapse", fontSize: 9.5 }}>
+			<div style={{ fontSize: 7.5, color: "#a0a5bc", fontStyle: "italic", marginBottom: 6 }}>Period: 2026-05-01 — 2026-05-31</div>
+			<table style={{ width: "100%", borderCollapse: "collapse" }}>
 				<thead>
 					<tr>
 						{["Matter #", "Description", "Fee Earner", "Completed", config.showHours ? "Hours" : null, config.showRate ? "Rate" : null, "Amount"].filter(Boolean).map((h) => (
-							<th key={h} style={{ background: p, color: "#fff", fontWeight: 700, fontSize: 9, padding: "5px 5px", border: "1px solid #d0d5e5", textAlign: h === "Amount" || h === "Hours" || h === "Rate" ? "right" : "left" }}>{h}</th>
+							<th key={h} style={{ background: p, color: "#fff", fontWeight: 700, fontSize: 8.5, padding: "5px 5px", textAlign: h === "Amount" || h === "Hours" || h === "Rate" ? "right" : "left" }}>{h}</th>
 						))}
 					</tr>
 				</thead>
 				<tbody>
 					{SAMPLES.map((r, i) => (
 						<tr key={r.ref} style={{ background: i % 2 === 1 ? "#f2f4f8" : "#fff" }}>
-							<td style={{ padding: "4px 5px", border: "1px solid #d0d5e5", fontFamily: "Courier New", fontSize: 8, color: "#9ba0b8" }}>{r.ref}</td>
-							<td style={{ padding: "4px 5px", border: "1px solid #d0d5e5" }}>{r.desc}</td>
-							<td style={{ padding: "4px 5px", border: "1px solid #d0d5e5" }}>{r.by}</td>
-							<td style={{ padding: "4px 5px", border: "1px solid #d0d5e5" }}>{r.date}</td>
-							{config.showHours && <td style={{ padding: "4px 5px", border: "1px solid #d0d5e5", textAlign: "right" }}>{r.hrs}</td>}
-							{config.showRate  && <td style={{ padding: "4px 5px", border: "1px solid #d0d5e5", textAlign: "right" }}>{r.rate}</td>}
-							<td style={{ padding: "4px 5px", border: "1px solid #d0d5e5", textAlign: "right" }}>{r.amt}</td>
+							<td style={{ ...tdBase, fontFamily: "Courier New", fontSize: 8, color: "#9ba0b8" }}>{r.ref}</td>
+							<td style={tdBase}>{r.desc}</td>
+							<td style={tdBase}>{r.by}</td>
+							<td style={tdBase}>{r.date}</td>
+							{config.showHours && <td style={{ ...tdBase, textAlign: "right" }}>{r.hrs}</td>}
+							{config.showRate  && <td style={{ ...tdBase, textAlign: "right" }}>{r.rate}</td>}
+							<td style={{ ...tdBase, textAlign: "right" }}>{r.amt}</td>
 						</tr>
 					))}
 				</tbody>
 			</table>
-			<div style={{ display: "flex", justifyContent: "flex-end", gap: 16, marginTop: 8, fontSize: 9, color: "#6870a0" }}>
-				<div style={{ textAlign: "right" }}><div>Subtotal</div>{config.showDiscount && <div>Discount (10%)</div>}</div>
-				<div style={{ textAlign: "right" }}><div>USD 1,317.50</div>{config.showDiscount && <div>− USD 131.75</div>}</div>
+			<div style={{ display: "flex", justifyContent: "flex-end", gap: 16, marginTop: 8, fontSize: 8.5, color: "#9ba0b8" }}>
+				<span>Subtotal</span><span>USD 1,317.50</span>
 			</div>
-			<div style={{ display: "flex", justifyContent: "flex-end", marginTop: 4 }}>
-				<div style={{ background: "#eaf4ea", padding: "4px 10px", fontWeight: 700, fontSize: 11, color: p }}>TOTAL DUE  USD 1,185.75</div>
+			{config.showDiscount && <div style={{ display: "flex", justifyContent: "flex-end", gap: 16, fontSize: 8.5, color: "#9ba0b8" }}><span>Discount (10%)</span><span>− USD 131.75</span></div>}
+			<div style={{ borderTop: `1.5px solid ${p}`, marginTop: 4, paddingTop: 4, display: "flex", justifyContent: "flex-end", gap: 16, fontWeight: 700, fontSize: 11, color: p }}>
+				<span>TOTAL DUE</span><span>USD 1,185.75</span>
 			</div>
-			<div style={{ textAlign: "center", fontSize: 8, color: "#c0c5d8", marginTop: 10, fontStyle: "italic" }}>{config.footerNote || "Payment due by 2026-06-22. Thank you for your business."}</div>
+			<div style={{ textAlign: "center", fontSize: 7.5, color: "#c0c5d8", marginTop: 10, fontStyle: "italic" }}>{config.footerNote || "Payment due by 2026-06-22. Thank you for your business."}</div>
 		</div>
 	);
 }
@@ -192,169 +193,200 @@ function XlsxMinimalPreview({ config, orgName }: { config: InvoiceConfig; orgNam
 	);
 }
 
-// ── PDF: Classic — corporate/legal letterhead ─────────────────────────────────
+// ── PDF: Classic — Invoice Fly / letterhead style ─────────────────────────────
 function PdfClassicPreview({ config, orgName }: { config: InvoiceConfig; orgName: string }) {
 	const p = `#${config.primaryColor}`;
-	const items = [
-		{ n: 1, title: "Website Redesign Phase 1", meta: "Jane D.  ·  Completed 2026-05-10  ·  8.0 hrs", amt: "USD 680.00" },
-		{ n: 2, title: "API Integration Setup",    meta: "Mark S.  ·  Completed 2026-05-12  ·  5.5 hrs", amt: "USD 467.50" },
-		{ n: 3, title: "Bug Fix — Auth Module",    meta: "Jane D.  ·  Completed 2026-05-15  ·  2.0 hrs", amt: "USD 170.00" },
+	const rows = [
+		{ n: 1, desc: "Website Redesign Phase 1", emp: "Jane D.",  date: "2026-05-10", hrs: "8.0",  amt: "680.00"  },
+		{ n: 2, desc: "API Integration Setup",    emp: "Mark S.",  date: "2026-05-12", hrs: "5.5",  amt: "467.50"  },
+		{ n: 3, desc: "Bug Fix — Auth Module",    emp: "Jane D.",  date: "2026-05-15", hrs: "2.0",  amt: "170.00"  },
 	];
 	return (
-		<div style={{ fontFamily: fontStack(config.fontFamily), fontSize: 11 }}>
-			<div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 3 }}>
-				<span style={{ fontWeight: 700, fontSize: 15, color: p }}>{orgName}</span>
-				<span style={{ fontWeight: 700, fontSize: 18, color: p }}>INVOICE</span>
-			</div>
-			<div style={{ height: 1.5, background: p, marginBottom: 10 }} />
-			<div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
+		<div style={{ fontFamily: fontStack(config.fontFamily), fontSize: 10 }}>
+			{/* Header */}
+			<div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 4 }}>
 				<div>
-					<div style={{ fontSize: 7, color: "#a0a5bc", fontWeight: 700, marginBottom: 3 }}>BILLED TO</div>
-					<div style={{ fontWeight: 700, fontSize: 12, color: p }}>Acme Corporation</div>
-					<div style={{ fontSize: 8.5, color: "#8890a8" }}>billing@acme.com</div>
-					<div style={{ fontSize: 8, color: "#a0a5bc", fontStyle: "italic", marginTop: 2 }}>Per Ticket  ·  Net 30</div>
+					<div style={{ fontSize: 7.5, color: "#9fa4bc", marginBottom: 2 }}>INVOICE</div>
+					<div style={{ fontWeight: 700, fontSize: 15, color: p }}>{orgName}</div>
 				</div>
-				<div style={{ textAlign: "right", fontSize: 8.5, color: "#9ba0b8" }}>
-					<div><span style={{ fontWeight: 700, color: "#2a2d47" }}>#TW-ORG-001</span></div>
-					<div style={{ marginTop: 2 }}>Issued <span style={{ color: "#2a2d47" }}>2026-05-23</span></div>
-					<div style={{ marginTop: 2 }}>Due <span style={{ color: "#2a2d47" }}>2026-06-22</span></div>
+				<div style={{ border: `1px solid ${p}`, padding: "4px 8px", minWidth: 80, textAlign: "right" }}>
+					<div style={{ fontSize: 7, color: "#9fa4bc" }}>NO.</div>
+					<div style={{ fontWeight: 700, fontSize: 8, color: "#1c1f36" }}>TW-ORG-001</div>
+					<div style={{ fontSize: 8, color: "#1c1f36", marginTop: 2 }}>2026-05-23</div>
 				</div>
 			</div>
-			<div style={{ fontSize: 8, color: "#a0a5bc", fontStyle: "italic", marginBottom: 6 }}>Period: 2026-05-01 – 2026-05-31</div>
-			<div style={{ height: 1, background: "#dde1ef", marginBottom: 10 }} />
-			{items.map((item) => (
-				<div key={item.n} style={{ marginBottom: 10 }}>
-					<div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
-						<span style={{ fontWeight: 700, fontSize: 9, color: p, flexShrink: 0 }}>{item.n}.</span>
-						<span style={{ fontWeight: 700, fontSize: 9.5, color: "#1e2337", flex: 1 }}>{item.title}</span>
-						<span style={{ borderBottom: "1px dotted #d0d5e5", flex: 1, margin: "0 4px", alignSelf: "flex-end", height: 0, minWidth: 20 }} />
-						<span style={{ fontWeight: 700, fontSize: 9.5, color: "#1e2337", flexShrink: 0 }}>{item.amt}</span>
-					</div>
-					<div style={{ fontSize: 8, color: "#a0a5bc", marginLeft: 18, marginTop: 2 }}>{item.meta}</div>
+			<div style={{ height: 1.5, background: p, marginBottom: 8 }} />
+			{/* Bill To / Due */}
+			<div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+				<div>
+					<div style={{ fontSize: 7, color: "#9fa4bc", fontWeight: 700, marginBottom: 2 }}>BILL TO</div>
+					<div style={{ fontWeight: 700, fontSize: 10, color: "#1c1f36" }}>Acme Corporation</div>
+					<div style={{ fontSize: 8, color: "#7880a0" }}>billing@acme.com</div>
+					<div style={{ fontSize: 8, color: "#9fa4bc", marginTop: 1 }}>Period: 2026-05-01 – 2026-05-31</div>
+				</div>
+				<div style={{ textAlign: "right", fontSize: 8, color: "#9fa4bc" }}>
+					<div>Due date:</div>
+					<div style={{ fontWeight: 700, color: "#1c1f36", marginTop: 1 }}>2026-06-22</div>
+				</div>
+			</div>
+			<div style={{ fontSize: 7.5, color: "#9fa4bc", fontStyle: "italic", textAlign: "center", marginBottom: 6 }}>
+				Payment Terms: Net 30 days
+			</div>
+			{/* Table */}
+			<div style={{ borderTop: "1px solid #cdd1e0", borderBottom: "1px solid #cdd1e0", display: "grid", gridTemplateColumns: "18px 1fr 60px 50px auto", gap: "0 6px", padding: "4px 0", marginBottom: 2 }}>
+				{["#", "DESCRIPTION", "ASSIGNEE", "DATE", "AMOUNT"].map((h) => (
+					<div key={h} style={{ fontSize: 7, fontWeight: 700, color: "#9fa4bc" }}>{h}</div>
+				))}
+			</div>
+			{rows.map((r) => (
+				<div key={r.n} style={{ display: "grid", gridTemplateColumns: "18px 1fr 60px 50px auto", gap: "0 6px", padding: "4px 0", borderBottom: "1px solid #e8ebf5", alignItems: "center" }}>
+					<div style={{ fontSize: 8, color: "#9fa4bc" }}>{r.n}</div>
+					<div style={{ fontSize: 8.5, color: "#1c1f36" }}>{r.desc}</div>
+					<div style={{ fontSize: 8, color: "#7880a0" }}>{r.emp}</div>
+					<div style={{ fontSize: 8, color: "#7880a0" }}>{r.date}</div>
+					<div style={{ fontSize: 8.5, color: "#1c1f36", textAlign: "right" }}>{r.amt}</div>
 				</div>
 			))}
-			<div style={{ height: 1, background: "#dde1ef", marginBottom: 8 }} />
-			<div style={{ display: "flex", justifyContent: "flex-end", gap: 20, fontSize: 9, color: "#6870a0" }}>
-				<span>Subtotal</span><span>USD 1,317.50</span>
+			{/* Totals */}
+			<div style={{ display: "flex", justifyContent: "flex-end", gap: 16, marginTop: 8, fontSize: 8.5, color: "#7880a0" }}>
+				<span>SUB TOTAL</span><span>1,317.50</span>
 			</div>
-			{config.showDiscount && <div style={{ display: "flex", justifyContent: "flex-end", gap: 20, fontSize: 9, color: "#6870a0" }}><span>Discount (10%)</span><span>− USD 131.75</span></div>}
-			<div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 4 }}>
-				<div style={{ borderTop: `1.5px solid ${p}`, paddingTop: 4, display: "flex", gap: 20, fontWeight: 700, fontSize: 11, color: p }}>
-					<span>TOTAL DUE</span><span>USD 1,185.75</span>
-				</div>
+			{config.showDiscount && <div style={{ display: "flex", justifyContent: "flex-end", gap: 16, fontSize: 8.5, color: "#7880a0" }}><span>DISCOUNT (10%)</span><span>− 131.75</span></div>}
+			<div style={{ height: 1, background: "#cdd1e0", margin: "4px 0" }} />
+			<div style={{ display: "flex", justifyContent: "flex-end", gap: 16, fontWeight: 700, fontSize: 10, color: p }}>
+				<span>TOTAL AMOUNT</span><span>USD 1,185.75</span>
 			</div>
-			<div style={{ textAlign: "center", fontSize: 8, color: "#c0c5d8", marginTop: 12, fontStyle: "italic" }}>{config.footerNote || "Payment due by 2026-06-22. Thank you for your business."}</div>
+			{/* Footer */}
+			<div style={{ borderTop: "1px solid #e0e3ef", marginTop: 10, paddingTop: 6, display: "flex", justifyContent: "space-between", fontSize: 7.5, color: "#9fa4bc" }}>
+				<div><div style={{ fontWeight: 700, color: "#1c1f36", marginBottom: 2 }}>Terms & Conditions:</div>{config.footerNote || "Payment due by date specified."}</div>
+				<div style={{ textAlign: "right" }}><div style={{ fontWeight: 700, color: "#1c1f36", marginBottom: 2 }}>Payment Terms:</div><div>Net 30  ·  Due 2026-06-22</div></div>
+			</div>
 		</div>
 	);
 }
 
-// ── PDF: Modern — creative agency blocks ──────────────────────────────────────
+// ── PDF: Modern — image-2 style (clean, bold underline header) ────────────────
 function PdfModernPreview({ config, orgName }: { config: InvoiceConfig; orgName: string }) {
 	const p = `#${config.primaryColor}`;
-	const items = [
-		{ title: "Website Redesign Phase 1", meta: "Jane D.  /  2026-05-10  /  8 h", amt: "680.00" },
-		{ title: "API Integration Setup",    meta: "Mark S.  /  2026-05-12  /  5.5 h", amt: "467.50" },
-		{ title: "Bug Fix — Auth Module",    meta: "Jane D.  /  2026-05-15  /  2 h",   amt: "170.00" },
+	const rows = [
+		{ desc: "Website Redesign Phase 1", emp: "Jane D.",  date: "2026-05-10", hrs: "8.0",  amt: "680.00"  },
+		{ desc: "API Integration Setup",    emp: "Mark S.",  date: "2026-05-12", hrs: "5.5",  amt: "467.50"  },
+		{ desc: "Bug Fix — Auth Module",    emp: "Jane D.",  date: "2026-05-15", hrs: "2.0",  amt: "170.00"  },
 	];
 	return (
-		<div style={{ fontFamily: fontStack(config.fontFamily), fontSize: 11, borderTop: `3px solid ${p}`, paddingTop: 12 }}>
-			<div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6 }}>
-				<div style={{ fontWeight: 700, fontSize: 18, color: p }}>{orgName}</div>
-				<div style={{ textAlign: "right" }}>
-					<div style={{ fontSize: 7.5, color: "#a0a3b5", textTransform: "uppercase" }}>Invoice</div>
-					<div style={{ fontWeight: 700, fontSize: 10, color: "#252840" }}>#TW-ORG-001</div>
-				</div>
-			</div>
-			<div style={{ height: 1.5, background: p, marginBottom: 10 }} />
-			<div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10 }}>
+		<div style={{ fontFamily: fontStack(config.fontFamily), fontSize: 10 }}>
+			{/* Header */}
+			<div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 4 }}>
 				<div>
-					<div style={{ fontSize: 7.5, color: "#a0a3b5", textTransform: "uppercase", marginBottom: 3 }}>To</div>
-					<div style={{ fontWeight: 700, fontSize: 12, color: "#252840" }}>Acme Corporation</div>
-					<div style={{ fontSize: 8.5, color: "#9095b0" }}>billing@acme.com  ·  Net 30</div>
+					<div style={{ fontWeight: 700, fontSize: 11, color: "#1c1f36" }}>{orgName}</div>
+					<div style={{ fontSize: 8, color: "#8890b0", marginTop: 2 }}>2026-05-23</div>
 				</div>
-				<div style={{ textAlign: "right", fontSize: 8.5, color: "#9095b0" }}>
-					<div style={{ fontSize: 7.5, color: "#a0a3b5", textTransform: "uppercase", marginBottom: 3 }}>Period</div>
-					<div>2026-05-01 — 2026-05-31</div>
-					<div>Issued 2026-05-23</div>
+				<div style={{ width: 28, height: 28, borderRadius: "50%", background: "#e8eaf0", display: "flex", alignItems: "center", justifyContent: "center" }}>
+					<span style={{ fontSize: 7, color: "#9fa4bc" }}>LOGO</span>
 				</div>
 			</div>
-			<div style={{ height: 1, background: "#e0e3ef", marginBottom: 8 }} />
-			{items.map((item, i) => (
+			<div style={{ height: 1, background: "#d0d4e8", marginBottom: 8 }} />
+			{/* Bill To / Invoice Meta */}
+			<div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
+				<div>
+					<div style={{ fontSize: 7, fontWeight: 700, color: "#9fa4bc", marginBottom: 2 }}>BILL TO</div>
+					<div style={{ fontWeight: 700, fontSize: 10, color: "#1c1f36" }}>Acme Corporation</div>
+					<div style={{ fontSize: 8, color: "#7880a0" }}>billing@acme.com</div>
+				</div>
+				<div style={{ fontSize: 8, color: "#7880a0" }}>
+					<div style={{ fontSize: 7, fontWeight: 700, color: "#9fa4bc", marginBottom: 2 }}>INVOICE</div>
+					<div style={{ display: "flex", gap: 8 }}><span style={{ color: "#9fa4bc" }}>Invoice No:</span><span style={{ color: "#1c1f36" }}>TW-ORG-001</span></div>
+					<div style={{ display: "flex", gap: 8 }}><span style={{ color: "#9fa4bc" }}>Issue Date:</span><span style={{ color: "#1c1f36" }}>2026-05-23</span></div>
+					<div style={{ display: "flex", gap: 8 }}><span style={{ color: "#9fa4bc" }}>Due Date:</span><span style={{ color: "#1c1f36" }}>2026-06-22</span></div>
+				</div>
+			</div>
+			<div style={{ height: 1, background: "#d0d4e8", marginBottom: 6 }} />
+			{/* Column headers */}
+			<div style={{ display: "grid", gridTemplateColumns: "1fr 60px auto", gap: "0 6px", paddingBottom: 4, borderBottom: `1.5px solid #1c1f36`, marginBottom: 4 }}>
+				{["Description", "Assignee", "Amount"].map((h) => (
+					<div key={h} style={{ fontSize: 7.5, fontWeight: 700, color: "#1c1f36" }}>{h}</div>
+				))}
+			</div>
+			{rows.map((r, i) => (
 				<div key={i}>
-					<div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-						<span style={{ fontWeight: 700, fontSize: 10.5, color: "#1e2337" }}>{item.title}</span>
-						<span style={{ fontWeight: 700, fontSize: 10.5, color: p }}>{item.amt}</span>
+					<div style={{ display: "grid", gridTemplateColumns: "1fr 60px auto", gap: "0 6px", padding: "4px 0", alignItems: "baseline" }}>
+						<div style={{ fontSize: 8.5, color: "#1c1f36" }}>{r.desc}</div>
+						<div style={{ fontSize: 8, color: "#7880a0" }}>{r.emp}</div>
+						<div style={{ fontSize: 8.5, color: "#1c1f36", textAlign: "right" }}>{r.amt}</div>
 					</div>
-					<div style={{ display: "flex", justifyContent: "space-between", marginTop: 2 }}>
-						<span style={{ fontSize: 8, color: "#9095b0" }}>{item.meta}</span>
-						<span style={{ fontSize: 7.5, color: "#b0b5c8" }}>USD</span>
-					</div>
-					{i < items.length - 1 && <div style={{ height: 1, background: "#e8ebf4", margin: "8px 0" }} />}
+					<div style={{ fontSize: 7.5, color: "#9fa4bc", marginBottom: 3 }}>{r.date}</div>
+					<div style={{ height: 1, background: "#eaecf5" }} />
 				</div>
 			))}
-			<div style={{ height: 1.5, background: p, margin: "10px 0" }} />
-			<div style={{ display: "flex", justifyContent: "flex-end", gap: 20, fontSize: 9, color: "#9095b0" }}>
+			{/* Totals */}
+			<div style={{ display: "flex", justifyContent: "flex-end", gap: 16, marginTop: 8, fontSize: 8.5, color: "#7880a0" }}>
 				<span>Subtotal</span><span>1,317.50</span>
 			</div>
-			{config.showDiscount && <div style={{ display: "flex", justifyContent: "flex-end", gap: 20, fontSize: 9, color: "#9095b0" }}><span>Discount 10%</span><span>− 131.75</span></div>}
-			<div style={{ display: "flex", justifyContent: "flex-end", gap: 20, marginTop: 5, fontWeight: 700, fontSize: 12, color: p }}>
-				<span>TOTAL  USD</span><span>1,185.75</span>
+			{config.showDiscount && <div style={{ display: "flex", justifyContent: "flex-end", gap: 16, fontSize: 8.5, color: "#7880a0" }}><span>Discount (10%)</span><span>− 131.75</span></div>}
+			<div style={{ height: 1, background: "#d0d4e8", margin: "4px 0" }} />
+			<div style={{ display: "flex", justifyContent: "flex-end", gap: 16, fontWeight: 700, fontSize: 10, color: p }}>
+				<span>Total</span><span>USD 1,185.75</span>
 			</div>
-			<div style={{ fontSize: 7.5, color: "#b8bdd0", marginTop: 14, fontStyle: "italic" }}>{config.footerNote || "Thank you for your business."}</div>
+			{/* Footer */}
+			<div style={{ borderTop: "1px solid #e0e3ef", marginTop: 10, paddingTop: 6, display: "flex", justifyContent: "space-between", fontSize: 7.5, color: "#9fa4bc" }}>
+				<div><div style={{ fontWeight: 700, color: "#1c1f36", marginBottom: 2 }}>Payment Terms</div><div>Net 30  ·  Due 2026-06-22</div></div>
+				<div style={{ textAlign: "right" }}><div style={{ fontWeight: 700, color: "#1c1f36", marginBottom: 2 }}>Notes</div><div>{config.footerNote || "Thank you for your business."}</div></div>
+			</div>
 		</div>
 	);
 }
 
-// ── PDF: Minimal — freelancer/letter ──────────────────────────────────────────
+// ── PDF: Minimal — letter style, dotted leaders ───────────────────────────────
 function PdfMinimalPreview({ config, orgName }: { config: InvoiceConfig; orgName: string }) {
 	const p = `#${config.primaryColor}`;
 	const items = [
-		{ title: "Website Redesign Phase 1", meta: "8.0 hrs  ·  Jane D.", amt: "680.00" },
-		{ title: "API Integration Setup",    meta: "5.5 hrs  ·  Mark S.", amt: "467.50" },
-		{ title: "Bug Fix — Auth Module",    meta: "2.0 hrs  ·  Jane D.", amt: "170.00" },
+		{ title: "Website Redesign Phase 1", meta: "Jane D.  ·  2026-05-10  ·  8.0 hrs", amt: "680.00" },
+		{ title: "API Integration Setup",    meta: "Mark S.  ·  2026-05-12  ·  5.5 hrs", amt: "467.50" },
+		{ title: "Bug Fix — Auth Module",    meta: "Jane D.  ·  2026-05-15  ·  2.0 hrs", amt: "170.00" },
 	];
 	return (
-		<div style={{ fontFamily: fontStack(config.fontFamily), fontSize: 11 }}>
+		<div style={{ fontFamily: fontStack(config.fontFamily), fontSize: 10 }}>
 			<div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 2 }}>
 				<span style={{ fontWeight: 700, fontSize: 13, color: p }}>{orgName}</span>
 				<span style={{ fontSize: 8, color: "#b0b5c8" }}>invoice  #TW-ORG-001</span>
 			</div>
-			<div style={{ height: 1.5, background: p, marginBottom: 12 }} />
+			<div style={{ height: 1.5, background: p, marginBottom: 10 }} />
 			{[
 				["to",     "Acme Corporation"],
 				["",       "billing@acme.com"],
 				["date",   "2026-05-23"],
 				["due",    "2026-06-22"],
+				["ref",    "TW-ORG-001"],
 				["period", "2026-05-01 — 2026-05-31"],
 				["terms",  "Net 30 days"],
 			].map(([l, v], i) => (
-				<div key={i} style={{ display: "flex", gap: 14, fontSize: 9, marginBottom: 3 }}>
-					<span style={{ width: 44, color: "#b0b5c8", flexShrink: 0 }}>{l}</span>
-					<span style={{ color: "#252840" }}>{v}</span>
+				<div key={i} style={{ display: "flex", gap: 12, fontSize: 8.5, marginBottom: 3 }}>
+					<span style={{ width: 40, color: "#b0b5c8", flexShrink: 0 }}>{l}</span>
+					<span style={{ color: "#20223a" }}>{v}</span>
 				</div>
 			))}
-			<div style={{ height: 1, background: "#d8dce8", margin: "10px 0" }} />
+			<div style={{ height: 1, background: "#d5d9ea", margin: "8px 0" }} />
 			{items.map((item, i) => (
-				<div key={i} style={{ marginBottom: 8 }}>
+				<div key={i} style={{ marginBottom: 6 }}>
 					<div style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
-						<span style={{ flex: 1, fontSize: 9.5, color: "#1e2337" }}>{item.title}</span>
-						<span style={{ borderBottom: "1px dotted #d0d5e5", flex: 1, margin: "0 6px", height: 0, minWidth: 16 }} />
-						<span style={{ fontSize: 9.5, color: "#1e2337", flexShrink: 0 }}>{item.amt}</span>
+						<span style={{ fontSize: 9, color: "#20223a" }}>{item.title}</span>
+						<span style={{ borderBottom: "1px dotted #cdd1e2", flex: 1, margin: "0 5px", height: 0, minWidth: 12 }} />
+						<span style={{ fontSize: 9, color: "#20223a", flexShrink: 0 }}>{item.amt}</span>
 					</div>
-					{(config.showHours) && <div style={{ fontSize: 7.5, color: "#b0b5c8", marginTop: 2, marginLeft: 2 }}>{item.meta}</div>}
+					{config.showHours && <div style={{ fontSize: 7.5, color: "#b0b5c8", marginTop: 2, paddingLeft: 2 }}>{item.meta}</div>}
 				</div>
 			))}
-			<div style={{ height: 1, background: "#d8dce8", marginBottom: 8 }} />
-			<div style={{ display: "flex", justifyContent: "flex-end", gap: 20, fontSize: 9, color: "#b0b5c8" }}>
+			<div style={{ height: 1, background: "#d5d9ea", margin: "6px 0" }} />
+			<div style={{ display: "flex", justifyContent: "flex-end", gap: 20, fontSize: 8.5, color: "#b0b5c8" }}>
 				<span>subtotal</span><span>1,317.50</span>
 			</div>
-			{config.showDiscount && <div style={{ display: "flex", justifyContent: "flex-end", gap: 20, fontSize: 9, color: "#b0b5c8" }}><span>discount  10%</span><span>− 131.75</span></div>}
-			<div style={{ display: "flex", justifyContent: "flex-end", gap: 20, marginTop: 4 }}>
-				<div style={{ borderTop: `1.5px solid ${p}`, paddingTop: 4, display: "flex", gap: 20, fontWeight: 700, fontSize: 11, color: p }}>
+			{config.showDiscount && <div style={{ display: "flex", justifyContent: "flex-end", gap: 20, fontSize: 8.5, color: "#b0b5c8" }}><span>discount  10%</span><span>− 131.75</span></div>}
+			<div style={{ display: "flex", justifyContent: "flex-end", marginTop: 3 }}>
+				<div style={{ borderTop: `1.5px solid ${p}`, paddingTop: 4, display: "flex", gap: 20, fontWeight: 700, fontSize: 10, color: p }}>
 					<span>total  USD</span><span>1,185.75</span>
 				</div>
 			</div>
-			<div style={{ fontSize: 8, color: "#c8cdd8", marginTop: 12, fontStyle: "italic" }}>{config.footerNote || "thank you."}</div>
+			<div style={{ fontSize: 7.5, color: "#c5c9da", marginTop: 12 }}>{config.footerNote || "thank you."}</div>
 		</div>
 	);
 }

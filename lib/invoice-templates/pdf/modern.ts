@@ -1,168 +1,178 @@
 import type { InvoiceData, InvoiceConfig } from "../types";
 import { currency, paymentTermsLabel, dueDateFrom } from "../helpers";
 
-// Modern — creative agency style
-// Each item is its own block: title large, metadata small below, amount floating right
-// Editorial feel — no table, no grid, items separated by thin rules
+// Modern — image-2 style (clean white, company left + logo right, bold underline header)
+// Org name + address block left. Bill To left | Invoice meta right.
+// Table with bold column headers. Thin row rules. Totals right. Payment footer.
 
 export async function buildModernPdf(data: InvoiceData, config: InvoiceConfig): Promise<ArrayBuffer> {
 	const { default: jsPDF } = await import("jspdf");
-
 	const { lineItems, invoiceNumber, issueDate, orgName, orgLogoUrl, dateFrom, dateTo, type } = data;
-	const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
 
+	const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
 	const P   = hexToRgb(config.primaryColor);
-	const W   = 210;
-	const M   = 18;
+	const W   = 210, M = 18;
 
 	const ink    = (r: number, g: number, b: number) => doc.setTextColor(r, g, b);
 	const stroke = (r: number, g: number, b: number, w = 0.25) => { doc.setDrawColor(r, g, b); doc.setLineWidth(w); };
-	const rule   = (y: number) => { stroke(220, 222, 230); doc.line(M, y, W - M, y); };
+	const hline  = (y: number, r = 200, g = 203, b = 212, w = 0.25) => { stroke(r, g, b, w); doc.line(M, y, W - M, y); };
 
-	// ── Header bar ────────────────────────────────────────────────────────────
-	// Full-width top bar — primary color, thin
-	stroke(...P, 1.5);
-	doc.line(0, 0, W, 0);
-
-	let y = 18;
-
-	// Org name — large, left
-	if (orgLogoUrl) {
-		try {
-			const img = await fetchImg(orgLogoUrl);
-			doc.addImage(img.data, img.ext, M, y - 8, 12, 12);
-		} catch {}
-	}
-
-	doc.setFont(config.fontFamily, "bold");
-	doc.setFontSize(20);
-	ink(...P);
-	doc.text(orgName, M, y);
-
-	// Invoice label — right side, stacked
-	doc.setFont(config.fontFamily, "normal");
-	doc.setFontSize(8);
-	ink(160, 162, 175);
-	doc.text("INVOICE", W - M, y - 5, { align: "right" });
-
-	doc.setFont(config.fontFamily, "bold");
-	doc.setFontSize(10);
-	ink(40, 42, 60);
-	doc.text(`#${invoiceNumber}`, W - M, y, { align: "right" });
-
-	y += 10;
-	stroke(...P, 0.6);
-	doc.line(M, y, W - M, y);
-	y += 8;
-
-	// ── To / Period block ─────────────────────────────────────────────────────
 	const first      = lineItems[0];
-	const clientName = type === "client" ? (first?.client_name ?? "—") : "All Clients";
+	const clientName = type === "client" ? (first?.client_name ?? "—") : "All Clients — Full Tally";
 	const clientEmail= first?.client_email ?? "";
 	const cur        = first?.currency ?? "USD";
 	const payTerms   = paymentTermsLabel(first?.payment_terms ?? "net_30");
 	const dueDate    = dueDateFrom(first?.payment_terms ?? "net_30", new Date(issueDate));
 
-	// Left: To block
+	let y = 20;
+
+	// ── Header — org name left, logo placeholder right ─────────────────────
+	// Logo (circle-style in reference — we render rectangular)
+	if (orgLogoUrl) {
+		try {
+			const img = await fetchImg(orgLogoUrl);
+			doc.addImage(img.data, img.ext, W - M - 18, y - 6, 18, 18);
+		} catch {}
+	}
+
+	doc.setFont(config.fontFamily, "bold");
+	doc.setFontSize(11);
+	ink(25, 28, 48);
+	doc.text(orgName, M, y);
+
+	y += 5;
 	doc.setFont(config.fontFamily, "normal");
+	doc.setFontSize(8);
+	ink(120, 123, 142);
+	doc.text(issueDate, M, y);
+
+	y += 12;
+	hline(y, 188, 191, 202, 0.3);
+	y += 10;
+
+	// ── Bill To (left) | Invoice meta (right) ────────────────────────────────
+	// Left
+	doc.setFont(config.fontFamily, "bold");
 	doc.setFontSize(7.5);
-	ink(160, 162, 175);
-	doc.text("TO", M, y);
+	ink(155, 158, 175);
+	doc.text("BILL TO", M, y);
+
+	// Right header
+	doc.setFont(config.fontFamily, "bold");
+	doc.setFontSize(7.5);
+	ink(155, 158, 175);
+	doc.text("INVOICE", W - M, y, { align: "right" });
 
 	y += 5;
 	doc.setFont(config.fontFamily, "bold");
-	doc.setFontSize(13);
-	ink(25, 28, 50);
+	doc.setFontSize(10);
+	ink(25, 28, 48);
 	doc.text(clientName, M, y);
 
-	y += 5;
-	doc.setFont(config.fontFamily, "normal");
-	doc.setFontSize(8.5);
-	ink(130, 133, 155);
-	if (clientEmail && type === "client") { doc.text(clientEmail, M, y); y += 4; }
-	doc.text(payTerms, M, y);
+	// Invoice meta — right block, label + value pairs
+	const metaRow = (label: string, val: string, yy: number) => {
+		doc.setFont(config.fontFamily, "normal");
+		doc.setFontSize(8);
+		ink(120, 123, 142);
+		doc.text(label, W - M - 36, yy);
+		ink(28, 31, 50);
+		doc.text(val, W - M, yy, { align: "right" });
+	};
 
-	// Right: dates block — aligned to right column
-	const dateY = y - 14;
+	metaRow("Invoice No:", invoiceNumber, y);    y += 5;
+	if (clientEmail && type === "client") {
+		doc.setFont(config.fontFamily, "normal");
+		doc.setFontSize(8);
+		ink(90, 93, 112);
+		doc.text(clientEmail, M, y);
+		y += 4;
+	}
+	metaRow("Issue Date:", issueDate, y);         y += 5;
+	metaRow("Due Date:",   dueDate, y);           y += 5;
 	doc.setFont(config.fontFamily, "normal");
 	doc.setFontSize(8);
-	ink(160, 162, 175);
-	doc.text("PERIOD", W - M, dateY, { align: "right" });
-	doc.setFont(config.fontFamily, "bold");
-	doc.setFontSize(9.5);
-	ink(40, 42, 60);
-	doc.text(`${dateFrom}  —  ${dateTo}`, W - M, dateY + 5, { align: "right" });
-	doc.setFont(config.fontFamily, "normal");
-	doc.setFontSize(8);
-	ink(130, 133, 155);
-	doc.text(`Issued ${issueDate}`, W - M, dateY + 10, { align: "right" });
-	doc.text(`Due ${dueDate}`, W - M, dateY + 15, { align: "right" });
+	ink(90, 93, 112);
+	doc.text(`Period: ${dateFrom}  –  ${dateTo}`, M, y);
 
 	y += 10;
-	rule(y);
+	hline(y, 188, 191, 202, 0.3);
 	y += 8;
 
-	// ── Line items — block layout ─────────────────────────────────────────────
+	// ── Table ─────────────────────────────────────────────────────────────────
+	const COL = {
+		desc: { x: M              },
+		emp:  { x: M + 98         },
+		hrs:  { rx: M + 145       },
+		rate: { rx: M + 164       },
+		amt:  { rx: W - M         },
+	};
+
+	// Column headers — bold text, underline rule
+	doc.setFont(config.fontFamily, "bold");
+	doc.setFontSize(7.5);
+	ink(28, 31, 50);
+	doc.text("Description",   COL.desc.x,  y);
+	doc.text("Assignee",      COL.emp.x,   y);
+	if (config.showHours) doc.text("Hrs",  COL.hrs.rx!,  y, { align: "right" });
+	if (config.showRate)  doc.text("Rate", COL.rate.rx!, y, { align: "right" });
+	doc.text("Amount",        COL.amt.rx!,  y, { align: "right" });
+
+	y += 3;
+	hline(y, 28, 31, 50, 0.4);
+	y += 6;
+
+	// ── Items ─────────────────────────────────────────────────────────────────
 	const items = lineItems.length > 0 ? lineItems : [];
 
 	for (let i = 0; i < items.length; i++) {
 		const item = items[i];
 
-		// Service title — left, prominent
-		doc.setFont(config.fontFamily, "bold");
-		doc.setFontSize(11);
-		ink(22, 25, 48);
-		const title = truncate(item.title, 65);
-		doc.text(title, M, y);
-
-		// Amount — right, same baseline as title
-		const amtLine1 = item.subtotal.toFixed(2);
-		doc.setFont(config.fontFamily, "bold");
-		doc.setFontSize(11);
-		ink(...P);
-		doc.text(amtLine1, W - M, y, { align: "right" });
-
-		y += 5;
-
-		// Currency label under amount
 		doc.setFont(config.fontFamily, "normal");
-		doc.setFontSize(7.5);
-		ink(170, 173, 190);
-		doc.text(cur, W - M, y, { align: "right" });
+		doc.setFontSize(8.5);
+		ink(25, 28, 48);
+		doc.text(truncate(item.title, 54), COL.desc.x, y);
 
-		// Metadata — left, small
-		const meta: string[] = [];
-		if (item.employee) meta.push(item.employee);
-		if (item.completed_at) meta.push(item.completed_at);
-		if (config.showHours && item.billable_hours > 0) meta.push(`${item.billable_hours.toFixed(1)} h`);
-		if (config.showRate) meta.push(`@ ${item.rate.toFixed(2)}/${cur}`);
-
-		doc.setFont(config.fontFamily, "normal");
 		doc.setFontSize(8);
-		ink(150, 153, 172);
-		doc.text(meta.join("  /  "), M, y);
-		y += 9;
+		ink(85, 88, 108);
+		if (item.employee)     doc.text(truncate(item.employee, 22),  COL.emp.x,   y);
+		if (config.showHours && item.billable_hours > 0)
+			doc.text(item.billable_hours.toFixed(1), COL.hrs.rx!,  y, { align: "right" });
+		if (config.showRate)
+			doc.text(item.rate.toFixed(2), COL.rate.rx!, y, { align: "right" });
 
-		// Thin rule between items (not after last)
-		if (i < items.length - 1) { rule(y); y += 6; }
+		doc.setFont(config.fontFamily, "normal");
+		doc.setFontSize(8.5);
+		ink(25, 28, 48);
+		doc.text(item.subtotal.toFixed(2), COL.amt.rx!, y, { align: "right" });
 
-		if (y > 258 && i < items.length - 1) { doc.addPage(); y = 20; }
+		y += 4.5;
+
+		// Subline: date
+		if (item.completed_at) {
+			doc.setFont(config.fontFamily, "normal");
+			doc.setFontSize(7.5);
+			ink(155, 158, 175);
+			doc.text(item.completed_at, COL.desc.x, y);
+			y += 4;
+		}
+
+		hline(y, 218, 221, 230, 0.2);
+		y += 4;
+
+		if (y > 255 && i < items.length - 1) { doc.addPage(); y = 20; }
 	}
 
 	if (items.length === 0) {
 		doc.setFont(config.fontFamily, "italic");
-		doc.setFontSize(9);
-		ink(180, 183, 200);
-		doc.text("No completed tickets found for this period.", M, y);
+		doc.setFontSize(8.5);
+		ink(175, 178, 195);
+		doc.text("No completed tickets found for this period.", COL.desc.x, y);
 		y += 10;
 	}
 
-	y += 4;
-	stroke(...P, 0.8);
-	doc.line(M, y, W - M, y);
-	y += 10;
+	y += 6;
 
-	// ── Totals — right-aligned stack ─────────────────────────────────────────
+	// ── Totals ────────────────────────────────────────────────────────────────
 	const totalSub  = items.reduce((s, i) => s + i.subtotal, 0);
 	const totalDisc = items.reduce((s, i) => s + i.discount_amount, 0);
 	const totalNet  = items.reduce((s, i) => s + i.net_total, 0);
@@ -170,29 +180,47 @@ export async function buildModernPdf(data: InvoiceData, config: InvoiceConfig): 
 
 	const totRow = (label: string, val: string, bold = false) => {
 		doc.setFont(config.fontFamily, bold ? "bold" : "normal");
-		doc.setFontSize(bold ? 11 : 8.5);
-		ink(bold ? P[0] : 140, bold ? P[1] : 143, bold ? P[2] : 162);
-		doc.text(label, W - M - 50, y, { align: "right" });
-		ink(bold ? P[0] : 45, bold ? P[1] : 48, bold ? P[2] : 70);
+		doc.setFontSize(bold ? 9.5 : 8.5);
+		ink(bold ? P[0] : 120, bold ? P[1] : 123, bold ? P[2] : 142);
+		doc.text(label, W - M - 44, y, { align: "right" });
+		ink(bold ? P[0] : 28, bold ? P[1] : 31, bold ? P[2] : 50);
 		doc.text(val, W - M, y, { align: "right" });
-		y += bold ? 8 : 5.5;
+		y += bold ? 7 : 5;
 	};
 
-	totRow("Subtotal", totalSub.toFixed(2));
-	if (config.showDiscount && totalDisc > 0)
-		totRow(`Discount ${discPct}%`, `− ${totalDisc.toFixed(2)}`);
+	totRow("Subtotal", currency(totalSub, cur));
+	if (config.showDiscount && totalDisc > 0) totRow(`Discount (${discPct}%)`, `− ${currency(totalDisc, cur)}`);
 
-	y += 1;
-	totRow(`TOTAL  ${cur}`, totalNet.toFixed(2), true);
+	hline(y - 1, 188, 191, 202, 0.3);
+	y += 2;
+	totRow("Total", currency(totalNet, cur), true);
 
-	// ── Footer — bottom, minimal ──────────────────────────────────────────────
-	stroke(220, 222, 230, 0.3);
-	doc.line(M, 282, W - M, 282);
+	// ── Footer — Pay by bank / Terms ─────────────────────────────────────────
+	const footY = Math.max(y + 10, 248);
+	hline(footY, 188, 191, 202, 0.3);
+
+	const fY = footY + 6;
+	doc.setFont(config.fontFamily, "bold");
+	doc.setFontSize(8);
+	ink(28, 31, 50);
+	doc.text("Payment Terms", M, fY);
+
 	doc.setFont(config.fontFamily, "normal");
 	doc.setFontSize(7.5);
-	ink(185, 188, 205);
-	doc.text(config.footerNote || "Thank you for your business.", M, 287);
-	doc.text(`Due ${dueDate}`, W - M, 287, { align: "right" });
+	ink(110, 113, 132);
+	doc.text(payTerms,      M, fY + 5);
+	doc.text(`Due: ${dueDate}`, M, fY + 10);
+
+	const midX = W / 2 + 8;
+	doc.setFont(config.fontFamily, "bold");
+	doc.setFontSize(8);
+	ink(28, 31, 50);
+	doc.text("Notes", midX, fY);
+
+	doc.setFont(config.fontFamily, "normal");
+	doc.setFontSize(7.5);
+	ink(110, 113, 132);
+	doc.text(config.footerNote || "Thank you for your business.", midX, fY + 5, { maxWidth: 80 });
 
 	return doc.output("arraybuffer");
 }
