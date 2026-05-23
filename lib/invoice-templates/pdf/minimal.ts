@@ -2,87 +2,112 @@ import type { InvoiceData, InvoiceConfig } from "../types";
 import { currency, paymentTermsLabel, dueDateFrom } from "../helpers";
 import { registerFont } from "../font-loader";
 
+// Site palette
+const INK  = [13,  31,  20]  as const; // #0D1F14
+const INK2 = [58,  94,  74]  as const; // #3A5E4A
+const INK3 = [122, 158, 136] as const; // #7A9E88
+
 export async function buildMinimalPdf(data: InvoiceData, config: InvoiceConfig): Promise<ArrayBuffer> {
 	const { default: jsPDF } = await import("jspdf");
-	const { lineItems, invoiceNumber, issueDate, orgName, orgLogoUrl, dateFrom, dateTo, type } = data;
+	const { lineItems, invoiceNumber, issueDate, orgName, dateFrom, dateTo, type } = data;
 
 	const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
-	const P   = hexToRgb(config.primaryColor);
+	const P   = hexToRgb(config.primaryColor); // org accent color
 	const W   = 210, M = 22;
 
 	const bootsBase64 = config.fonts?.["Bootshaus"];
 	const robotoBase64 = config.fonts?.["Roboto"];
-	if (bootsBase64) registerFont(doc as any, "Bootshaus", bootsBase64);
-	if (robotoBase64) registerFont(doc as any, "Roboto", robotoBase64);
-	const HF = bootsBase64 ? "Bootshaus" : config.fontFamily; // everything text
-	const NF = robotoBase64 ? "Roboto" : config.fontFamily;   // numbers only
+	if (bootsBase64) {
+		registerFont(doc as any, "Bootshaus", bootsBase64, "normal");
+		registerFont(doc as any, "Bootshaus", bootsBase64, "bold");
+	}
+	if (robotoBase64) {
+		registerFont(doc as any, "Roboto", robotoBase64, "normal");
+		registerFont(doc as any, "Roboto", robotoBase64, "bold");
+	}
+	const HF = bootsBase64 ? "Bootshaus" : "helvetica"; // labels, headings, structure
+	const NF = robotoBase64 ? "Roboto"    : "helvetica"; // values, numbers, meta
 
 	const ink    = (r: number, g: number, b: number) => doc.setTextColor(r, g, b);
-	const stroke = (r: number, g: number, b: number, w = 0.2) => { doc.setDrawColor(r, g, b); doc.setLineWidth(w); };
+	const stroke = (r: number, g: number, b: number, w = 0.12) => { doc.setDrawColor(r, g, b); doc.setLineWidth(w); };
 
-	const first       = lineItems[0];
-	const clientName  = type === "client" ? (first?.client_name ?? "") : "All Clients";
-	const clientEmail = first?.client_email ?? "";
-	const cur         = first?.currency ?? "USD";
-	const payTerms    = paymentTermsLabel(first?.payment_terms ?? "net_30");
-	const dueDate     = dueDateFrom(first?.payment_terms ?? "net_30", new Date(issueDate));
+	const first      = lineItems[0];
+	const clientName = type === "client" ? (first?.client_name ?? "") : "All Clients";
+	const clientEmail= first?.client_email ?? "";
+	const cur        = first?.currency ?? "USD";
+	const payTerms   = paymentTermsLabel(first?.payment_terms ?? "net_30");
+	const dueDate    = dueDateFrom(first?.payment_terms ?? "net_30", new Date(issueDate));
 
-	let y = 24;
+	// ── Header ────────────────────────────────────────────────────────────────
+	// Org name — Bootshaus, ink
+	doc.setFont(HF, "bold"); doc.setFontSize(15);
+	ink(INK[0], INK[1], INK[2]);
+	doc.text(orgName, M, 20);
 
-	// ── Org name + invoice ref ────────────────────────────────────────────────
-	if (orgLogoUrl) {
-		try { const img = await fetchImg(orgLogoUrl); doc.addImage(img.data, img.ext, M, y - 8, 10, 10); } catch {}
-	}
+	// "INVOICE" label — accent, right
+	doc.setFont(HF, "normal"); doc.setFontSize(7.5);
+	ink(P[0], P[1], P[2]);
+	doc.text("INVOICE", W - M, 12, { align: "right" });
 
-	doc.setFont(HF, "bold"); doc.setFontSize(13); ink(P[0], P[1], P[2]);
-	doc.text(orgName, M, y);
+	// Invoice number — ink-3, Roboto
+	doc.setFont(NF, "normal"); doc.setFontSize(6);
+	ink(INK3[0], INK3[1], INK3[2]);
+	const numLines = doc.splitTextToSize(invoiceNumber, 85) as string[];
+	numLines.slice(0, 2).forEach((l: string, i: number) => doc.text(l, W - M, 17 + i * 4, { align: "right" }));
 
-	doc.setFont(HF, "normal"); doc.setFontSize(7); ink(170, 173, 188);
-	const numMaxW  = W - M - M - doc.getTextWidth("invoice  ") - 2;
-	const numLines = doc.splitTextToSize(invoiceNumber, numMaxW) as string[];
-	const numSlice = numLines.slice(0, 2);
-	doc.text(`invoice  ${numSlice[0]}`, W - M, y, { align: "right" });
-	if (numSlice[1]) doc.text(numSlice[1], W - M, y + 4, { align: "right" });
+	// Issued date — ink-3, Bootshaus
+	doc.setFont(HF, "normal"); doc.setFontSize(6.5);
+	doc.text(`Issued: ${issueDate}`, W - M, 25, { align: "right" });
 
-	y += 5;
-	stroke(P[0], P[1], P[2], 0.5); doc.line(M, y, W - M, y); y += 12;
+	// Primary rule
+	const ruleY = 33;
+	stroke(P[0], P[1], P[2], 0.35);
+	doc.line(M, ruleY, W - M, ruleY);
 
-	// ── Recipient info block ──────────────────────────────────────────────────
-	const LW = 20;
+	let y = ruleY + 13;
 
+	// ── Info block ────────────────────────────────────────────────────────────
+	const LW = 22;
 	const lv = (label: string, val: string) => {
-		doc.setFont(HF, "normal"); doc.setFontSize(8); ink(P[0], P[1], P[2]);
+		// Label — Bootshaus, accent color
+		doc.setFont(HF, "normal"); doc.setFontSize(7.5);
+		ink(P[0], P[1], P[2]);
 		if (label) doc.text(label, M, y);
-		doc.setFont(HF, "normal"); doc.setFontSize(8.5); ink(32, 35, 55);
+		// Value — Roboto, ink-2
+		doc.setFont(NF, "normal"); doc.setFontSize(7.5);
+		ink(INK2[0], INK2[1], INK2[2]);
 		doc.text(val, M + LW, y);
-		y += 5.5;
+		y += 6;
 	};
 
-	lv("to",   clientName);
+	lv("to",     clientName);
 	if (clientEmail && type === "client") lv("", clientEmail);
 	y += 1;
-	lv("date", issueDate);
-	lv("due",  dueDate);
+	lv("date",   issueDate);
+	lv("due",    dueDate);
 
-	doc.setFont(HF, "normal"); doc.setFontSize(8); ink(P[0], P[1], P[2]);
+	// ref — split label vs value
+	doc.setFont(HF, "normal"); doc.setFontSize(7.5); ink(P[0], P[1], P[2]);
 	doc.text("ref", M, y);
-	doc.setFont(HF, "normal"); doc.setFontSize(8.5); ink(32, 35, 55);
+	doc.setFont(NF, "normal"); doc.setFontSize(7); ink(INK2[0], INK2[1], INK2[2]);
 	const refLines = doc.splitTextToSize(invoiceNumber, W - M - (M + LW)) as string[];
-	const refSlice = refLines.slice(0, 2);
-	refSlice.forEach((line: string, i: number) => doc.text(line, M + LW, y + i * 5));
-	y += refSlice.length * 5 + 0.5;
+	refLines.slice(0, 2).forEach((l: string, i: number) => doc.text(l, M + LW, y + i * 4.5));
+	y += refLines.slice(0, 2).length * 4.5 + 1;
 
 	lv("period", `${dateFrom} to ${dateTo}`);
 	lv("terms",  payTerms);
 
 	y += 8;
-	stroke(205, 208, 218, 0.3); doc.line(M, y, W - M, y); y += 10;
+	stroke(INK3[0], INK3[1], INK3[2], 0.12);
+	doc.line(M, y, W - M, y);
+	y += 10;
 
 	// ── Items ─────────────────────────────────────────────────────────────────
 	const items = lineItems;
 
 	if (items.length === 0) {
-		doc.setFont(HF, "italic"); doc.setFontSize(7.5); ink(180, 183, 200);
+		doc.setFont(HF, "italic"); doc.setFontSize(7.5);
+		ink(INK3[0], INK3[1], INK3[2]);
 		doc.text("No completed tickets found for this period.", M, y); y += 10;
 	}
 
@@ -91,84 +116,83 @@ export async function buildMinimalPdf(data: InvoiceData, config: InvoiceConfig):
 		const title   = truncate(item.title, 62);
 		const amtText = item.subtotal.toFixed(2);
 
-		// Title — Bootshaus, amount — Roboto
-		doc.setFont(HF, "normal"); doc.setFontSize(8); ink(28, 31, 52);
+		// Title — Bootshaus, ink
+		doc.setFont(HF, "normal"); doc.setFontSize(7);
+		ink(INK[0], INK[1], INK[2]);
 		doc.text(title, M, y);
-		doc.setFont(NF, "normal"); doc.setFontSize(8);
+
+		// Amount — Roboto, ink
+		doc.setFont(NF, "normal"); doc.setFontSize(7);
 		doc.text(amtText, W - M, y, { align: "right" });
 
-		// Dotted leader
-		doc.setFont(HF, "normal");
-		const titleW = doc.getTextWidth(title);
-		const amtW   = doc.getTextWidth(amtText);
-		const ls = M + titleW + 2, le = W - M - amtW - 2;
+		// Dotted leader — ink-3
+		doc.setFont(NF, "normal");
+		const ls = M + doc.getTextWidth(title) + 2;
+		const le = W - M - doc.getTextWidth(amtText) - 2;
 		if (le > ls + 3) {
-			doc.setFontSize(7); ink(205, 208, 220);
+			doc.setFontSize(7); ink(INK3[0], INK3[1], INK3[2]);
 			doc.text(buildLeader(doc, ls, le), ls, y);
 		}
-
 		y += 4.5;
 
-		// Meta subline — Bootshaus for text, Roboto for numbers
+		// Meta subline — Roboto, ink-3
 		const meta: string[] = [];
 		if (type !== "client" && item.client_name) meta.push(item.client_name);
 		if (item.completed_at) meta.push(item.completed_at.slice(0, 10));
-
+		if (config.showHours && item.billable_hours >= 0) meta.push(`${item.billable_hours.toFixed(1)} hrs`);
+		if (config.showRate) meta.push(`@ ${cur} ${item.rate.toFixed(2)}`);
 		if (meta.length > 0) {
-			doc.setFont(HF, "normal"); doc.setFontSize(6.5); ink(160, 163, 180);
-			doc.text(meta.join("  ·  "), M + 4, y);
-			// Append numeric parts after
-			const numMeta: string[] = [];
-			if (config.showHours && item.billable_hours >= 0) numMeta.push(`${item.billable_hours.toFixed(1)} hrs`);
-			if (config.showRate) numMeta.push(`@ ${cur} ${item.rate.toFixed(2)}`);
-			if (numMeta.length > 0) {
-				const metaTextW = doc.getTextWidth(meta.join("  ·  ") + "  ·  ");
-				doc.setFont(NF, "normal");
-				doc.text(numMeta.join("  ·  "), M + 4 + metaTextW, y);
-			}
-			y += 4;
-		} else {
-			// Only numeric meta
-			const numMeta: string[] = [];
-			if (config.showHours && item.billable_hours >= 0) numMeta.push(`${item.billable_hours.toFixed(1)} hrs`);
-			if (config.showRate) numMeta.push(`@ ${cur} ${item.rate.toFixed(2)}`);
-			if (numMeta.length > 0) {
-				doc.setFont(NF, "normal"); doc.setFontSize(6.5); ink(160, 163, 180);
-				doc.text(numMeta.join("  ·  "), M + 4, y); y += 4;
-			}
+			doc.setFont(NF, "normal"); doc.setFontSize(6.5);
+			ink(INK3[0], INK3[1], INK3[2]);
+			doc.text(meta.join("  ·  "), M + 4, y); y += 4;
 		}
-
 		y += 2.5;
-		if (y > 255 && i < items.length - 1) { doc.addPage(); y = 24; }
+
+		if (y > 240 && i < items.length - 1) { doc.addPage(); y = 24; }
 	}
 
 	y += 5;
-	stroke(205, 208, 218, 0.3); doc.line(M, y, W - M, y); y += 9;
+	stroke(INK3[0], INK3[1], INK3[2], 0.12);
+	doc.line(M, y, W - M, y);
+	y += 9;
 
-	// ── Totals ────────────────────────────────────────────────────────────────
+	// ── Totals — Bootshaus labels, Roboto numbers ─────────────────────────────
 	const totalSub  = items.reduce((s, it) => s + it.subtotal, 0);
 	const totalDisc = items.reduce((s, it) => s + it.discount_amount, 0);
 	const totalNet  = items.reduce((s, it) => s + it.net_total, 0);
 	const discPct   = items[0]?.discount_percent ?? 0;
 
 	const totRow = (label: string, val: string, bold = false) => {
-		doc.setFont(HF, bold ? "bold" : "normal"); doc.setFontSize(bold ? 11 : 8);
-		ink(bold ? P[0] : 145, bold ? P[1] : 148, bold ? P[2] : 165);
+		doc.setFont(HF, bold ? "bold" : "normal"); doc.setFontSize(7.5);
+		ink(bold ? P[0] : INK3[0], bold ? P[1] : INK3[1], bold ? P[2] : INK3[2]);
 		doc.text(label, W - M - 52, y, { align: "right" });
-		doc.setFont(NF, bold ? "bold" : "normal"); doc.setFontSize(bold ? 11 : 8);
-		ink(bold ? P[0] : 32, bold ? P[1] : 35, bold ? P[2] : 55);
+		doc.setFont(NF, bold ? "bold" : "normal"); doc.setFontSize(7.5);
+		ink(bold ? P[0] : INK[0], bold ? P[1] : INK[1], bold ? P[2] : INK[2]);
 		doc.text(val, W - M, y, { align: "right" });
-		y += bold ? 7 : 5.5;
+		y += 5.5;
 	};
 
 	totRow("subtotal", totalSub.toFixed(2));
 	if (config.showDiscount && totalDisc > 0) totRow(`discount  ${discPct}%`, `-${totalDisc.toFixed(2)}`);
-	y += 4; stroke(P[0], P[1], P[2], 0.35); doc.line(W - M - 58, y, W - M, y); y += 6;
+	y += 4;
+	stroke(P[0], P[1], P[2], 0.25);
+	doc.line(W - M - 60, y, W - M, y);
+	y += 6;
 	totRow(`total  ${cur}`, totalNet.toFixed(2), true);
 
-	// ── Footer ────────────────────────────────────────────────────────────────
-	doc.setFont(HF, "normal"); doc.setFontSize(7.5); ink(185, 188, 205);
-	doc.text(config.footerNote || "thank you.", M, 285);
+	// ── Footer — fixed at bottom ──────────────────────────────────────────────
+	const footY = 265;
+	stroke(INK3[0], INK3[1], INK3[2], 0.12);
+	doc.line(M, footY, W - M, footY);
+
+	doc.setFont(HF, "bold"); doc.setFontSize(7.5); ink(P[0], P[1], P[2]);
+	doc.text("Payment Terms", M, footY + 7);
+	doc.setFont(NF, "normal"); doc.setFontSize(7); ink(INK2[0], INK2[1], INK2[2]);
+	doc.text(payTerms,          M, footY + 12);
+	doc.text(`Due: ${dueDate}`, M, footY + 17);
+
+	doc.setFont(HF, "normal"); doc.setFontSize(10); ink(P[0], P[1], P[2]);
+	doc.text(config.footerNote || "thank you.", W - M, footY + 12, { align: "right" });
 
 	return doc.output("arraybuffer");
 }
@@ -176,15 +200,6 @@ export async function buildMinimalPdf(data: InvoiceData, config: InvoiceConfig):
 function hexToRgb(hex: string): [number, number, number] {
 	const n = parseInt(hex, 16);
 	return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
-}
-
-async function fetchImg(url: string): Promise<{ data: string; ext: string }> {
-	const res = await fetch(url);
-	if (!res.ok) throw new Error("logo fetch failed");
-	const buf = await res.arrayBuffer();
-	const ct  = res.headers.get("content-type") ?? "image/png";
-	const ext = ct.includes("jpeg") || ct.includes("jpg") ? "JPEG" : "PNG";
-	return { data: `data:${ct};base64,${Buffer.from(buf).toString("base64")}`, ext };
 }
 
 function truncate(str: string, max: number): string {

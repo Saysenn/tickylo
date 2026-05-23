@@ -16,6 +16,7 @@ function loadFonts(): Record<string, string> {
 	};
 	load("Bootshaus-Regular.ttf", "Bootshaus");
 	load("Roboto-VariableFont_wdth,wght.ttf", "Roboto");
+	load("logo.webp", "AppLogo");
 	return fonts;
 }
 
