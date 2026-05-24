@@ -1,7 +1,5 @@
 import type { TemplateDefinition } from "./types";
 import { buildClassicXlsx } from "./xlsx/classic";
-import { buildModernXlsx }  from "./xlsx/modern";
-import { buildMinimalXlsx } from "./xlsx/minimal";
 import { buildClassicPdf }  from "./pdf/classic";
 import { buildModernPdf }   from "./pdf/modern";
 import { buildMinimalPdf }  from "./pdf/minimal";
@@ -14,22 +12,8 @@ export const TEMPLATES: TemplateDefinition[] = [
 		id:          "classic-xlsx",
 		name:        "Classic",
 		format:      "xlsx",
-		description: "Corporate / legal. Numbered items, formal column headers, navy palette.",
+		description: "Corporate billing statement with column headers, alternating rows, and payment footer.",
 		buildXlsx:   buildClassicXlsx,
-	},
-	{
-		id:          "modern-xlsx",
-		name:        "Modern",
-		format:      "xlsx",
-		description: "Creative agency. Bold org name, no borders on rows, editorial column names.",
-		buildXlsx:   buildModernXlsx,
-	},
-	{
-		id:          "minimal-xlsx",
-		name:        "Minimal",
-		format:      "xlsx",
-		description: "Freelancer. Looks like a typed letter. Lowercase headers, no fill, sparse.",
-		buildXlsx:   buildMinimalXlsx,
 	},
 	{
 		id:          "classic-pdf",

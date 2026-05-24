@@ -83,116 +83,6 @@ function XlsxClassicPreview({ config, orgName }: { config: InvoiceConfig; orgNam
 	);
 }
 
-// ── XLSX: Modern — creative agency ────────────────────────────────────────────
-function XlsxModernPreview({ config, orgName }: { config: InvoiceConfig; orgName: string }) {
-	const p = `#${config.primaryColor}`;
-	return (
-		<div style={{ fontFamily: fontStack(config.fontFamily), fontSize: 11 }}>
-			<div style={{ fontWeight: 700, fontSize: 20, color: p, letterSpacing: 1, marginBottom: 2 }}>{orgName.toUpperCase()}</div>
-			<div style={{ display: "flex", justifyContent: "space-between", fontSize: 8.5, color: "#a8aec8", marginBottom: 4 }}>
-				<span>Invoice  #TW-ORG-001</span>
-				<span>2026-05-01 — 2026-05-31</span>
-			</div>
-			<div style={{ height: 3, background: p, marginBottom: 10 }} />
-			<div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10 }}>
-				<div>
-					<div style={{ fontWeight: 700, fontSize: 13, color: p }}>Acme Corporation</div>
-					<div style={{ fontSize: 8.5, color: "#a8aec8" }}>Net 30 days</div>
-				</div>
-				<div style={{ textAlign: "right", fontSize: 8.5, color: "#a8aec8" }}>
-					<div>Issued 2026-05-23</div>
-					<div>Due 2026-06-22</div>
-				</div>
-			</div>
-			<table style={{ width: "100%", borderCollapse: "collapse", fontSize: 10 }}>
-				<thead>
-					<tr>
-						{["Ref", "Deliverable", "Creative", "Date", config.showHours ? "Hours" : null, config.showRate ? "Rate" : null, "Fee"].filter(Boolean).map((h) => (
-							<th key={h} style={{ color: "#c0c6dc", fontSize: 7.5, fontWeight: 700, textTransform: "uppercase", borderBottom: `2px solid ${p}`, padding: "5px 4px", textAlign: h === "Fee" || h === "Hours" || h === "Rate" ? "right" : "left" }}>{h}</th>
-						))}
-					</tr>
-				</thead>
-				<tbody>
-					{SAMPLES.map((r, i) => (
-						<tr key={r.ref} style={{ background: i % 2 === 1 ? "#f8f9fc" : "#fff" }}>
-							<td style={{ padding: "4px 4px", borderBottom: "1px solid #e4e8f2", fontFamily: "Courier New", fontSize: 8.5, color: "#a8aec8" }}>{r.ref}</td>
-							<td style={{ padding: "4px 4px", borderBottom: "1px solid #e4e8f2", color: "#252840" }}>{r.desc}</td>
-							<td style={{ padding: "4px 4px", borderBottom: "1px solid #e4e8f2", color: "#252840" }}>{r.by}</td>
-							<td style={{ padding: "4px 4px", borderBottom: "1px solid #e4e8f2", color: "#252840" }}>{r.date}</td>
-							{config.showHours && <td style={{ padding: "4px 4px", borderBottom: "1px solid #e4e8f2", textAlign: "right" }}>{r.hrs}</td>}
-							{config.showRate  && <td style={{ padding: "4px 4px", borderBottom: "1px solid #e4e8f2", textAlign: "right" }}>{r.rate}</td>}
-							<td style={{ padding: "4px 4px", borderBottom: "1px solid #e4e8f2", textAlign: "right" }}>{r.amt}</td>
-						</tr>
-					))}
-				</tbody>
-			</table>
-			<div style={{ display: "flex", justifyContent: "flex-end", gap: 20, marginTop: 10, fontSize: 9, color: "#a8aec8" }}>
-				<span>Subtotal</span><span>USD 1,317.50</span>
-			</div>
-			{config.showDiscount && <div style={{ display: "flex", justifyContent: "flex-end", gap: 20, fontSize: 9, color: "#a8aec8" }}><span>Discount 10%</span><span>− USD 131.75</span></div>}
-			<div style={{ display: "flex", justifyContent: "flex-end", gap: 20, marginTop: 4, fontWeight: 700, fontSize: 12, color: p }}>
-				<span>TOTAL DUE</span><span>USD 1,185.75</span>
-			</div>
-			<div style={{ textAlign: "center", fontSize: 8, color: "#c8cedf", marginTop: 10, fontStyle: "italic" }}>{config.footerNote || "Thank you for your business."}</div>
-		</div>
-	);
-}
-
-// ── XLSX: Minimal — freelancer/letter ─────────────────────────────────────────
-function XlsxMinimalPreview({ config, orgName }: { config: InvoiceConfig; orgName: string }) {
-	const p = `#${config.primaryColor}`;
-	return (
-		<div style={{ fontFamily: fontStack(config.fontFamily), fontSize: 11 }}>
-			<div style={{ fontWeight: 700, fontSize: 14, color: p, marginBottom: 2 }}>{orgName}</div>
-			<div style={{ height: 2, background: p, marginBottom: 12 }} />
-			{[
-				["to",      "Acme Corporation"],
-				["",        "billing@acme.com"],
-				["date",    "2026-05-23"],
-				["due",     "2026-06-22"],
-				["invoice", "#TW-ORG-001"],
-				["period",  "2026-05-01 — 2026-05-31"],
-				["terms",   "Net 30 days"],
-			].map(([label, val], i) => (
-				<div key={i} style={{ display: "flex", gap: 16, fontSize: 9, marginBottom: 3 }}>
-					<span style={{ width: 52, color: "#c0c5d5", flexShrink: 0 }}>{label}</span>
-					<span style={{ color: "#252840" }}>{val}</span>
-				</div>
-			))}
-			<div style={{ height: 1, background: "#d8dce8", margin: "10px 0" }} />
-			<table style={{ width: "100%", borderCollapse: "collapse", fontSize: 10 }}>
-				<thead>
-					<tr>
-						{["ref", "description", "by", "date", config.showHours ? "hrs" : null, "amount"].filter(Boolean).map((h) => (
-							<th key={h} style={{ color: "#d0d5e5", fontSize: 8, fontWeight: 400, borderBottom: `2px solid ${p}`, padding: "4px 3px", textAlign: h === "amount" || h === "hrs" ? "right" : "left" }}>{h}</th>
-						))}
-					</tr>
-				</thead>
-				<tbody>
-					{SAMPLES.map((r) => (
-						<tr key={r.ref}>
-							<td style={{ padding: "4px 3px", borderBottom: "1px solid #e8ebf4", fontFamily: "Courier New", fontSize: 8.5, color: "#c0c5d5" }}>{r.ref}</td>
-							<td style={{ padding: "4px 3px", borderBottom: "1px solid #e8ebf4", color: "#252840" }}>{r.desc}</td>
-							<td style={{ padding: "4px 3px", borderBottom: "1px solid #e8ebf4", color: "#252840" }}>{r.by}</td>
-							<td style={{ padding: "4px 3px", borderBottom: "1px solid #e8ebf4", color: "#252840" }}>{r.date}</td>
-							{config.showHours && <td style={{ padding: "4px 3px", borderBottom: "1px solid #e8ebf4", textAlign: "right" }}>{r.hrs}</td>}
-							<td style={{ padding: "4px 3px", borderBottom: "1px solid #e8ebf4", textAlign: "right" }}>{r.amt}</td>
-						</tr>
-					))}
-				</tbody>
-			</table>
-			<div style={{ display: "flex", justifyContent: "flex-end", gap: 20, marginTop: 8, fontSize: 9, color: "#c0c5d5" }}>
-				<span>subtotal</span><span>USD 1,317.50</span>
-			</div>
-			{config.showDiscount && <div style={{ display: "flex", justifyContent: "flex-end", gap: 20, fontSize: 9, color: "#c0c5d5" }}><span>discount  10%</span><span>− USD 131.75</span></div>}
-			<div style={{ display: "flex", justifyContent: "flex-end", gap: 20, marginTop: 4, fontWeight: 700, fontSize: 12, color: p }}>
-				<span>total  USD</span><span>1,185.75</span>
-			</div>
-			<div style={{ fontSize: 8.5, color: "#d0d5e5", marginTop: 12, fontStyle: "italic" }}>{config.footerNote || "thank you."}</div>
-		</div>
-	);
-}
-
 // ── PDF: Classic — Invoice Fly / letterhead style ─────────────────────────────
 function PdfClassicPreview({ config, orgName }: { config: InvoiceConfig; orgName: string }) {
 	const p = `#${config.primaryColor}`;
@@ -393,9 +283,7 @@ function PdfMinimalPreview({ config, orgName }: { config: InvoiceConfig; orgName
 
 // ── Dispatcher ────────────────────────────────────────────────────────────────
 
-function XlsxPreview({ template, config, orgName }: { template: TemplateDefinition; config: InvoiceConfig; orgName: string }) {
-	if (template.id === "modern-xlsx") return <XlsxModernPreview config={config} orgName={orgName} />;
-	if (template.id === "minimal-xlsx") return <XlsxMinimalPreview config={config} orgName={orgName} />;
+function XlsxPreview({ config, orgName }: { template: TemplateDefinition; config: InvoiceConfig; orgName: string }) {
 	return <XlsxClassicPreview config={config} orgName={orgName} />;
 }
 
