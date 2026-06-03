@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 
 type Step = "idle" | "enroll" | "verify" | "disable";
 
@@ -175,9 +176,9 @@ export function TwoFactorSettings() {
 
       <CardContent className="space-y-4 -mt-2">
         {isLoading ? (
-          <div className="flex items-center gap-2 text-sm text-muted-foreground py-2">
-            <Loader2 className="w-4 h-4 animate-spin" />
-            Loading…
+          <div className="space-y-3 py-2">
+            <Skeleton className="h-4 w-48" />
+            <Skeleton className="h-9 w-36 rounded-md" />
           </div>
         ) : (
           <>

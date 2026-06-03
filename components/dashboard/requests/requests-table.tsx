@@ -22,6 +22,7 @@ import { Inbox, Plus, Trash2, BellRing, CheckCircle2, SlidersHorizontal } from "
 import { Combobox } from "@/components/ui/combobox";
 import { ROWS_PER_PAGE } from "@/configs/pagination.config";
 import type { LeaveRequest, LeaveRequestPage } from "./types";
+import { TablePageSkeleton } from "@/components/skeletons/table-page-skeleton";
 
 const STATUS_STYLES: Record<string, string> = {
 	pending: "bg-yellow-500/15 text-yellow-700 border-yellow-500/20",
@@ -157,11 +158,7 @@ export function RequestsTable() {
 	};
 
 	if (isLoading) {
-		return (
-			<div className="flex items-center justify-center py-24">
-				<div className="w-5 h-5 border-2 border-mint/40 border-t-mint rounded-full animate-spin" />
-			</div>
-		);
+		return <TablePageSkeleton />;
 	}
 
 	if (isError) {

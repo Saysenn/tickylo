@@ -3,6 +3,7 @@ import { ExternalLink, LogOut } from "lucide-react";
 import { getTodaySummary, getWeekSummary, getMyTickets } from "../lib/api";
 import type { Me } from "../lib/api";
 import { Storage } from "../lib/storage";
+import { StatCardSkeleton } from "../components/skeleton";
 
 const ACTIVE_STATUSES = new Set(["assigned", "in_progress", "on_hold"]);
 
@@ -53,9 +54,9 @@ export function MeTab({ me, orgName }: { me: Me | null; orgName: string }) {
 
       {/* Analytics */}
       <div className="grid grid-cols-3 gap-2">
-        <Stat label="Today" value={todayMs !== null ? formatMs(todayMs) : "—"} />
-        <Stat label="This Week" value={weekMs !== null ? formatMs(weekMs) : "—"} />
-        <Stat label="Active" value={activeTickets !== null ? `${activeTickets}` : "—"} sub="tickets" />
+        {todayMs === null ? <StatCardSkeleton /> : <Stat label="Today" value={formatMs(todayMs)} />}
+        {weekMs === null ? <StatCardSkeleton /> : <Stat label="This Week" value={formatMs(weekMs)} />}
+        {activeTickets === null ? <StatCardSkeleton /> : <Stat label="Active" value={`${activeTickets}`} sub="tickets" />}
       </div>
 
       {/* Actions */}

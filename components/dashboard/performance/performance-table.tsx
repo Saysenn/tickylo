@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Combobox } from "@/components/ui/combobox";
 import { DialogRoot, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useAppSelector } from "@/store/hooks";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface PerformanceEntry {
 	user: { id: string; name: string | null; email: string };
@@ -290,8 +291,26 @@ export function PerformanceTable() {
 			</div>
 
 			{isLoading && (
-				<div className="flex items-center justify-center py-24">
-					<div className="w-5 h-5 border-2 border-mint/40 border-t-mint rounded-full animate-spin" />
+				<div className="rounded-lg border overflow-hidden">
+					<div className="grid grid-cols-7 border-b px-4 py-2.5 bg-accent/20 gap-4">
+						{Array.from({ length: 7 }).map((_, i) => <Skeleton key={i} className="h-3 w-16" />)}
+					</div>
+					{Array.from({ length: 6 }).map((_, i) => (
+						<div key={i} className="grid grid-cols-7 items-center gap-4 px-4 py-3.5 border-b last:border-0">
+							<div className="flex items-center gap-2 col-span-2">
+								<Skeleton className="h-8 w-8 rounded-full shrink-0" />
+								<div className="space-y-1">
+									<Skeleton className="h-3.5 w-28" />
+									<Skeleton className="h-3 w-36" />
+								</div>
+							</div>
+							<Skeleton className="h-3.5 w-8" />
+							<Skeleton className="h-3.5 w-8" />
+							<Skeleton className="h-3.5 w-10" />
+							<Skeleton className="h-2 w-24 rounded-full" />
+							<Skeleton className="h-3.5 w-12" />
+						</div>
+					))}
 				</div>
 			)}
 			{isError && (

@@ -21,6 +21,7 @@ import {
 import type { Task, TaskPage } from "./types";
 import type { TimeEntry } from "@/components/dashboard/time-tracker/types";
 import { EmployeePickerModal } from "@/components/dashboard/tickets/employee-picker-modal";
+import { TablePageSkeleton } from "@/components/skeletons/table-page-skeleton";
 
 const STATUS_STYLES: Record<string, string> = {
 	needs_approval: "bg-purple-500/15 text-purple-700 border-purple-500/20",
@@ -265,11 +266,7 @@ const { mutateAsync: claimTask, isPending: isClaiming } = useMutation({
 	};
 
 	if (isLoading) {
-		return (
-			<div className="flex items-center justify-center py-24">
-				<div className="w-5 h-5 border-2 border-mint/40 border-t-mint rounded-full animate-spin" />
-			</div>
-		);
+		return <TablePageSkeleton />;
 	}
 
 	if (isError) {

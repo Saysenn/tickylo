@@ -9,6 +9,7 @@ import { TasksListWidget } from "./tasks-list-widget";
 import { TimerCard } from "./timer-card";
 import { formatDurationMs } from "@/lib/utils/format";
 import { Clock, CheckSquare, ClipboardList } from "lucide-react";
+import { DashboardSkeleton } from "@/components/skeletons/dashboard-skeleton";
 
 interface EmployeeDashboardData {
 	time: {
@@ -34,11 +35,7 @@ export function EmployeeDashboard() {
 	});
 
 	if (isLoading || !data) {
-		return (
-			<div className="flex items-center justify-center py-32">
-				<div className="w-5 h-5 border-2 border-mint/40 border-t-mint rounded-full animate-spin" />
-			</div>
-		);
+		return <DashboardSkeleton />;
 	}
 
 	const activeTasks = data.tasks.assigned + data.tasks.in_progress;

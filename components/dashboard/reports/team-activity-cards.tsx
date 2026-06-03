@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import APIService from "@/lib/infra/api";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils/cn";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const LEAVE_STATUS_STYLES: Record<string, string> = {
 	pending:   "bg-yellow-500/15 text-yellow-700 border-yellow-500/20",
@@ -33,8 +34,16 @@ export function RecentTasksCard() {
 
 	if (isLoading) {
 		return (
-			<div className="flex items-center justify-center py-10">
-				<div className="w-5 h-5 border-2 border-mint/40 border-t-mint rounded-full animate-spin" />
+			<div className="glass rounded-2xl flex flex-col overflow-hidden">
+				<div className="grid grid-cols-2 sm:grid-cols-4 divide-x divide-y">
+					{Array.from({ length: 4 }).map((_, i) => (
+						<div key={i} className="flex flex-col items-center py-5 gap-2">
+							<Skeleton className="h-3 w-20" />
+							<Skeleton className="h-8 w-14" />
+							<Skeleton className="h-3 w-16" />
+						</div>
+					))}
+				</div>
 			</div>
 		);
 	}

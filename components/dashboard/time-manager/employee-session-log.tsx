@@ -9,6 +9,7 @@ import APIService from "@/lib/infra/api";
 import { formatDate, formatTime, formatDurationBetween } from "@/lib/utils/format";
 import { SessionDetailModal } from "@/components/dashboard/time-tracker/session-detail-modal";
 import type { TimeEntry, TimeEntryPage } from "@/components/dashboard/time-tracker/types";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const TICKET_TYPE_LABEL: Record<string, string> = {
 	incident:      "Incident",
@@ -63,9 +64,18 @@ export function EmployeeSessionLog({ userId, from, to }: Props) {
 			</div>
 
 			{isLoading ? (
-				<div className="flex items-center justify-center py-10">
-					<div className="w-4 h-4 border-2 border-mint/40 border-t-mint rounded-full animate-spin" />
-				</div>
+				<ul className="divide-y">
+					{Array.from({ length: 4 }).map((_, i) => (
+						<li key={i} className="flex items-center gap-3 px-5 py-3">
+							<Skeleton className="h-7 w-7 rounded-lg shrink-0" />
+							<div className="flex-1 space-y-1.5 min-w-0">
+								<Skeleton className="h-3.5 w-36" />
+								<Skeleton className="h-3 w-24" />
+							</div>
+							<Skeleton className="h-3.5 w-14 shrink-0" />
+						</li>
+					))}
+				</ul>
 			) : entries.length === 0 ? (
 				<div className="flex flex-col items-center justify-center py-10 text-center">
 					<Clock className="w-7 h-7 text-ink-3/30 mb-2" strokeWidth={1.5} />

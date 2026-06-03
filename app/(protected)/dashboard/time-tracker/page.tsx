@@ -11,6 +11,7 @@ import { TimeDayBars } from "@/components/dashboard/time-manager/time-day-bars";
 import { TimeEntriesTable } from "@/components/dashboard/time-tracker/time-entries-table";
 import type { TimeSummary } from "@/components/dashboard/time-manager/types";
 import { todayDateStr, daysAgoDateStr, startOfMonthDateStr, startOfLastMonthDateStr, endOfLastMonthDateStr } from "@/lib/utils/format";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const DATE_PRESETS = [
 	{ label: "Today",        from: () => todayDateStr(),            to: () => todayDateStr() },
@@ -69,8 +70,24 @@ export default function TimeTrackerPage() {
 			<TimeDateRange from={from} to={to} onChange={(f, t) => { setFrom(f); setTo(t); }} />
 
 			{isLoading ? (
-				<div className="flex items-center justify-center py-16">
-					<div className="w-5 h-5 border-2 border-mint/40 border-t-mint rounded-full animate-spin" />
+				<div className="space-y-4">
+					<div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+						{Array.from({ length: 4 }).map((_, i) => (
+							<div key={i} className="rounded-xl border p-4 space-y-2">
+								<Skeleton className="h-3 w-20" />
+								<Skeleton className="h-7 w-16" />
+								<Skeleton className="h-3 w-14" />
+							</div>
+						))}
+					</div>
+					<div className="rounded-xl border p-4 space-y-3">
+						<Skeleton className="h-3.5 w-24" />
+						<div className="flex items-end gap-2 h-28">
+							{Array.from({ length: 7 }).map((_, i) => (
+								<Skeleton key={i} className="flex-1 rounded-t" style={{ height: `${40 + (i % 4) * 18}px` }} />
+							))}
+						</div>
+					</div>
 				</div>
 			) : summary ? (
 				<div className="space-y-4">

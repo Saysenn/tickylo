@@ -24,6 +24,7 @@ import {
 	DialogTitle,
 } from "@/components/ui/dialog";
 import { formatDate, toDateInput } from "@/lib/utils/format";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface UserMeta {
 	id?: string;
@@ -266,8 +267,15 @@ export function ProfileMetaSection() {
 
 			<CardContent className="space-y-6">
 				{isLoading ? (
-					<div className="flex items-center justify-center py-10">
-						<div className="w-5 h-5 border-2 border-mint/40 border-t-mint rounded-full animate-spin" />
+					<div className="space-y-4">
+						<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+							{Array.from({ length: 4 }).map((_, i) => (
+								<div key={i} className="space-y-1.5">
+									<Skeleton className="h-3.5 w-20" />
+									<Skeleton className="h-10 w-full rounded-md" />
+								</div>
+							))}
+						</div>
 					</div>
 				) : editing ? (
 					/* ── Edit mode ── */

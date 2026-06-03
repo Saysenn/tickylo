@@ -9,6 +9,7 @@ import { formatDate, formatTime } from "@/lib/utils/format";
 import { ROLES } from "@/configs/rbac.config";
 import { cn } from "@/lib/utils/cn";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface AttachmentAuthor {
 	id: string;
@@ -87,8 +88,16 @@ export function TicketAttachmentsPanel({ ticketId }: { ticketId: string }) {
 			{expanded && (
 				<div className="border-t border-border/40 px-4 pb-4 pt-3 space-y-4">
 					{isLoading ? (
-						<div className="flex items-center justify-center py-4">
-							<div className="w-4 h-4 border-2 border-mint/40 border-t-mint rounded-full animate-spin" />
+						<div className="space-y-2">
+							{Array.from({ length: 3 }).map((_, i) => (
+								<div key={i} className="flex items-center gap-3">
+									<Skeleton className="h-10 w-10 rounded-lg shrink-0" />
+									<div className="flex-1 space-y-1.5 min-w-0">
+										<Skeleton className="h-3.5 w-36" />
+										<Skeleton className="h-3 w-20" />
+									</div>
+								</div>
+							))}
 						</div>
 					) : groups.length === 0 ? (
 						<p className="text-xs text-ink-3 text-center py-2">No attachments yet.</p>

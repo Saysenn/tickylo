@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Combobox } from "@/components/ui/combobox";
 import { EmployeePickerModal } from "@/components/dashboard/tickets/employee-picker-modal";
 import { Pagination } from "@/components/ui/pagination";
+import { Skeleton } from "@/components/ui/skeleton";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -398,11 +399,17 @@ export function TicketRequestsTable() {
 							</tr>
 						</thead>
 						<tbody>
-							{isLoading && (
-								<tr>
-									<td colSpan={7} className="px-4 py-12 text-center text-sm text-ink-3">Loading…</td>
+							{isLoading && Array.from({ length: 7 }).map((_, i) => (
+								<tr key={i} className="border-b last:border-0">
+									<td className="px-4 py-3 w-8"><Skeleton className="h-4 w-4 rounded" /></td>
+									<td className="px-4 py-3"><div className="flex items-center gap-2"><Skeleton className="h-6 w-6 rounded-full shrink-0" /><Skeleton className="h-3.5 w-28" /></div></td>
+									<td className="px-4 py-3"><Skeleton className="h-5 w-20 rounded-full" /></td>
+									<td className="px-4 py-3"><Skeleton className="h-3.5 w-24" /></td>
+									<td className="px-4 py-3"><Skeleton className="h-3.5 w-20" /></td>
+									<td className="px-4 py-3"><Skeleton className="h-3.5 w-16" /></td>
+									<td className="px-4 py-3"><div className="flex gap-1"><Skeleton className="h-7 w-16 rounded-lg" /><Skeleton className="h-7 w-16 rounded-lg" /></div></td>
 								</tr>
-							)}
+							))}
 							{!isLoading && rows.length === 0 && (
 								<tr>
 									<td colSpan={7} className="px-4 py-16 text-center">

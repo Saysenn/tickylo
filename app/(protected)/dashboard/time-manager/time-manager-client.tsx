@@ -19,6 +19,7 @@ import { useAppSelector } from "@/store/hooks";
 import { RecentTasksCard } from "@/components/dashboard/reports/team-activity-cards";
 import { EmployeeSessionLog } from "@/components/dashboard/time-manager/employee-session-log";
 import { cn } from "@/lib/utils/cn";
+import { Skeleton } from "@/components/ui/skeleton";
 
 type Tab = "overview" | "flagged";
 
@@ -128,8 +129,32 @@ export function TimeManagerClient() {
 			)}
 
 			{isLoading ? (
-				<div className="flex items-center justify-center py-16">
-					<div className="w-5 h-5 border-2 border-mint/40 border-t-mint rounded-full animate-spin" />
+				<div className="space-y-4">
+					<div className="grid grid-cols-2 gap-4">
+						{Array.from({ length: 4 }).map((_, i) => (
+							<div key={i} className="rounded-xl border p-5 space-y-2">
+								<Skeleton className="h-3 w-24" />
+								<Skeleton className="h-8 w-20" />
+								<Skeleton className="h-3 w-16" />
+							</div>
+						))}
+					</div>
+					<div className="rounded-xl border overflow-hidden divide-y">
+						<div className="flex items-center gap-4 px-4 py-2.5 bg-accent/20">
+							{Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-3 w-16" />)}
+						</div>
+						{Array.from({ length: 5 }).map((_, i) => (
+							<div key={i} className="flex items-center gap-4 px-4 py-3.5">
+								<div className="flex items-center gap-2 flex-1">
+									<Skeleton className="h-8 w-8 rounded-full shrink-0" />
+									<Skeleton className="h-3.5 w-28" />
+								</div>
+								<Skeleton className="h-3.5 w-16" />
+								<Skeleton className="h-3.5 w-12" />
+								<Skeleton className="h-3.5 w-12" />
+							</div>
+						))}
+					</div>
 				</div>
 			) : !showEmployee && teamData ? (
 				<div className="space-y-6">

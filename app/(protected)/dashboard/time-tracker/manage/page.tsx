@@ -19,6 +19,7 @@ import {
 import { cn } from "@/lib/utils/cn";
 import type { TimeEntry, TimeEntryPage } from "@/components/dashboard/time-tracker/types";
 import { SessionDetailModal } from "@/components/dashboard/time-tracker/session-detail-modal";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const PAGE_SIZE = 15;
 
@@ -267,8 +268,21 @@ export default function ManageTimePage() {
 			)}
 
 			{isLoading ? (
-				<div className="flex items-center justify-center py-24">
-					<div className="w-5 h-5 border-2 border-mint/40 border-t-mint rounded-full animate-spin" />
+				<div className="rounded-lg border overflow-hidden divide-y">
+					{Array.from({ length: 8 }).map((_, i) => (
+						<div key={i} className="flex items-center gap-4 px-4 py-3.5">
+							<div className="flex items-center gap-2 flex-1 min-w-0">
+								<Skeleton className="h-8 w-8 rounded-full shrink-0" />
+								<div className="space-y-1.5 min-w-0">
+									<Skeleton className="h-3.5 w-32" />
+									<Skeleton className="h-3 w-24" />
+								</div>
+							</div>
+							<Skeleton className="h-3.5 w-28 shrink-0" />
+							<Skeleton className="h-3.5 w-16 shrink-0" />
+							<Skeleton className="h-7 w-16 rounded-lg shrink-0" />
+						</div>
+					))}
 				</div>
 			) : list.length === 0 ? (
 				<div className="flex flex-col items-center justify-center py-24 text-center border rounded-lg">

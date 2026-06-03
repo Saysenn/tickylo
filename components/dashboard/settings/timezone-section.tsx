@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Combobox } from "@/components/ui/combobox";
 import { TIMEZONES } from "@/lib/utils/format";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface UserMe {
 	id: string;
@@ -45,8 +46,10 @@ export function TimezoneSection() {
 	});
 
 	if (isLoading) return (
-		<div className="rounded-xl border p-6">
-			<div className="w-4 h-4 border-2 border-mint/40 border-t-mint rounded-full animate-spin" />
+		<div className="rounded-xl border p-6 space-y-4">
+			<div className="space-y-1"><Skeleton className="h-5 w-28" /><Skeleton className="h-3.5 w-56" /></div>
+			<Skeleton className="h-10 w-full rounded-md" />
+			<Skeleton className="h-10 w-28 rounded-md" />
 		</div>
 	);
 

@@ -5,6 +5,7 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 
 import APIService from "@/lib/infra/api";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Users } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface Employee {
 	id: string;
@@ -54,7 +55,11 @@ export function WorkloadChart() {
 				{isLoading || chartData.length === 0 ? (
 					<div className="flex items-center justify-center h-32">
 						{isLoading ? (
-							<div className="w-4 h-4 border-2 border-mint/40 border-t-mint rounded-full animate-spin" />
+							<div className="flex gap-2 items-end h-20 px-4">
+								{Array.from({ length: 6 }).map((_, i) => (
+									<Skeleton key={i} className="w-8 rounded-t" style={{ height: `${30 + (i % 3) * 20}px` }} />
+								))}
+							</div>
 						) : (
 							<p className="text-xs text-ink-3">No employees yet.</p>
 						)}

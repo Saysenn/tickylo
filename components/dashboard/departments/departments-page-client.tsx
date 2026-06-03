@@ -21,6 +21,8 @@ import { DepartmentFormDialog } from "@/components/dashboard/settings/department
 import { formatMemberCount, formatInitials, formatDate } from "@/lib/utils/format";
 import { cn } from "@/lib/utils/cn";
 import type { DepartmentRow } from "@/services/department.service";
+import { Skeleton } from "@/components/ui/skeleton";
+import { TablePageSkeleton } from "@/components/skeletons/table-page-skeleton";
 
 const ICON_COLORS = [
 	{ bg: "bg-mint/15", text: "text-mint" },
@@ -96,8 +98,17 @@ function MembersTab({ dept }: { dept: DepartmentRow }) {
 	return (
 		<div className="space-y-3">
 			{isLoading && (
-				<div className="flex justify-center py-8">
-					<div className="w-4 h-4 border-2 border-mint/40 border-t-mint rounded-full animate-spin" />
+				<div className="space-y-2">
+					{Array.from({ length: 4 }).map((_, i) => (
+						<div key={i} className="flex items-center gap-3 px-4 py-3 rounded-xl border">
+							<Skeleton className="h-8 w-8 rounded-full shrink-0" />
+							<div className="flex-1 space-y-1.5">
+								<Skeleton className="h-3.5 w-32" />
+								<Skeleton className="h-3 w-20" />
+							</div>
+							<Skeleton className="h-7 w-16 rounded-lg shrink-0" />
+						</div>
+					))}
 				</div>
 			)}
 
@@ -529,11 +540,7 @@ export function DepartmentsPageClient() {
 	const hasActiveFilters = quickFilter !== "all";
 
 	if (isLoading) {
-		return (
-			<div className="flex items-center justify-center py-24">
-				<div className="w-5 h-5 border-2 border-mint/40 border-t-mint rounded-full animate-spin" />
-			</div>
-		);
+		return <TablePageSkeleton />;
 	}
 
 	return (

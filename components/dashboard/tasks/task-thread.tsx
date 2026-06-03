@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils/cn";
 import { ROLES } from "@/configs/rbac.config";
 import { RichTextEditor, type AttachmentPreview } from "@/components/ui/rich-text-editor";
 import { useOrgSettings } from "@/providers/org-settings-provider";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const FIXED_EMOJIS = ["👍", "❤️", "😂", "😮", "😢", "🔥"];
 const COMMENT_DELETE_WINDOW_MS = 5 * 60 * 1000;
@@ -240,8 +241,20 @@ export function TaskThread({ taskId, taskCreatedBy, view, readOnly = false }: Ta
 			{/* Timeline */}
 			<div className="space-y-0.5">
 				{isLoading ? (
-					<div className="flex items-center justify-center py-8">
-						<div className="w-4 h-4 border-2 border-mint/40 border-t-mint rounded-full animate-spin" />
+					<div className="space-y-4 py-2">
+						{Array.from({ length: 4 }).map((_, i) => (
+							<div key={i} className="flex items-start gap-3">
+								<Skeleton className="h-7 w-7 rounded-full shrink-0" />
+								<div className="flex-1 space-y-1.5">
+									<div className="flex items-center gap-2">
+										<Skeleton className="h-3 w-24" />
+										<Skeleton className="h-3 w-16" />
+									</div>
+									<Skeleton className="h-3.5 w-full" />
+									<Skeleton className="h-3.5 w-3/4" />
+								</div>
+							</div>
+						))}
 					</div>
 				) : comments.length === 0 ? (
 					<div className="flex flex-col items-center justify-center py-8 text-center">

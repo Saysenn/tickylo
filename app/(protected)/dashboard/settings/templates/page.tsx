@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils/cn";
 import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import { Combobox } from "@/components/ui/combobox";
 import type { TicketTemplate } from "@/components/dashboard/tasks/types";
+import { Skeleton } from "@/components/ui/skeleton";
 
 function isRteEmpty(val: string | null | undefined): boolean {
 	if (!val) return true;
@@ -483,7 +484,17 @@ export default function TemplatesSettingsPage() {
 			)}
 
 			{isLoading && (
-				<p className="text-sm text-ink-3/50 py-8 text-center">Loading templates…</p>
+				<div className="space-y-2">
+					{Array.from({ length: 4 }).map((_, i) => (
+						<div key={i} className="flex items-center gap-3 px-4 py-3.5 rounded-xl border">
+							<div className="flex-1 space-y-1.5">
+								<Skeleton className="h-4 w-36" />
+								<Skeleton className="h-3 w-56" />
+							</div>
+							<Skeleton className="h-7 w-16 rounded-lg shrink-0" />
+						</div>
+					))}
+				</div>
 			)}
 
 			{!isLoading && templates.length === 0 && !creating && (

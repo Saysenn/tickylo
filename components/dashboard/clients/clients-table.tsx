@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { ClientFormDialog, type ClientFormData } from "./client-form-dialog";
 import { Briefcase, Pencil, Trash2, UserPlus } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
+import { TablePageSkeleton } from "@/components/skeletons/table-page-skeleton";
 
 interface Client {
 	id: string;
@@ -55,11 +56,7 @@ export function ClientsTable() {
 	});
 
 	if (isLoading) {
-		return (
-			<div className="flex items-center justify-center py-24">
-				<div className="w-5 h-5 border-2 border-mint/40 border-t-mint rounded-full animate-spin" />
-			</div>
-		);
+		return <TablePageSkeleton />;
 	}
 
 	if (isError) {

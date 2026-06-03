@@ -3,6 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Clock } from "lucide-react";
 import APIService from "@/lib/infra/api";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
@@ -22,8 +23,15 @@ export function WorkScheduleReadonlySection() {
 	});
 
 	if (isLoading) return (
-		<div className="rounded-xl border p-6">
-			<div className="w-4 h-4 border-2 border-mint/40 border-t-mint rounded-full animate-spin" />
+		<div className="rounded-xl border p-6 space-y-4">
+			<Skeleton className="h-5 w-40" />
+			<div className="grid grid-cols-7 gap-2">
+				{Array.from({ length: 7 }).map((_, i) => <Skeleton key={i} className="h-9 rounded-lg" />)}
+			</div>
+			<div className="grid grid-cols-2 gap-4">
+				<div className="space-y-1.5"><Skeleton className="h-3.5 w-20" /><Skeleton className="h-9 w-full rounded-lg" /></div>
+				<div className="space-y-1.5"><Skeleton className="h-3.5 w-20" /><Skeleton className="h-9 w-full rounded-lg" /></div>
+			</div>
 		</div>
 	);
 

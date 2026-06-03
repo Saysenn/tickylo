@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import APIService from "@/lib/infra/api";
 import { formatDate, formatTime, formatDurationBetween, formatDuration, todayDateStr, daysAgoDateStr } from "@/lib/utils/format";
 import type { TimeEntryPage } from "@/components/dashboard/time-tracker/types";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface ActiveEntry {
 	id: string;
@@ -100,9 +101,18 @@ export function TimeLogsTable() {
 				</div>
 
 				{isLoadingActive ? (
-					<div className="flex items-center justify-center py-6">
-						<div className="w-4 h-4 border-2 border-mint/40 border-t-mint rounded-full animate-spin" />
-					</div>
+					<ul className="divide-y">
+						{Array.from({ length: 3 }).map((_, i) => (
+							<li key={i} className="flex items-center gap-3 px-5 py-2.5">
+								<Skeleton className="h-6 w-6 rounded-lg shrink-0" />
+								<div className="flex-1 space-y-1 min-w-0">
+									<Skeleton className="h-3.5 w-32" />
+									<Skeleton className="h-3 w-48" />
+								</div>
+								<Skeleton className="h-4 w-12 shrink-0" />
+							</li>
+						))}
+					</ul>
 				) : activeEntries.length === 0 ? (
 					<div className="flex items-center justify-center py-6 gap-2 text-ink-3">
 						<Clock className="w-4 h-4 opacity-30" strokeWidth={1.5} />
@@ -193,9 +203,18 @@ export function TimeLogsTable() {
 				</div>
 
 				{isLoading ? (
-					<div className="flex items-center justify-center py-10">
-						<div className="w-4 h-4 border-2 border-mint/40 border-t-mint rounded-full animate-spin" />
-					</div>
+					<ul className="divide-y">
+						{Array.from({ length: 6 }).map((_, i) => (
+							<li key={i} className="flex items-center gap-3 px-5 py-3">
+								<Skeleton className="h-8 w-8 rounded-lg shrink-0" />
+								<div className="flex-1 space-y-1.5 min-w-0">
+									<Skeleton className="h-3.5 w-40" />
+									<Skeleton className="h-3 w-56" />
+								</div>
+								<Skeleton className="h-3.5 w-16 shrink-0" />
+							</li>
+						))}
+					</ul>
 				) : entries.length === 0 ? (
 					<div className="flex flex-col items-center justify-center py-10 text-center">
 						<Clock className="w-7 h-7 text-ink-3/30 mb-2" strokeWidth={1.5} />

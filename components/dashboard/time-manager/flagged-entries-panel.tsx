@@ -5,6 +5,7 @@ import APIService from "@/lib/infra/api";
 import { formatDateTime, formatDurationMs } from "@/lib/utils/format";
 import { Flag, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface TimeEntry {
 	id: string;
@@ -38,8 +39,17 @@ export function FlaggedEntriesPanel() {
 	const entries = data?.data ?? [];
 
 	if (isLoading) return (
-		<div className="flex items-center justify-center py-16">
-			<div className="w-5 h-5 border-2 border-mint/40 border-t-mint rounded-full animate-spin" />
+		<div className="divide-y rounded-lg border overflow-hidden">
+			{Array.from({ length: 5 }).map((_, i) => (
+				<div key={i} className="flex items-center gap-3 px-4 py-3.5">
+					<Skeleton className="h-8 w-8 rounded-lg shrink-0" />
+					<div className="flex-1 space-y-1.5 min-w-0">
+						<Skeleton className="h-3.5 w-40" />
+						<Skeleton className="h-3 w-28" />
+					</div>
+					<Skeleton className="h-7 w-16 rounded-lg shrink-0" />
+				</div>
+			))}
 		</div>
 	);
 

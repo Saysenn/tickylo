@@ -12,6 +12,7 @@ import { WorkloadChart } from "@/components/dashboard/tasks/workload-chart";
 import { Users, BarChart2, ClipboardList, Ticket } from "lucide-react";
 import { usePlan } from "@/providers/org-settings-provider";
 import { canAccess } from "@/lib/utils/plan-gate";
+import { DashboardSkeleton } from "@/components/skeletons/dashboard-skeleton";
 
 interface AdminDashboardData {
 	employees: { total: number };
@@ -52,11 +53,7 @@ export function AdminDashboard() {
 	const gate = (feature: Parameters<typeof canAccess>[2]) => canAccess(plan, is_internal, feature);
 
 	if (isLoading || !data) {
-		return (
-			<div className="flex items-center justify-center py-32">
-				<div className="w-5 h-5 border-2 border-mint/40 border-t-mint rounded-full animate-spin" />
-			</div>
-		);
+		return <DashboardSkeleton />;
 	}
 
 	return (

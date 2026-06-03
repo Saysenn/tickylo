@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { GenerateInvoiceModal } from "./generate-invoice-modal";
 import { formatDate } from "@/lib/utils/format";
 import { cn } from "@/lib/utils/cn";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface Props {
 	orgName:    string;
@@ -141,7 +142,17 @@ export function InvoicesClient({ orgName, orgLogoUrl }: Props) {
 				</div>
 
 				{isLoading ? (
-					<div className="flex items-center justify-center py-16 text-ink-3 text-sm">Loading…</div>
+					<div className="divide-y">
+						{Array.from({ length: 5 }).map((_, i) => (
+							<div key={i} className="flex items-center gap-4 px-4 py-3.5">
+								<Skeleton className="h-4 w-24" />
+								<Skeleton className="h-4 w-20" />
+								<Skeleton className="h-4 w-28 flex-1" />
+								<Skeleton className="h-5 w-16 rounded-full" />
+								<Skeleton className="h-4 w-16" />
+							</div>
+						))}
+					</div>
 				) : invoices.length === 0 ? (
 					<div className="flex flex-col items-center justify-center py-20 gap-3 text-ink-3">
 						<div className="w-12 h-12 rounded-full bg-accent/60 flex items-center justify-center">

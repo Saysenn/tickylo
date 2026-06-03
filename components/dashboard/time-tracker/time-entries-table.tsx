@@ -10,6 +10,7 @@ import { formatDate, formatTime, formatDurationBetween } from "@/lib/utils/forma
 import { cn } from "@/lib/utils/cn";
 import type { TimeEntry, TimeEntryPage } from "./types";
 import { SessionDetailModal } from "./session-detail-modal";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface TimeEntriesTableProps {
 	from?: string;
@@ -65,8 +66,17 @@ export function TimeEntriesTable({ from: fromProp, to: toProp }: TimeEntriesTabl
 	return (
 		<div className="space-y-4">
 			{isLoading ? (
-				<div className="flex items-center justify-center py-16">
-					<div className="w-5 h-5 border-2 border-mint/40 border-t-mint rounded-full animate-spin" />
+				<div className="divide-y rounded-lg border overflow-hidden">
+					{Array.from({ length: 6 }).map((_, i) => (
+						<div key={i} className="flex items-center gap-4 px-4 py-3">
+							<Skeleton className="h-8 w-8 rounded-lg shrink-0" />
+							<div className="flex-1 space-y-1.5 min-w-0">
+								<Skeleton className="h-3.5 w-40" />
+								<Skeleton className="h-3 w-28" />
+							</div>
+							<Skeleton className="h-3.5 w-16 shrink-0" />
+						</div>
+					))}
 				</div>
 			) : isError ? (
 				<div className="flex items-center justify-center py-16">

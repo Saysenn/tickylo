@@ -7,6 +7,7 @@ import APIService from "@/lib/infra/api";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Combobox } from "@/components/ui/combobox";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const INTERVAL_OPTIONS = [
 	{ value: "5",   label: "Every 5 minutes" },
@@ -45,8 +46,9 @@ export function NudgeIntervalSection() {
 	});
 
 	if (isLoading) return (
-		<div className="rounded-xl border p-6">
-			<div className="w-4 h-4 border-2 border-mint/40 border-t-mint rounded-full animate-spin" />
+		<div className="rounded-xl border p-6 space-y-4">
+			<div className="space-y-1"><Skeleton className="h-5 w-32" /><Skeleton className="h-3.5 w-64" /></div>
+			<Skeleton className="h-10 w-48 rounded-md" />
 		</div>
 	);
 

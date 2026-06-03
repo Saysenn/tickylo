@@ -6,6 +6,7 @@ import { BarChart2, ChevronDown, ChevronUp } from "lucide-react";
 import Link from "next/link";
 import APIService from "@/lib/infra/api";
 import { cn } from "@/lib/utils/cn";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export function TicketSummaryToggle() {
 	const [open, setOpen] = useState(false);
@@ -59,9 +60,13 @@ export function TicketSummaryToggle() {
 							</Link>
 					  ))
 					: open && (
-							<div className="col-span-5 flex items-center gap-2 py-4">
-								<div className="w-4 h-4 border-2 border-mint/40 border-t-mint rounded-full animate-spin" />
-								<span className="text-xs text-ink-3">Loading…</span>
+							<div className="col-span-5 flex items-center gap-3 py-4">
+								{Array.from({ length: 5 }).map((_, i) => (
+									<div key={i} className="space-y-1 text-center">
+										<Skeleton className="h-2.5 w-12 mx-auto" />
+										<Skeleton className="h-6 w-8 mx-auto" />
+									</div>
+								))}
 							</div>
 					  )}
 			</div>

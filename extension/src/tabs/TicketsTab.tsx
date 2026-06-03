@@ -7,6 +7,7 @@ import {
 } from "../lib/api";
 import type { Ticket, ActiveTimer, Client } from "../lib/api";
 import { Storage } from "../lib/storage";
+import { TicketRowSkeleton } from "../components/skeleton";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -236,8 +237,8 @@ export function TicketsTab({
       {/* List */}
       <div className="flex-1 overflow-y-auto">
         {loading ? (
-          <div className="flex justify-center py-10">
-            <Loader2 size={18} className="text-gray-300 animate-spin" />
+          <div className="divide-y divide-gray-50">
+            {Array.from({ length: 5 }).map((_, i) => <TicketRowSkeleton key={i} />)}
           </div>
         ) : tickets.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-14 text-center px-4">

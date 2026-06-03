@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Trash2, Pencil, Check, X, Clock } from "lucide-react";
 import { getTimeEntries, updateTimeEntry, deleteTimeEntry } from "../lib/api";
 import type { TimeEntry, ActiveTimer } from "../lib/api";
+import { LogRowSkeleton } from "../components/skeleton";
 
 function formatTime(iso: string) {
   return new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
@@ -55,8 +56,13 @@ export function LogsTab({ activeTimer, isAdmin }: { activeTimer: ActiveTimer | n
 
   if (loading) {
     return (
-      <div className="flex justify-center py-10">
-        <div className="w-4 h-4 border-2 border-mint border-t-transparent rounded-full animate-spin" />
+      <div className="flex flex-col">
+        <div className="px-4 pt-3 pb-1">
+          <div className="h-2.5 w-24 rounded-md bg-[#0D1F14]/[0.07] animate-pulse" />
+        </div>
+        <div className="divide-y divide-gray-50">
+          {Array.from({ length: 4 }).map((_, i) => <LogRowSkeleton key={i} />)}
+        </div>
       </div>
     );
   }
