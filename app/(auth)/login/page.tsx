@@ -3,7 +3,15 @@ import Link from "next/link";
 
 export const metadata = {
   title: "Login",
-  description: "Sign in to your account",
+  description: "Sign in to your Tickworks account to track tickets, manage your team, and monitor performance.",
+  openGraph: {
+    title: "Login — Tickworks",
+    description: "Sign in to your Tickworks account to track tickets, manage your team, and monitor performance.",
+  },
+  twitter: {
+    title: "Login — Tickworks",
+    description: "Sign in to your Tickworks account to track tickets, manage your team, and monitor performance.",
+  },
 };
 
 export default function LoginPage() {

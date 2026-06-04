@@ -2,8 +2,12 @@ import { JoinForm } from "@/components/auth/join-form";
 import Link from "next/link";
 
 export const metadata = {
-	title: "Join Your Team — Tickworks",
-	description: "Join your company workspace on Tickworks",
+	title: "Join Your Team",
+	description: "Join your company's Tickworks workspace to start tracking your tasks and time.",
+	openGraph: {
+		title: "Join Your Team — Tickworks",
+		description: "Join your company's Tickworks workspace to start tracking your tasks and time.",
+	},
 };
 
 export default async function JoinPage({

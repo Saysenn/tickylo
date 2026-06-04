@@ -2,8 +2,12 @@ import { ApplyForm } from "@/components/auth/apply-form";
 import Link from "next/link";
 
 export const metadata = {
-	title: "Register Your Company — Tickworks",
-	description: "Apply to create your organization on Tickworks",
+	title: "Register Your Company",
+	description: "Apply to create your organization on Tickworks and start managing your team's tasks, time, and performance.",
+	openGraph: {
+		title: "Register Your Company — Tickworks",
+		description: "Apply to create your organization on Tickworks and start managing your team's tasks, time, and performance.",
+	},
 };
 
 export default function ApplyPage() {

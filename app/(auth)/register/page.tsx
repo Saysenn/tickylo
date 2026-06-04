@@ -2,8 +2,16 @@ import Link from "next/link";
 import { Building2, Users } from "lucide-react";
 
 export const metadata = {
-	title: "Get Started — Tickworks",
-	description: "Register your company or join your team on Tickworks",
+	title: "Get Started",
+	description: "Register your company or join your team on Tickworks — the smart platform for task management, time tracking, and employee performance.",
+	openGraph: {
+		title: "Get Started — Tickworks",
+		description: "Register your company or join your team on Tickworks — the smart platform for task management, time tracking, and employee performance.",
+	},
+	twitter: {
+		title: "Get Started — Tickworks",
+		description: "Register your company or join your team on Tickworks — the smart platform for task management, time tracking, and employee performance.",
+	},
 };
 
 export default function RegisterPage() {
