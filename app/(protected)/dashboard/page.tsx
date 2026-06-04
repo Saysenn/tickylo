@@ -46,7 +46,7 @@ export default function DashboardPage() {
 
 			<div className="mb-6">
 				<h1 className="text-2xl font-bold text-ink">Dashboard</h1>
-				<p className="text-ink-3 mt-1 text-sm">
+				<p className="text-ink-3 mt-1 text-sm" suppressHydrationWarning>
 					{isAdmin
 						? "Team overview, activity, and performance at a glance."
 						: "Your tasks, time, and activity at a glance."}
