@@ -168,8 +168,37 @@ export async function GET(request: NextRequest) {
 		}
 	}
 
-	// ── 4. Auto-close timers exceeding max_timer_hours ────────────────────────
+	// ── 4a. Warn employees whose timer is approaching max_timer_hours (75%) ─────
 	const schedulesWithCap = schedules.filter((s) => s.max_timer_hours != null);
+
+	for (const schedule of schedulesWithCap) {
+		const warnMs   = schedule.max_timer_hours! * 3600 * 1000 * 0.75;
+		const maxMs    = schedule.max_timer_hours! * 3600 * 1000;
+		const warnCutoff = new Date(now.getTime() - warnMs);
+		const maxCutoff  = new Date(now.getTime() - maxMs);
+
+		// Timers past 75% but not yet past 100% (auto-close handles those below)
+		const approachingEntries = await prisma.timeEntry.findMany({
+			where: {
+				org_id:     schedule.org_id,
+				end_time:   null,
+				start_time: { lte: warnCutoff, gt: maxCutoff },
+			},
+			select: { id: true, user_id: true },
+		});
+
+		for (const entry of approachingEntries) {
+			await createNotification({
+				user_id: entry.user_id,
+				type:    "timer_warning",
+				title:   "Timer running long",
+				body:    `Your timer has been running for over ${Math.round(schedule.max_timer_hours! * 0.75)}h. It will be auto-stopped at ${schedule.max_timer_hours}h.`,
+				link:    "/dashboard/time-tracker",
+			}).catch(() => {});
+		}
+	}
+
+	// ── 4. Auto-close timers exceeding max_timer_hours ────────────────────────
 
 	for (const schedule of schedulesWithCap) {
 		const maxMs   = schedule.max_timer_hours! * 3600 * 1000;

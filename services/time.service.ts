@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/infra/prisma";
 import { ROLES } from "@/configs/rbac.config";
 import { auditLog } from "@/lib/utils/audit";
+import { createNotification } from "@/lib/utils/create-notification";
 import type { Caller } from "./ticket.service";
 
 const callerIsAdmin = (c: Caller) => c.app_metadata?.role === ROLES.ADMIN;
@@ -99,7 +100,7 @@ export async function adminForceStop(entryId: string, caller: Caller) {
 	const now = new Date();
 	const updated = await prisma.timeEntry.update({
 		where: { id: entryId },
-		data: { end_time: now, auto_closed: true },
+		data: { end_time: now, auto_closed: true, flagged: true },
 	});
 
 	auditLog({
@@ -109,8 +110,16 @@ export async function adminForceStop(entryId: string, caller: Caller) {
 		action: "UPDATE",
 		entity_type: "time_entry",
 		entity_id: entryId,
-		after: { end_time: now.toISOString(), auto_closed: true, force_stopped_by_admin: true },
+		after: { end_time: now.toISOString(), auto_closed: true, flagged: true, force_stopped_by_admin: true },
 	});
+
+	createNotification({
+		user_id: entry.user_id,
+		type: "timer_force_stopped",
+		title: "Timer force-stopped",
+		body: "An admin stopped your active timer. This entry has been flagged for review.",
+		link: "/dashboard/time-tracker",
+	}).catch(() => {});
 
 	return updated;
 }

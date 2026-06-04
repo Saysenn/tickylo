@@ -374,13 +374,35 @@ export async function updateTicket(id: string, caller: Caller, data: UpdateTicke
 	});
 
 	if (isAdminCaller && updated.user_id) {
-		createNotification({
-			user_id: updated.user_id,
-			type: "task_updated",
-			title: "Ticket updated",
-			body: `"${updated.title}" has been updated by admin.`,
-			link: `/dashboard/tickets/${id}`,
-		}).catch(() => {});
+		const dueDateChanged = data.due_date !== undefined &&
+			(data.due_date?.toISOString() ?? null) !== (ticket.due_date?.toISOString() ?? null);
+		const priorityChanged = data.priority !== undefined && data.priority !== ticket.priority;
+
+		if (dueDateChanged) {
+			createNotification({
+				user_id: updated.user_id,
+				type: "task_updated",
+				title: "Due date updated",
+				body: `"${updated.title}" has a new due date${data.due_date ? `: ${new Date(data.due_date).toLocaleDateString()}` : " (cleared)"}.`,
+				link: `/dashboard/tickets/${id}`,
+			}).catch(() => {});
+		} else if (priorityChanged) {
+			createNotification({
+				user_id: updated.user_id,
+				type: "task_updated",
+				title: "Priority changed",
+				body: `"${updated.title}" priority changed to ${data.priority}.`,
+				link: `/dashboard/tickets/${id}`,
+			}).catch(() => {});
+		} else {
+			createNotification({
+				user_id: updated.user_id,
+				type: "task_updated",
+				title: "Ticket updated",
+				body: `"${updated.title}" has been updated by admin.`,
+				link: `/dashboard/tickets/${id}`,
+			}).catch(() => {});
+		}
 	}
 
 	return updated;
@@ -965,6 +987,16 @@ export async function deleteComment(commentId: string, caller: Caller) {
 		entity_id: comment.task_id,
 		after: { deleted_comment_id: commentId },
 	});
+
+	if (isAdmin && comment.user_id && comment.user_id !== caller.id) {
+		createNotification({
+			user_id: comment.user_id,
+			type: "task_updated",
+			title: "Comment removed",
+			body: "An admin removed one of your comments.",
+			link: `/dashboard/tickets/${comment.task_id}`,
+		}).catch(() => {});
+	}
 }
 
 export async function clearComments(ticketId: string, caller: Caller) {

@@ -8,6 +8,7 @@ import { employeeJoinRequestEmail } from "@/lib/email/templates";
 import { GDPR } from "@/configs/gdpr.config";
 import { rateLimit, getIP } from "@/lib/utils/rate-limit";
 import { LOCKED_PLANS, ENTERPRISE_INCLUDED_SEATS, TRIAL_INCLUDED_SEATS } from "@/configs/stripe.config";
+import { notifyAdmins } from "@/lib/utils/create-notification";
 
 const schema = z.object({
 	org_join_code:    z.string().min(1),
@@ -108,6 +109,19 @@ export async function POST(request: NextRequest) {
 		admins.forEach(({ email: adminEmail }) => {
 			sendEmail({ to: adminEmail, subject, html }).catch(() => {});
 		});
+
+		// Notify admins if seats are running low (>= 80% used after this join)
+		const newUserCount = currentUsers + 1;
+		if (!org.is_internal && newUserCount >= Math.floor(seatLimit * 0.8)) {
+			const remaining = seatLimit - newUserCount;
+			notifyAdmins({
+				orgId: org.id,
+				type: "seat_limit_warning",
+				title: "Seat limit approaching",
+				body: `${newUserCount} of ${seatLimit} seats are now used. ${remaining} seat${remaining === 1 ? "" : "s"} remaining.`,
+				link: "/dashboard/settings",
+			}).catch(() => {});
+		}
 
 		return ok({ message: "Join request submitted. Your admin will approve your access." });
 	} catch (err) {
