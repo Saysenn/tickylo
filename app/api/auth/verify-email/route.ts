@@ -32,11 +32,11 @@ export async function POST(req: NextRequest) {
 
 		await sendEmail({
 			to:      email,
-			subject: "Your Tickworks verification code",
+			subject: "Your Tickylo verification code",
 			html: `
 				<div style="font-family:sans-serif;max-width:480px;margin:0 auto;">
 					<h2 style="color:#000;margin-bottom:8px;">Verify your email</h2>
-					<p style="color:#555;margin-bottom:24px;">Use the code below to verify your work email for Tickworks registration.</p>
+					<p style="color:#555;margin-bottom:24px;">Use the code below to verify your work email for Tickylo registration.</p>
 					<div style="background:#f5f5f5;border-radius:12px;padding:24px;text-align:center;margin-bottom:24px;">
 						<span style="font-size:36px;font-weight:700;letter-spacing:12px;color:#000;">${code}</span>
 					</div>

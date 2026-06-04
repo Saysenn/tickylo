@@ -3,10 +3,10 @@ import Link from "next/link";
 
 export const metadata = {
 	title: "Register Your Company",
-	description: "Apply to create your organization on Tickworks and start managing your team's tasks, time, and performance.",
+	description: "Apply to create your organization on Tickylo and start managing your team's tasks, time, and performance.",
 	openGraph: {
-		title: "Register Your Company — Tickworks",
-		description: "Apply to create your organization on Tickworks and start managing your team's tasks, time, and performance.",
+		title: "Register Your Company — Tickylo",
+		description: "Apply to create your organization on Tickylo and start managing your team's tasks, time, and performance.",
 	},
 };
 

@@ -1,4 +1,4 @@
-# Tickworks — Pricing
+# Tickylo — Pricing
 
 ---
 
@@ -16,7 +16,7 @@ Admin included in base. Each employee = $3.99/seat. Buy and remove seats anytime
 
 **Annual:** $1,000/yr (2 months free)
 
-Need more than 26 seats? Contact us — [hello@tickworks.app](mailto:hello@tickworks.app)
+Need more than 26 seats? Contact us — [hello@tickylo.app](mailto:hello@tickylo.app)
 
 ---
 

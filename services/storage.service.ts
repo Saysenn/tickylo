@@ -190,8 +190,8 @@ export async function deleteFile(orgId: string, key: string) {
 // ── Connection test ───────────────────────────────────────────────────────────
 
 export async function testConnection(config: StorageConfig): Promise<void> {
-	const testKey = `__tickworks_test_${Date.now()}.txt`;
-	const buf = Buffer.from("tickworks-connection-test");
+	const testKey = `__tickylo_test_${Date.now()}.txt`;
+	const buf = Buffer.from("tickylo-connection-test");
 
 	if (config.provider === "supabase") {
 		const supabase = createClient(config.url, config.service_key);

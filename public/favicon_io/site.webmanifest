@@ -1,6 +1,6 @@
 {
-  "name": "Tickworks",
-  "short_name": "Tickworks",
+  "name": "Tickylo",
+  "short_name": "Tickylo",
   "description": "Track tickets, manage time, and monitor team performance.",
   "start_url": "/",
   "display": "standalone",

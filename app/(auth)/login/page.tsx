@@ -3,14 +3,14 @@ import Link from "next/link";
 
 export const metadata = {
   title: "Login",
-  description: "Sign in to your Tickworks account to track tickets, manage your team, and monitor performance.",
+  description: "Sign in to your Tickylo account to track tickets, manage your team, and monitor performance.",
   openGraph: {
-    title: "Login — Tickworks",
-    description: "Sign in to your Tickworks account to track tickets, manage your team, and monitor performance.",
+    title: "Login — Tickylo",
+    description: "Sign in to your Tickylo account to track tickets, manage your team, and monitor performance.",
   },
   twitter: {
-    title: "Login — Tickworks",
-    description: "Sign in to your Tickworks account to track tickets, manage your team, and monitor performance.",
+    title: "Login — Tickylo",
+    description: "Sign in to your Tickylo account to track tickets, manage your team, and monitor performance.",
   },
 };
 

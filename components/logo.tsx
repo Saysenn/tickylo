@@ -21,7 +21,7 @@ export function Logo({ size = "md", className, invert = false }: LogoProps) {
 			<div className="relative shrink-0" style={{ width: icon, height: icon }}>
 				<Image
 					src="/logo.webp"
-					alt="Tickworks"
+					alt="Tickylo"
 					fill
 					sizes={`${icon}px`}
 					className={cn("object-contain", invert && "brightness-0 invert")}
@@ -36,7 +36,7 @@ export function Logo({ size = "md", className, invert = false }: LogoProps) {
 						invert ? "text-white" : "text-[#1E293B] dark:text-ink",
 					)}
 				>
-					Tickworks
+					Tickylo
 				</span>
 				<span
 					className={cn(

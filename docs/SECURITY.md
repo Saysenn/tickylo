@@ -1,4 +1,4 @@
-# Tickworks — Security Checklist
+# Tickylo — Security Checklist
 
 > Last updated: 2026-05-14
 

@@ -6,7 +6,7 @@ import BillingSetupForm from "@/components/billing/billing-setup-form";
 import { SignOutButton } from "@/components/billing/sign-out-button";
 import { Clock } from "lucide-react";
 
-export const metadata = { title: "Billing Setup — Tickworks" };
+export const metadata = { title: "Billing Setup — Tickylo" };
 
 export default async function BillingPage() {
 	const supabase = await createClient();
@@ -62,7 +62,7 @@ export default async function BillingPage() {
 							<p className="font-medium">What to do</p>
 							<ul className="list-disc list-inside space-y-0.5">
 								<li>Contact your organisation admin</li>
-								<li>Ask them to complete billing setup at tickworks.app/billing</li>
+								<li>Ask them to complete billing setup at tickylo.app/billing</li>
 								<li>You&apos;ll be able to log in once the workspace is active</li>
 							</ul>
 						</div>
@@ -102,7 +102,7 @@ export default async function BillingPage() {
 			<footer className="border-t border-border/60 px-6 py-4 flex items-center justify-center gap-4 text-xs text-ink-3">
 				<a href="/privacy" className="hover:text-ink transition-colors">Privacy Policy</a>
 				<a href="/terms" className="hover:text-ink transition-colors">Terms</a>
-				<a href="mailto:hello@tickworks.app" className="hover:text-ink transition-colors">Contact Support</a>
+				<a href="mailto:hello@tickylo.app" className="hover:text-ink transition-colors">Contact Support</a>
 				<span className="text-border">·</span>
 				<SignOutButton label="Sign out" />
 			</footer>

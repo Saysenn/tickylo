@@ -67,7 +67,7 @@ export function App() {
           <div className="w-5 h-5 rounded bg-mint flex items-center justify-center">
             <span className="text-ink font-bold text-[10px]">T</span>
           </div>
-          <span className="font-semibold text-xs text-ink tracking-wide">Tickworks</span>
+          <span className="font-semibold text-xs text-ink tracking-wide">Tickylo</span>
         </div>
         {activeTimer && (
           <span className="flex items-center gap-1 text-[10px] text-mint font-semibold">
@@ -113,7 +113,7 @@ function LoadingScreen() {
 }
 
 function NotLoggedIn() {
-  const BASE = import.meta.env.VITE_API_URL ?? "https://tickworks.app";
+  const BASE = import.meta.env.VITE_API_URL ?? "https://tickylo.app";
   return (
     <div className="flex flex-col items-center justify-center text-center px-6 gap-4 bg-white h-full">
       <div className="w-12 h-12 rounded-2xl bg-gray-50 border border-gray-100 flex items-center justify-center">
@@ -121,13 +121,13 @@ function NotLoggedIn() {
       </div>
       <div>
         <p className="font-bold text-ink text-sm mb-1">You're not logged in</p>
-        <p className="text-xs text-gray-400 leading-relaxed">Sign in to your Tickworks dashboard first, then reopen this extension.</p>
+        <p className="text-xs text-gray-400 leading-relaxed">Sign in to your Tickylo dashboard first, then reopen this extension.</p>
       </div>
       <button
         onClick={() => chrome.tabs.create({ url: `${BASE}/login` })}
         className="w-full py-2.5 rounded-xl bg-mint text-ink text-xs font-semibold hover:bg-mint-hover transition-colors"
       >
-        Open Tickworks
+        Open Tickylo
       </button>
     </div>
   );
@@ -150,7 +150,7 @@ function NotEnabled({ orgName }: { orgName: string }) {
 }
 
 function BillingLocked({ orgName }: { orgName: string }) {
-  const BASE = import.meta.env.VITE_API_URL ?? "https://tickworks.app";
+  const BASE = import.meta.env.VITE_API_URL ?? "https://tickylo.app";
   return (
     <div className="flex flex-col items-center justify-center text-center px-6 gap-4 bg-white h-full">
       <div className="w-12 h-12 rounded-2xl bg-gray-50 border border-gray-100 flex items-center justify-center">

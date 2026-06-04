@@ -218,7 +218,7 @@ export function StorageAdminSection() {
 							<Input
 								value={sbBucket}
 								onChange={(e) => setSbBucket(e.target.value)}
-								placeholder="tickworks-attachments"
+								placeholder="tickylo-attachments"
 								className="h-9 text-sm"
 								disabled={formDisabled}
 							/>
@@ -235,7 +235,7 @@ export function StorageAdminSection() {
 						</div>
 						<div className="space-y-1.5">
 							<Label className="text-xs">Bucket Name</Label>
-							<Input value={s3Bucket} onChange={(e) => setS3Bucket(e.target.value)} placeholder="my-tickworks-bucket" className="h-9 text-sm" disabled={formDisabled} />
+							<Input value={s3Bucket} onChange={(e) => setS3Bucket(e.target.value)} placeholder="my-tickylo-bucket" className="h-9 text-sm" disabled={formDisabled} />
 						</div>
 						<div className="space-y-1.5">
 							<Label className="text-xs">Access Key ID</Label>

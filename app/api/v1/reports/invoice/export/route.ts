@@ -175,7 +175,7 @@ export async function POST(request: NextRequest) {
 
 		// XLSX (default)
 		const wb = new ExcelJS.Workbook();
-		wb.creator  = org_name ?? "Tickworks";
+		wb.creator  = org_name ?? "Tickylo";
 		wb.created  = today;
 		wb.modified = today;
 

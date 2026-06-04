@@ -3,10 +3,10 @@ import Link from "next/link";
 
 export const metadata = {
 	title: "Join Your Team",
-	description: "Join your company's Tickworks workspace to start tracking your tasks and time.",
+	description: "Join your company's Tickylo workspace to start tracking your tasks and time.",
 	openGraph: {
-		title: "Join Your Team — Tickworks",
-		description: "Join your company's Tickworks workspace to start tracking your tasks and time.",
+		title: "Join Your Team — Tickylo",
+		description: "Join your company's Tickylo workspace to start tracking your tasks and time.",
 	},
 };
 

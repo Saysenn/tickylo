@@ -61,7 +61,7 @@ export default async function SuperAdminDashboard() {
 			{/* Page header */}
 			<div>
 				<h1 className="text-2xl font-bold text-ink">Dashboard</h1>
-				<p className="text-ink-3 mt-0.5 text-sm">Platform-wide overview for Tickworks.</p>
+				<p className="text-ink-3 mt-0.5 text-sm">Platform-wide overview for Tickylo.</p>
 			</div>
 
 			{/* Stats grid */}

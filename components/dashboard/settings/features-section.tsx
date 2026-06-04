@@ -32,7 +32,7 @@ function useFeatureData() {
 	};
 }
 
-const EXTENSION_URL = "https://chrome.google.com/webstore/detail/tickworks";
+const EXTENSION_URL = "https://chrome.google.com/webstore/detail/tickylo";
 
 function ExtensionDetails() {
 	const [copied, setCopied] = useState(false);

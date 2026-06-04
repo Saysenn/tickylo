@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
 
 		const { plan, seat_count, interval, payment_method_id } = body.data;
 		const stripe = getStripe();
-		const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://tickworks.app";
+		const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://tickylo.app";
 
 		// Create or retrieve Stripe customer
 		let customerId = org.stripe_customer_id ?? undefined;

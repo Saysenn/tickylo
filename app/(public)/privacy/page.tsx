@@ -1,8 +1,8 @@
 import Link from "next/link";
 
 export const metadata = {
-  title: "Privacy Policy — Tickworks",
-  description: "How Tickworks collects, uses, and protects your personal data.",
+  title: "Privacy Policy — Tickylo",
+  description: "How Tickylo collects, uses, and protects your personal data.",
 };
 
 export default function PrivacyPage() {
@@ -11,7 +11,7 @@ export default function PrivacyPage() {
       <div className="max-w-3xl mx-auto px-6 py-16">
         <div className="mb-10">
           <Link href="/" className="text-sm text-mint font-medium hover:underline">
-            ← Back to Tickworks
+            ← Back to Tickylo
           </Link>
         </div>
 
@@ -32,7 +32,7 @@ export default function PrivacyPage() {
           <section>
             <h2 className="text-xl font-semibold text-ink mb-4">2. How We Use It</h2>
             <p className="text-ink-3">
-              Your data is used to operate and improve the Tickworks platform, provide customer support, send
+              Your data is used to operate and improve the Tickylo platform, provide customer support, send
               service-related communications, and comply with legal obligations. We do not sell your personal
               data to third parties. We may share data with service providers acting on our behalf, bound by
               appropriate data processing agreements.
@@ -52,8 +52,8 @@ export default function PrivacyPage() {
             <h2 className="text-xl font-semibold text-ink mb-4">4. Contact</h2>
             <p className="text-ink-3">
               For privacy-related enquiries or to submit a data subject request, please contact our team at{" "}
-              <a href="mailto:privacy@tickworks.app" className="text-mint hover:underline">
-                privacy@tickworks.app
+              <a href="mailto:privacy@tickylo.app" className="text-mint hover:underline">
+                privacy@tickylo.app
               </a>
               . Our legal team will populate the full contact details, registered address, and Data Protection
               Officer information in the final version of this policy.

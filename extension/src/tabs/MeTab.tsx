@@ -18,7 +18,7 @@ export function MeTab({ me, orgName }: { me: Me | null; orgName: string }) {
   const [todayMs, setTodayMs]         = useState<number | null>(null);
   const [weekMs, setWeekMs]           = useState<number | null>(null);
   const [activeTickets, setActiveTickets] = useState<number | null>(null);
-  const BASE = import.meta.env.VITE_API_URL ?? "https://tickworks.app";
+  const BASE = import.meta.env.VITE_API_URL ?? "https://tickylo.app";
 
   useEffect(() => {
     getTodaySummary().then((r) => setTodayMs(r.totalMs)).catch(() => setTodayMs(0));

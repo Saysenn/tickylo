@@ -6,9 +6,9 @@ A Chrome/Edge/Firefox extension for clocking in/out without opening the app.
 
 ## Auth — No OAuth Needed
 
-Uses **cookie passthrough**. The browser automatically sends the Supabase session cookie when the extension fetches `https://tickworks.app/api/v1/...` with `credentials: "include"`. User just needs to be logged into the web app once.
+Uses **cookie passthrough**. The browser automatically sends the Supabase session cookie when the extension fetches `https://tickylo.app/api/v1/...` with `credentials: "include"`. User just needs to be logged into the web app once.
 
-- **401 response** → show "Please log in at tickworks.app first" + Open App button
+- **401 response** → show "Please log in at tickylo.app first" + Open App button
 - No token storage, no OAuth flow, no backend changes
 
 ---
@@ -43,7 +43,7 @@ extension/
 
 ## Screens
 
-**Not logged in** → "Log in at tickworks.app" + Open App button
+**Not logged in** → "Log in at tickylo.app" + Open App button
 
 **Clocked out** → task title input + Clock In button + user name
 

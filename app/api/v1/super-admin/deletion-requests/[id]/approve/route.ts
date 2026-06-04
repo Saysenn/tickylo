@@ -83,8 +83,8 @@ export async function POST(
 					<p>Hi,</p>
 					<p>Your deletion request for <strong>${org.name}</strong> has been approved.</p>
 					<p>Your subscription has been cancelled and all team members have lost access. Your data will be permanently deleted within 30 days.</p>
-					<p>If this was a mistake, please contact us immediately at <a href="mailto:hello@tickworks.app">hello@tickworks.app</a>.</p>
-					<p>— The Tickworks Team</p>
+					<p>If this was a mistake, please contact us immediately at <a href="mailto:hello@tickylo.app">hello@tickylo.app</a>.</p>
+					<p>— The Tickylo Team</p>
 				`,
 			});
 		}

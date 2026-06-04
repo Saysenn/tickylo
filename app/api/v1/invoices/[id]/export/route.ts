@@ -126,7 +126,7 @@ export async function GET(
 		}
 
 		const wb = new ExcelJS.Workbook();
-		wb.creator  = orgFull?.name ?? "Tickworks";
+		wb.creator  = orgFull?.name ?? "Tickylo";
 		wb.created  = invoice.generated_at;
 		wb.modified = new Date();
 

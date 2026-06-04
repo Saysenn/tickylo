@@ -67,8 +67,8 @@ const NOTICE_RULES: NoticeRule[] = [
 	},
 	{
 		id: "extension_available",
-		message: "Your admin has enabled the Tickworks browser extension. Install it to clock in/out from any tab.",
-		href: "https://chrome.google.com/webstore/detail/tickworks",
+		message: "Your admin has enabled the Tickylo browser extension. Install it to clock in/out from any tab.",
+		href: "https://chrome.google.com/webstore/detail/tickylo",
 		linkLabel: "Install Extension →",
 		adminMessage: "The browser extension is enabled for your organisation. Employees can install it to clock in/out from any tab.",
 		adminLinkLabel: "Manage Extension →",

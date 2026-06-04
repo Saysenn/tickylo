@@ -9,7 +9,7 @@ const reviews = [
 		company: "Pixel & Co Agency",
 		initials: "SM",
 		rating: 5,
-		text: "We finally know exactly how many billable hours go into each client. Invoicing used to be a guess — now it's a report. Tickworks paid for itself in week one.",
+		text: "We finally know exactly how many billable hours go into each client. Invoicing used to be a guess — now it's a report. Tickylo paid for itself in week one.",
 	},
 	{
 		name: "James Okafor",
@@ -25,7 +25,7 @@ const reviews = [
 		company: "Brightside Creative",
 		initials: "PS",
 		rating: 5,
-		text: "Our freelancers are spread across time zones. Tickworks gives us one view of output and hours without chasing anyone for updates. Huge time saver.",
+		text: "Our freelancers are spread across time zones. Tickylo gives us one view of output and hours without chasing anyone for updates. Huge time saver.",
 	},
 	{
 		name: "Marcus Webb",
@@ -33,7 +33,7 @@ const reviews = [
 		company: "Loopline Studio",
 		initials: "MW",
 		rating: 5,
-		text: "We replaced three separate tools with Tickworks. Billable hours, task tracking, and team reports all in one place. The team adopted it within a day.",
+		text: "We replaced three separate tools with Tickylo. Billable hours, task tracking, and team reports all in one place. The team adopted it within a day.",
 	},
 	{
 		name: "Amara Nwosu",
@@ -111,7 +111,7 @@ export default function ReviewsMarquee() {
 					What agencies are already saying
 				</h2>
 				<p className="text-sm text-ink-3 mt-3 leading-relaxed">
-					Hundreds of agency teams trust Tickworks to track every hour and hit every deadline.
+					Hundreds of agency teams trust Tickylo to track every hour and hit every deadline.
 				</p>
 			</div>
 

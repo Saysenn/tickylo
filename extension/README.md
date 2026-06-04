@@ -1,4 +1,4 @@
-# Tickworks Browser Extension
+# Tickylo Browser Extension
 
 ## Dev
 ```bash
@@ -10,9 +10,9 @@ Load unpacked in Chrome: `chrome://extensions` → Enable Developer mode → Loa
 
 ## Prod build
 ```bash
-VITE_API_URL=https://tickworks.app npm run build
+VITE_API_URL=https://tickylo.app npm run build
 # zip dist/ → upload to Chrome Web Store
 ```
 
 ## Auth
-Cookie-based. User must be logged into tickworks.app first. Extension sends cookies automatically via `credentials: "include"`.
+Cookie-based. User must be logged into tickylo.app first. Extension sends cookies automatically via `credentials: "include"`.

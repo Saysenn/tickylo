@@ -45,7 +45,7 @@ export default function Footer() {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 mb-10">
           <div>
             <p className="text-[10px] text-white/28 tracking-[0.15em] uppercase mb-2">Company Name</p>
-            <p className="text-[12px] text-white/55">Tickworks</p>
+            <p className="text-[12px] text-white/55">Tickylo</p>
           </div>
           <div>
             <p className="text-[10px] text-white/28 tracking-[0.15em] uppercase mb-2">Company Number</p>
@@ -66,7 +66,7 @@ export default function Footer() {
         {/* Bottom bar */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
           <p className="text-[10px] text-white/25 tracking-[0.14em] uppercase">
-            © 2026 Tickworks. All Rights Reserved.
+            © 2026 Tickylo. All Rights Reserved.
           </p>
           <div className="flex items-center gap-5">
             <a href="/privacy" className="text-[10px] text-white/35 hover:text-white/60 transition-colors tracking-[0.12em] uppercase">Privacy Policy</a>

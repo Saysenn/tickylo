@@ -1,4 +1,4 @@
-# Tickworks — Architecture Reference
+# Tickylo — Architecture Reference
 
 > Workforce & IT Service Management SaaS. Multi-tenant, role-based, ITIL-style ticket workflows.
 

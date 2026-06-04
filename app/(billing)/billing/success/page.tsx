@@ -7,7 +7,7 @@ import { CheckCircle2 } from "lucide-react";
 import { formatDate } from "@/lib/utils/format";
 import { Button } from "@/components/ui/button";
 
-export const metadata = { title: "Billing Setup Complete — Tickworks" };
+export const metadata = { title: "Billing Setup Complete — Tickylo" };
 
 export default async function BillingSuccessPage() {
 	const supabase = await createClient();

@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/infra/prisma";
 import SubscriptionPanel from "@/components/billing/subscription-panel";
 
-export const metadata = { title: "Subscription — Tickworks" };
+export const metadata = { title: "Subscription — Tickylo" };
 
 export default async function SubscriptionPage() {
 	const supabase = await createClient();

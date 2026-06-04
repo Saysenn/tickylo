@@ -68,17 +68,17 @@ export async function POST(
 			data: { status: "approved", reviewed_at: new Date() },
 		});
 
-		const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://tickworks.app";
+		const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://tickylo.app";
 		await sendEmail({
 			to: application.admin_email,
 			subject: `Your company registration for ${application.company_name} has been approved`,
 			html: `
 				<p>Hi ${application.admin_name},</p>
-				<p>Great news! Your company registration for <strong>${application.company_name}</strong> on Tickworks has been approved.</p>
+				<p>Great news! Your company registration for <strong>${application.company_name}</strong> on Tickylo has been approved.</p>
 				<p>To activate your workspace, log in and complete your billing setup. You'll get a <strong>14-day free trial</strong> — no charge until the trial ends.</p>
 				<p><a href="${appUrl}/billing" style="display:inline-block;padding:10px 20px;background:#80ed99;color:#000;text-decoration:none;border-radius:6px;font-weight:600;">Set Up Billing &amp; Start Trial →</a></p>
 				<p style="color:#888;font-size:12px;">You'll need to choose a plan (Business or Enterprise) and add a payment method. You won't be charged during the trial period.</p>
-				<p>— The Tickworks Team</p>
+				<p>— The Tickylo Team</p>
 			`,
 		});
 

@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "Tickworks",
+  "name": "Tickylo",
   "version": "1.0.0",
   "description": "Clock in/out and manage tickets from any tab.",
   "icons": {
@@ -21,7 +21,7 @@
   },
   "permissions": ["storage", "alarms", "notifications"],
   "host_permissions": [
-    "https://tickworks.app/*",
+    "https://tickylo.app/*",
     "http://localhost:3000/*"
   ]
 }

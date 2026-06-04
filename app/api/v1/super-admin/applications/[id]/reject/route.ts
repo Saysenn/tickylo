@@ -35,13 +35,13 @@ export async function POST(
 
 		await sendEmail({
 			to: application.admin_email,
-			subject: `Update on your Tickworks company registration`,
+			subject: `Update on your Tickylo company registration`,
 			html: `
 				<p>Hi ${application.admin_name},</p>
-				<p>Thank you for your interest in Tickworks. Unfortunately, your company registration for <strong>${application.company_name}</strong> was not approved at this time.</p>
+				<p>Thank you for your interest in Tickylo. Unfortunately, your company registration for <strong>${application.company_name}</strong> was not approved at this time.</p>
 				<p><strong>Reason:</strong> ${reason}</p>
 				<p>If you believe this was a mistake or would like to reapply, please contact our support team.</p>
-				<p>— The Tickworks Team</p>
+				<p>— The Tickylo Team</p>
 			`,
 		});
 

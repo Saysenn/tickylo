@@ -15,7 +15,7 @@
 
 ```env
 RESEND_API_KEY=re_xxxxxxxxxxxx
-EMAIL_FROM=Tickworks <noreply@yourdomain.com>
+EMAIL_FROM=Tickylo <noreply@yourdomain.com>
 ```
 
 This immediately enables the org registration OTP and deletion approval emails.
@@ -33,7 +33,7 @@ This immediately enables the org registration OTP and deletion approval emails.
 | Username      | `resend`                  |
 | Password      | `re_xxxxxxxxxxxx`         |
 | Sender email  | `noreply@yourdomain.com`  |
-| Sender name   | `Tickworks`               |
+| Sender name   | `Tickylo`               |
 
 This enables forgot password, email confirmation, magic link, and email change — all sent via Resend.
 

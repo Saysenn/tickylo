@@ -21,7 +21,7 @@ export async function POST() {
 			return errorResponse("No Stripe customer found. Complete billing setup first.", 400);
 		}
 
-		const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://tickworks.app";
+		const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://tickylo.app";
 		const stripe = getStripe();
 
 		const session = await stripe.billingPortal.sessions.create({

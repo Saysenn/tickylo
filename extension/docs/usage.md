@@ -1,9 +1,9 @@
-# Tickworks Extension — Usage
+# Tickylo Extension — Usage
 
 ## Requirements
 
 - Chrome or Edge (Manifest V3)
-- Logged into [tickworks.app](https://tickworks.app) in the same browser
+- Logged into [tickylo.app](https://tickylo.app) in the same browser
 - Admin has enabled the extension in **Settings → Organization → Details**
 
 ---
@@ -50,4 +50,4 @@ The extension icon shows a live badge while a timer is running:
 
 ## Auth
 
-No login inside the extension. It reads your session from the browser cookie automatically. If you see **"You're not logged in"**, go to tickworks.app and sign in first.
+No login inside the extension. It reads your session from the browser cookie automatically. If you see **"You're not logged in"**, go to tickylo.app and sign in first.

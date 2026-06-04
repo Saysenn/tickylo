@@ -1,8 +1,8 @@
 import Link from "next/link";
 
 export const metadata = {
-  title: "Cookie Policy — Tickworks",
-  description: "Information about the cookies Tickworks uses and why.",
+  title: "Cookie Policy — Tickylo",
+  description: "Information about the cookies Tickylo uses and why.",
 };
 
 export default function CookiesPage() {
@@ -11,7 +11,7 @@ export default function CookiesPage() {
       <div className="max-w-3xl mx-auto px-6 py-16">
         <div className="mb-10">
           <Link href="/" className="text-sm text-mint font-medium hover:underline">
-            ← Back to Tickworks
+            ← Back to Tickylo
           </Link>
         </div>
 
@@ -22,7 +22,7 @@ export default function CookiesPage() {
           <section>
             <h2 className="text-xl font-semibold text-ink mb-4">Cookies We Use</h2>
             <p className="text-ink-3 mb-6">
-              Tickworks uses a minimal set of strictly necessary cookies required to operate the service.
+              Tickylo uses a minimal set of strictly necessary cookies required to operate the service.
               These cookies cannot be disabled without breaking core functionality.
             </p>
 
@@ -58,7 +58,7 @@ export default function CookiesPage() {
             <h2 className="text-xl font-semibold text-ink mb-4">What We Do Not Use</h2>
             <p className="text-ink-3">
               We do not use analytics, advertising, or tracking cookies. No third-party cookies are set by
-              Tickworks. We do not share cookie data with any advertising networks or data brokers.
+              Tickylo. We do not share cookie data with any advertising networks or data brokers.
             </p>
           </section>
         </div>

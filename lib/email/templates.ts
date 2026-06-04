@@ -1,4 +1,4 @@
-const BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://app.tickworks.com";
+const BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://app.tickylo.com";
 
 export function employeeJoinRequestEmail({
 	employeeName,
@@ -13,18 +13,18 @@ export function employeeJoinRequestEmail({
 		subject: `New employee join request — ${orgName}`,
 		html: `
 <div style="font-family:system-ui,sans-serif;max-width:520px;margin:0 auto;padding:32px 24px;color:#1e293b">
-  <img src="${BASE_URL}/logo-plain.webp" alt="Tickworks" width="40" style="margin-bottom:20px" />
+  <img src="${BASE_URL}/logo-plain.webp" alt="Tickylo" width="40" style="margin-bottom:20px" />
   <h2 style="margin:0 0 8px;font-size:18px;font-weight:700">New join request</h2>
   <p style="margin:0 0 24px;color:#64748b;font-size:14px">
     <strong style="color:#1e293b">${employeeName}</strong> (${employeeEmail}) has requested to join
-    <strong style="color:#1e293b">${orgName}</strong> on Tickworks.
+    <strong style="color:#1e293b">${orgName}</strong> on Tickylo.
   </p>
   <a href="${BASE_URL}/dashboard/employees/join-requests"
      style="display:inline-block;background:#80ed99;color:#1e293b;font-weight:600;font-size:14px;padding:10px 22px;border-radius:8px;text-decoration:none">
     Review Request →
   </a>
   <p style="margin:32px 0 0;font-size:12px;color:#94a3b8">
-    You're receiving this because you are an admin of ${orgName} on Tickworks.
+    You're receiving this because you are an admin of ${orgName} on Tickylo.
   </p>
 </div>`,
 	};
@@ -42,11 +42,11 @@ export function employeeWelcomeEmail({
 	orgName: string;
 }) {
 	return {
-		subject: `Your Tickworks account is ready — ${orgName}`,
+		subject: `Your Tickylo account is ready — ${orgName}`,
 		html: `
 <div style="font-family:system-ui,sans-serif;max-width:520px;margin:0 auto;padding:32px 24px;color:#1e293b">
-  <img src="${BASE_URL}/logo-plain.webp" alt="Tickworks" width="40" style="margin-bottom:20px" />
-  <h2 style="margin:0 0 8px;font-size:18px;font-weight:700">Welcome to ${orgName} on Tickworks</h2>
+  <img src="${BASE_URL}/logo-plain.webp" alt="Tickylo" width="40" style="margin-bottom:20px" />
+  <h2 style="margin:0 0 8px;font-size:18px;font-weight:700">Welcome to ${orgName} on Tickylo</h2>
   <p style="margin:0 0 24px;color:#64748b;font-size:14px">
     Hi ${employeeName}, your account has been created. Use the credentials below to sign in.
   </p>
@@ -58,7 +58,7 @@ export function employeeWelcomeEmail({
   </div>
   <a href="${BASE_URL}/login"
      style="display:inline-block;background:#80ed99;color:#1e293b;font-weight:600;font-size:14px;padding:10px 22px;border-radius:8px;text-decoration:none">
-    Sign in to Tickworks →
+    Sign in to Tickylo →
   </a>
   <p style="margin:24px 0 0;font-size:13px;color:#94a3b8">
     Please change your password after your first login.

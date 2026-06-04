@@ -1,8 +1,8 @@
 import Link from "next/link";
 
 export const metadata = {
-  title: "Terms of Service — Tickworks",
-  description: "The terms and conditions governing your use of Tickworks.",
+  title: "Terms of Service — Tickylo",
+  description: "The terms and conditions governing your use of Tickylo.",
 };
 
 export default function TermsPage() {
@@ -11,7 +11,7 @@ export default function TermsPage() {
       <div className="max-w-3xl mx-auto px-6 py-16">
         <div className="mb-10">
           <Link href="/" className="text-sm text-mint font-medium hover:underline">
-            ← Back to Tickworks
+            ← Back to Tickylo
           </Link>
         </div>
 
@@ -22,7 +22,7 @@ export default function TermsPage() {
           <section>
             <h2 className="text-xl font-semibold text-ink mb-4">1. Acceptance</h2>
             <p className="text-ink-3">
-              By creating an account or using Tickworks, you agree to be bound by these Terms of Service and
+              By creating an account or using Tickylo, you agree to be bound by these Terms of Service and
               our Privacy Policy. If you do not agree, you must not use the service. These terms apply to all
               users, including organisation administrators and employees.
             </p>
@@ -31,7 +31,7 @@ export default function TermsPage() {
           <section>
             <h2 className="text-xl font-semibold text-ink mb-4">2. Use of Service</h2>
             <p className="text-ink-3">
-              You may use Tickworks solely for lawful purposes and in accordance with these terms. You agree
+              You may use Tickylo solely for lawful purposes and in accordance with these terms. You agree
               not to use the service to transmit harmful, misleading, or unlawful content, to attempt
               unauthorised access to any system, or to interfere with the integrity or performance of the platform.
             </p>
@@ -49,7 +49,7 @@ export default function TermsPage() {
           <section>
             <h2 className="text-xl font-semibold text-ink mb-4">4. Termination</h2>
             <p className="text-ink-3">
-              We reserve the right to suspend or terminate your access to Tickworks at any time if you breach
+              We reserve the right to suspend or terminate your access to Tickylo at any time if you breach
               these terms or if we determine, in our sole discretion, that continued access would be harmful.
               You may close your account at any time by contacting support. Upon termination, your data will
               be handled in accordance with our data retention policy.
@@ -59,7 +59,7 @@ export default function TermsPage() {
           <section>
             <h2 className="text-xl font-semibold text-ink mb-4">5. Limitation of Liability</h2>
             <p className="text-ink-3">
-              To the maximum extent permitted by applicable law, Tickworks and its affiliates shall not be
+              To the maximum extent permitted by applicable law, Tickylo and its affiliates shall not be
               liable for any indirect, incidental, special, consequential, or punitive damages arising from
               your use of the service. Our total liability shall not exceed the amounts paid by you in the
               twelve months preceding the claim.
@@ -69,7 +69,7 @@ export default function TermsPage() {
           <section>
             <h2 className="text-xl font-semibold text-ink mb-4">6. Governing Law</h2>
             <p className="text-ink-3">
-              These terms are governed by the laws of the jurisdiction in which Tickworks is incorporated.
+              These terms are governed by the laws of the jurisdiction in which Tickylo is incorporated.
               Our legal team will populate the applicable jurisdiction and dispute resolution procedures in
               the final version of these terms.
             </p>

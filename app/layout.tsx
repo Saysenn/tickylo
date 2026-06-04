@@ -12,9 +12,9 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-const APP_URL = "https://tickworks.app";
-const APP_NAME = "Tickworks";
-const APP_DESCRIPTION = "Tickworks is a smart employee performance and task management platform. Track tickets, manage time, monitor team productivity, and generate client invoices — all in one place.";
+const APP_URL = "https://tickylo.app";
+const APP_NAME = "Tickylo";
+const APP_DESCRIPTION = "Tickylo is a smart employee performance and task management platform. Track tickets, manage time, monitor team productivity, and generate client invoices — all in one place.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(APP_URL),
@@ -34,11 +34,11 @@ export const metadata: Metadata = {
     "HR software",
     "project management",
     "workforce management",
-    "Tickworks",
+    "Tickylo",
   ],
-  authors: [{ name: "Tickworks", url: APP_URL }],
-  creator: "Tickworks",
-  publisher: "Tickworks",
+  authors: [{ name: "Tickylo", url: APP_URL }],
+  creator: "Tickylo",
+  publisher: "Tickylo",
   applicationName: APP_NAME,
   referrer: "origin-when-cross-origin",
   robots: {
@@ -81,7 +81,7 @@ export const metadata: Metadata = {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "Tickworks — Employee Performance & Task Management",
+        alt: "Tickylo — Employee Performance & Task Management",
       },
     ],
     locale: "en_US",
@@ -90,8 +90,8 @@ export const metadata: Metadata = {
   // Twitter / X Card
   twitter: {
     card: "summary_large_image",
-    site: "@tickworks",
-    creator: "@tickworks",
+    site: "@tickylo",
+    creator: "@tickylo",
     title: `${APP_NAME} — Track · Manage · Perform`,
     description: APP_DESCRIPTION,
     images: ["/og-image.png"],

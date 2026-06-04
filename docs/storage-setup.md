@@ -26,9 +26,9 @@ You likely already have a Supabase project. This is the easiest setup.
 ### Steps
 
 1. Open your Supabase project → **Storage** → **New bucket**
-2. Name it (e.g. `tickworks-attachments`) and set it to **Public**
+2. Name it (e.g. `tickylo-attachments`) and set it to **Public**
 3. Go to **Project Settings** → **API** → copy the `service_role` key (not the `anon` key)
-4. In Tickworks, go to **Settings** → **File Storage** and fill in:
+4. In Tickylo, go to **Settings** → **File Storage** and fill in:
    - **Provider**: Supabase Storage
    - **Project URL**: `https://your-project-ref.supabase.co`
    - **Service Role Key**: the key from step 3
@@ -50,7 +50,7 @@ You likely already have a Supabase project. This is the easiest setup.
 1. Create an S3 bucket in your AWS account
 2. Set the bucket's **Block Public Access** settings based on your preference:
    - For simplicity: allow public read (set bucket policy to allow `s3:GetObject` for `*`)
-   - For signed URLs: keep bucket private (tickworks generates 7-day signed URLs for S3)
+   - For signed URLs: keep bucket private (tickylo generates 7-day signed URLs for S3)
 3. Create an IAM user with the following policy:
    ```json
    {
@@ -65,7 +65,7 @@ You likely already have a Supabase project. This is the easiest setup.
    }
    ```
 4. Generate **Access Key ID** and **Secret Access Key** for that IAM user
-5. In Tickworks, go to **Settings** → **File Storage** and fill in:
+5. In Tickylo, go to **Settings** → **File Storage** and fill in:
    - **Provider**: AWS S3
    - **Region**: e.g. `ap-southeast-1`
    - **Bucket Name**: your bucket name

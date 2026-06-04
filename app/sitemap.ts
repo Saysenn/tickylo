@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 
-const BASE = "https://tickworks.app";
+const BASE = "https://tickylo.app";
 
 export default function sitemap(): MetadataRoute.Sitemap {
 	return [

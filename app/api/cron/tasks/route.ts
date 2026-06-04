@@ -159,7 +159,7 @@ export async function GET(request: NextRequest) {
 						<p>Hi ${entry.user.name ?? "there"},</p>
 						<p>Your active timer was automatically stopped at the end of your shift (<strong>${userShiftEndUtc.toUTCString()}</strong>).</p>
 						${flagged ? `<p><strong>Note:</strong> This entry has been flagged for review because the duration exceeded the expected limit. Your admin may follow up.</p>` : ""}
-						<p>You can view your time logs <a href="${process.env.NEXT_PUBLIC_APP_URL ?? "https://tickworks.app"}/dashboard/time-tracker">here</a>.</p>
+						<p>You can view your time logs <a href="${process.env.NEXT_PUBLIC_APP_URL ?? "https://tickylo.app"}/dashboard/time-tracker">here</a>.</p>
 					`,
 				}).catch(() => {});
 			}
@@ -255,7 +255,7 @@ export async function GET(request: NextRequest) {
 						<p>Hi ${entry.user.name ?? "there"},</p>
 						<p>Your active timer has been automatically stopped because it exceeded the <strong>${schedule.max_timer_hours}-hour limit</strong> set by your organization.</p>
 						<p>This entry has been <strong>flagged for review</strong> by your admin.</p>
-						<p>You can view your time logs <a href="${process.env.NEXT_PUBLIC_APP_URL ?? "https://tickworks.app"}/dashboard/time-tracker">here</a>.</p>
+						<p>You can view your time logs <a href="${process.env.NEXT_PUBLIC_APP_URL ?? "https://tickylo.app"}/dashboard/time-tracker">here</a>.</p>
 					`,
 				}).catch(() => {});
 			}

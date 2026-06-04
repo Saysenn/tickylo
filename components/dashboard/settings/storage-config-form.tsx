@@ -121,7 +121,7 @@ export function StorageConfigForm() {
 					</div>
 					<div className="space-y-1.5">
 						<Label className="text-xs">Bucket Name</Label>
-						<Input value={sbBucket} onChange={(e) => setSbBucket(e.target.value)} placeholder="tickworks-attachments" className="h-9 text-sm" />
+						<Input value={sbBucket} onChange={(e) => setSbBucket(e.target.value)} placeholder="tickylo-attachments" className="h-9 text-sm" />
 						<p className="text-[10px] text-ink-3">The bucket must exist in Supabase Storage and be set to public.</p>
 					</div>
 				</div>
@@ -135,7 +135,7 @@ export function StorageConfigForm() {
 					</div>
 					<div className="space-y-1.5">
 						<Label className="text-xs">Bucket Name</Label>
-						<Input value={s3Bucket} onChange={(e) => setS3Bucket(e.target.value)} placeholder="my-tickworks-bucket" className="h-9 text-sm" />
+						<Input value={s3Bucket} onChange={(e) => setS3Bucket(e.target.value)} placeholder="my-tickylo-bucket" className="h-9 text-sm" />
 					</div>
 					<div className="space-y-1.5">
 						<Label className="text-xs">Access Key ID</Label>

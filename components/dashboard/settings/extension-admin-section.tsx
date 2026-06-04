@@ -15,7 +15,7 @@ import {
 	DialogClose,
 } from "@/components/ui/dialog";
 
-const EXTENSION_URL = "https://chrome.google.com/webstore/detail/tickworks";
+const EXTENSION_URL = "https://chrome.google.com/webstore/detail/tickylo";
 
 export function ExtensionAdminSection() {
 	const queryClient = useQueryClient();
@@ -65,7 +65,7 @@ export function ExtensionAdminSection() {
 			<div className="flex items-center justify-between rounded-lg border border-border px-4 py-3">
 				<div>
 					<p className="text-sm font-medium text-ink">Enable browser extension</p>
-					<p className="text-xs text-ink-3">Employees can install the Tickworks extension and use it while logged into the dashboard.</p>
+					<p className="text-xs text-ink-3">Employees can install the Tickylo extension and use it while logged into the dashboard.</p>
 				</div>
 				<button
 					type="button"
@@ -118,7 +118,7 @@ export function ExtensionAdminSection() {
 						</DialogTitle>
 						<DialogDescription>
 							{pendingToggle
-								? "Employees will be able to install and use the Tickworks browser extension to clock in/out and manage tickets from any tab."
+								? "Employees will be able to install and use the Tickylo browser extension to clock in/out and manage tickets from any tab."
 								: "The browser extension will stop working for all employees in your organisation. They can still use the dashboard normally."}
 						</DialogDescription>
 					</DialogHeader>

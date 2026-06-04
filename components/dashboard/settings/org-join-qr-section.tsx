@@ -31,7 +31,7 @@ export function OrgJoinQrSection() {
 	async function share() {
 		if (!joinUrl) return;
 		if (navigator.share) {
-			await navigator.share({ title: "Join our team on Tickworks", url: joinUrl });
+			await navigator.share({ title: "Join our team on Tickylo", url: joinUrl });
 		} else {
 			copyLink();
 		}
@@ -53,7 +53,7 @@ export function OrgJoinQrSection() {
 			ctx.fillRect(0, 0, size, size);
 			ctx.drawImage(img, 0, 0, size, size);
 			const a = document.createElement("a");
-			a.download = "tickworks-join-qr.png";
+			a.download = "tickylo-join-qr.png";
 			a.href = canvas.toDataURL("image/png");
 			a.click();
 		};

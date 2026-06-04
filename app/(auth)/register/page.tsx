@@ -3,14 +3,14 @@ import { Building2, Users } from "lucide-react";
 
 export const metadata = {
 	title: "Get Started",
-	description: "Register your company or join your team on Tickworks — the smart platform for task management, time tracking, and employee performance.",
+	description: "Register your company or join your team on Tickylo — the smart platform for task management, time tracking, and employee performance.",
 	openGraph: {
-		title: "Get Started — Tickworks",
-		description: "Register your company or join your team on Tickworks — the smart platform for task management, time tracking, and employee performance.",
+		title: "Get Started — Tickylo",
+		description: "Register your company or join your team on Tickylo — the smart platform for task management, time tracking, and employee performance.",
 	},
 	twitter: {
-		title: "Get Started — Tickworks",
-		description: "Register your company or join your team on Tickworks — the smart platform for task management, time tracking, and employee performance.",
+		title: "Get Started — Tickylo",
+		description: "Register your company or join your team on Tickylo — the smart platform for task management, time tracking, and employee performance.",
 	},
 };
 
@@ -36,7 +36,7 @@ export default function RegisterPage() {
 				<div className="glass rounded-2xl p-8 space-y-6">
 					<div className="text-center">
 						<h1 className="text-2xl font-bold text-ink">Get Started</h1>
-						<p className="text-ink-3 text-sm mt-1">How are you joining Tickworks?</p>
+						<p className="text-ink-3 text-sm mt-1">How are you joining Tickylo?</p>
 					</div>
 
 					<div className="grid grid-cols-2 gap-4">
