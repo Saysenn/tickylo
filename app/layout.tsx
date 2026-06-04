@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -10,6 +11,12 @@ const geistSans = Geist({
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+});
+
+const axope = localFont({
+  src: "../public/fonts/AXOPE.ttf",
+  variable: "--font-axope-var",
+  display: "swap",
 });
 
 const APP_URL = "https://tickylo.app";
@@ -123,7 +130,7 @@ export default function RootLayout({
         <meta name="msapplication-TileColor" content="#0D1F14" />
         <meta name="msapplication-TileImage" content="/favicon_io/android-chrome-192x192.png" />
       </head>
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`} suppressHydrationWarning>
+      <body className={`${geistSans.variable} ${geistMono.variable} ${axope.variable} antialiased`} suppressHydrationWarning>
         {children}
       </body>
     </html>

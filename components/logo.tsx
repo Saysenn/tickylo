@@ -8,9 +8,9 @@ interface LogoProps {
 }
 
 const sizeMap = {
-	sm: { icon: 32, titleCls: "text-[17px]", subCls: "text-[7.5px]" },
-	md: { icon: 40, titleCls: "text-[21px]", subCls: "text-[8.5px]" },
-	lg: { icon: 48, titleCls: "text-[26px]", subCls: "text-[9.5px]" },
+	sm: { icon: 32, titleCls: "text-[13px]", subCls: "text-[7.5px]" },
+	md: { icon: 40, titleCls: "text-[16px]", subCls: "text-[8.5px]" },
+	lg: { icon: 48, titleCls: "text-[20px]", subCls: "text-[9.5px]" },
 };
 
 export function Logo({ size = "md", className, invert = false }: LogoProps) {
@@ -31,9 +31,11 @@ export function Logo({ size = "md", className, invert = false }: LogoProps) {
 			<div className="flex flex-col leading-none">
 				<span
 					className={cn(
-						"font-bold tracking-tight",
+						"font-bold tracking-widest font-axope bg-clip-text text-transparent",
 						titleCls,
-						invert ? "text-white" : "text-[#1E293B] dark:text-ink",
+						invert
+							? "bg-linear-to-r from-white to-white/70"
+							: "bg-linear-to-r from-[#0D1F14] via-[#2d7a4f] to-[#80ED99]",
 					)}
 				>
 					Tickylo
@@ -45,7 +47,7 @@ export function Logo({ size = "md", className, invert = false }: LogoProps) {
 						invert ? "text-white/40" : "text-[#94A3B8]",
 					)}
 				>
-					Track&nbsp;•&nbsp;Manage&nbsp;•&nbsp;Perform
+					Perform&nbsp;•&nbsp;Track&nbsp;•&nbsp;Manage
 				</span>
 			</div>
 		</div>
