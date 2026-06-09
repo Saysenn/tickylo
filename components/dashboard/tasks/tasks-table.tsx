@@ -13,7 +13,7 @@ import { TimeOutDialog } from "@/components/dashboard/time-tracker/time-out-dial
 import { useAppSelector } from "@/store/hooks";
 import { formatDueDate, formatDurationMs } from "@/lib/utils/format";
 import { cn } from "@/lib/utils/cn";
-import { ClipboardList, Plus, Trash2, CheckCheck, UserCog, X, SlidersHorizontal, Clock, CheckSquare, Search, Pencil } from "lucide-react";
+import { ClipboardList, Plus, Trash2, CheckCheck, UserCog, X, SlidersHorizontal, Clock, CheckSquare, Search, Pencil, GitMerge } from "lucide-react";
 import { Combobox } from "@/components/ui/combobox";
 import { ROWS_PER_PAGE } from "@/configs/pagination.config";
 import {
@@ -22,6 +22,7 @@ import type { Task, TaskPage } from "./types";
 import type { TimeEntry } from "@/components/dashboard/time-tracker/types";
 import { EmployeePickerModal } from "@/components/dashboard/tickets/employee-picker-modal";
 import { TablePageSkeleton } from "@/components/skeletons/table-page-skeleton";
+import { MergeTicketsDialog } from "./merge-tickets-dialog";
 
 const STATUS_STYLES: Record<string, string> = {
 	needs_approval: "bg-purple-500/15 text-purple-700 border-purple-500/20",
@@ -73,6 +74,7 @@ export function TasksTable() {
 	const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 	const [bulkMode, setBulkMode] = useState(false);
 	const [bulkAssignOpen, setBulkAssignOpen] = useState(false);
+	const [mergeOpen, setMergeOpen] = useState(false);
 	const [filtersOpen, setFiltersOpen] = useState(false);
 	const [editingTask, setEditingTask] = useState<Task | null>(null);
 
@@ -104,6 +106,14 @@ export function TasksTable() {
 	};
 	const user = useAppSelector((s) => s.auth.user);
 	const isAdmin = user?.role === "admin";
+
+	const { data: orgSettings } = useQuery({
+		queryKey: ["org-settings"],
+		queryFn: () => APIService.orgSettings.get(),
+		staleTime: 0,
+		enabled: !isAdmin,
+	});
+	const canMerge = isAdmin || (orgSettings?.employees_can_merge_tickets ?? false);
 
 	const updateParam = (key: string, value: string) => {
 		const params = new URLSearchParams(searchParams.toString());
@@ -472,6 +482,18 @@ const { mutateAsync: claimTask, isPending: isClaiming } = useMutation({
 								Reassign
 							</Button>
 						)}
+						{canMerge && (
+							<Button
+								size="sm" variant="outline"
+								className="h-7 text-xs gap-1.5 text-mint border-mint/30 hover:bg-mint/10"
+								disabled={isBulkPending || selectedIds.size < 2 || selectedIds.size > 5}
+								title={selectedIds.size < 2 ? "Select 2–5 tickets to merge" : selectedIds.size > 5 ? "Maximum 5 tickets at once" : ""}
+								onClick={() => setMergeOpen(true)}
+							>
+								<GitMerge className="w-3.5 h-3.5" />
+								Merge
+							</Button>
+						)}
 						<Button
 							size="sm" variant="outline"
 							className="h-7 text-xs gap-1.5 text-success-fg border-success/30 hover:bg-success/10"
@@ -793,6 +815,16 @@ const { mutateAsync: claimTask, isPending: isClaiming } = useMutation({
 					confirmLabel="Confirm"
 					onConfirm={(eid) => bulkAction({ action: "assign", user_id: eid })}
 					onClose={() => setBulkAssignOpen(false)}
+				/>
+			)}
+
+			{/* Merge tickets dialog */}
+			{canMerge && mergeOpen && (
+				<MergeTicketsDialog
+					open={mergeOpen}
+					onOpenChange={setMergeOpen}
+					tickets={list.filter((t: Task) => selectedIds.has(t.id))}
+					onSuccess={() => { setSelectedIds(new Set()); setBulkMode(false); }}
 				/>
 			)}
 		</div>

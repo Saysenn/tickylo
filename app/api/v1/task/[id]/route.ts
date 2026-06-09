@@ -45,7 +45,6 @@ const CONFIGURABLE_FIELD_SCHEMAS = {
 	implementation_plan: z.string().max(5000).nullable().optional(),
 	rollback_plan:       z.string().max(5000).nullable().optional(),
 	links:               z.array(linkSchema).max(20).nullable().optional(),
-	related_to:          z.string().nullable().optional(),
 	status:              z.enum(["pending", "assigned", "in_progress", "on_hold", "stale", "completed", "closed"]).optional(),
 } as const;
 

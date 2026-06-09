@@ -22,6 +22,7 @@ export async function GET() {
 				logo_url: true, invoice_template: true, invoice_config: true,
 				employee_editable_fields: true, creator_can_edit_own_tickets: true,
 				employees_can_set_client_on_create: true, employees_can_edit_client: true,
+				employees_can_merge_tickets: true,
 			},
 		});
 		if (!org) return errorResponse("Organization not found", 404);
@@ -36,7 +37,7 @@ export async function GET() {
 const ALLOWED_EDITABLE_FIELDS = [
 	"title", "description", "priority", "ticket_type", "due_date",
 	"estimated_hours", "billable_hours", "implementation_plan",
-	"rollback_plan", "links", "related_to", "status",
+	"rollback_plan", "links", "status",
 ] as const;
 
 const patchSchema = z.object({
@@ -54,6 +55,7 @@ const patchSchema = z.object({
 	creator_can_edit_own_tickets:       z.boolean().optional(),
 	employees_can_set_client_on_create: z.boolean().optional(),
 	employees_can_edit_client:          z.boolean().optional(),
+	employees_can_merge_tickets:        z.boolean().optional(),
 });
 
 export async function PATCH(req: NextRequest) {
@@ -83,6 +85,7 @@ export async function PATCH(req: NextRequest) {
 		if (d.creator_can_edit_own_tickets       !== undefined) updateData.creator_can_edit_own_tickets       = d.creator_can_edit_own_tickets;
 		if (d.employees_can_set_client_on_create !== undefined) updateData.employees_can_set_client_on_create = d.employees_can_set_client_on_create;
 		if (d.employees_can_edit_client          !== undefined) updateData.employees_can_edit_client          = d.employees_can_edit_client;
+		if (d.employees_can_merge_tickets        !== undefined) updateData.employees_can_merge_tickets        = d.employees_can_merge_tickets;
 
 		const org = await prisma.organization.update({
 			where: { id: orgId },
@@ -94,6 +97,7 @@ export async function PATCH(req: NextRequest) {
 				logo_url: true, invoice_template: true, invoice_config: true,
 				employee_editable_fields: true, creator_can_edit_own_tickets: true,
 				employees_can_set_client_on_create: true, employees_can_edit_client: true,
+				employees_can_merge_tickets: true,
 			},
 		});
 

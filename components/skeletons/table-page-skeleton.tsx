@@ -60,7 +60,7 @@ export function TablePageSkeleton({
 								className="h-4"
 								style={{
 									width: i === 1
-										? `${Math.floor(Math.random() * 20) + 30}%`
+										? `${30 + ((r * cols + i) % 5) * 4}%`
 										: `${Math.floor(60 / (cols - 1))}%`,
 									opacity: i === 0 ? 0.5 : 1,
 								}}

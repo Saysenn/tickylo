@@ -50,6 +50,7 @@ model Organization {
   creator_can_edit_own_tickets   Boolean @default(false)
   employees_can_set_client_on_create Boolean @default(false)
   employees_can_edit_client      Boolean @default(false)
+  employees_can_merge_tickets    Boolean @default(false)
 
   users            User[]
   join_requests    UserJoinRequest[]

@@ -19,7 +19,6 @@ const EDITABLE_FIELD_OPTIONS: { key: string; label: string; description: string;
 	{ key: "rollback_plan",       label: "Rollback Plan",       description: "Allow employees to edit the rollback plan.",                        defaultOn: true  },
 	{ key: "links",               label: "Links",               description: "Allow employees to add or remove related links.",                   defaultOn: true  },
 	{ key: "estimated_hours",     label: "Estimated Hours",     description: "Allow employees to update the estimated hours on a ticket.",        defaultOn: false },
-	{ key: "related_to",          label: "Related Ticket",      description: "Allow employees to link or unlink a related ticket.",               defaultOn: false },
 	{ key: "status",              label: "Status",              description: "Allow employees to change the ticket status themselves.",            defaultOn: false },
 ];
 
@@ -187,6 +186,29 @@ export function TicketPermissionsSection() {
 					checked={orgSettings?.employees_can_edit_client ?? false}
 					disabled={disabled}
 					onChange={(val) => update({ employees_can_edit_client: val })}
+				/>
+			</section>
+
+			{/* Merge tickets */}
+			<section className="rounded-xl border bg-background p-6 space-y-4">
+				<div className="flex items-center gap-3">
+					<div className="w-7 h-7 rounded-lg bg-mint/15 flex items-center justify-center shrink-0">
+						<Ticket className="w-3.5 h-3.5 text-mint" />
+					</div>
+					<div className="flex-1">
+						<h2 className="text-xs font-semibold text-ink">Ticket Merging</h2>
+						<p className="text-[11px] text-ink-3 mt-0.5">
+							Control whether employees can merge duplicate tickets. Admins can always merge.
+						</p>
+					</div>
+				</div>
+
+				<ToggleRow
+					label="Allow employees to merge tickets"
+					description="When enabled, employees can select 2–5 tickets in the tickets table and merge them into one. All comments, time entries, subtasks, and watchers are consolidated."
+					checked={orgSettings?.employees_can_merge_tickets ?? false}
+					disabled={disabled}
+					onChange={(val) => update({ employees_can_merge_tickets: val })}
 				/>
 			</section>
 		</div>

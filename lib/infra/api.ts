@@ -284,6 +284,8 @@ class APIService {
 			ids: string[],
 			payload?: { user_id?: string; status?: string; priority?: string; due_date?: string | null },
 		) => axiosService.post(`${apiVersion}/ticket/bulk`, { action, ids, ...payload }),
+		merge: (primary_id: string, ticket_ids: string[]) =>
+			axiosService.post(`${apiVersion}/ticket/merge`, { primary_id, ticket_ids }),
 	};
 
 	// ---------------------------------------------------------------------------
@@ -418,6 +420,7 @@ class APIService {
 			creator_can_edit_own_tickets: boolean;
 			employees_can_set_client_on_create: boolean;
 			employees_can_edit_client: boolean;
+			employees_can_merge_tickets: boolean;
 		}>(`${apiVersion}/org/settings`),
 		update: (data: {
 			attachments_enabled?: boolean; departments_enabled?: boolean; extension_enabled?: boolean;
@@ -428,6 +431,7 @@ class APIService {
 			creator_can_edit_own_tickets?: boolean;
 			employees_can_set_client_on_create?: boolean;
 			employees_can_edit_client?: boolean;
+			employees_can_merge_tickets?: boolean;
 		}) => axiosService.patch(`${apiVersion}/org/settings`, data),
 	};
 

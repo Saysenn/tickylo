@@ -211,7 +211,8 @@ export default function TicketDetailPage() {
 	const { data: orgSettings } = useQuery({
 		queryKey: ["org-settings"],
 		queryFn: () => APIService.orgSettings.get(),
-		staleTime: 300_000,
+		staleTime: 0,
+		refetchOnWindowFocus: true,
 		enabled: !isAdmin,
 	});
 
@@ -896,7 +897,7 @@ export default function TicketDetailPage() {
 											<DollarSign className="w-3.5 h-3.5" />
 											Billable
 										</div>
-										{isAdmin || !isAssignee || (ticket as any).assignee_permission === "viewer" ? (
+										{isAdmin || !isAssignee || (ticket as any).assignee_permission === "viewer" || !empEditableFields.includes("billable_hours") ? (
 											<span className="text-sm font-semibold text-ink">
 												{ticket.billable_hours != null ? `${ticket.billable_hours}h` : <span className="text-ink-3 font-normal italic text-xs">Not set</span>}
 											</span>
