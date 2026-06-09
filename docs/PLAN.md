@@ -14,7 +14,7 @@
 5. **Client Portal** — Client logs in to view their own tickets and invoice history.
 6. enable RLS policies for all tables
 7. Add a dedicated Comparison Page to the landing site featuring competitor comparison tables that highlight our SaaS advantages, key features, pricing benefits, and unique selling points.
-8. stick to only one plan for now. business only. we will make users focus on just the ticket and time management and tracking for the saas
+8. stick to only one plan for now. business only. we will make users focus on just the ticket and time management and tracking for the saas ( we just need to prevent and remove upgrading to enterprise on ui and ux )
 
 # one liner flow
 
