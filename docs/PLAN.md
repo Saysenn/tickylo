@@ -1,5 +1,12 @@
 # Tickylo — Remaining Work
 
+## Enterprise Readiness Gap
+- **Own infrastructure** (storage, SMS/Twilio) — decided, needs implementation
+- **SSO / SAML** — enterprises require it, non-negotiable for big accounts
+- **SOC 2 / data residency** — later stage, needed for regulated industries
+- **SLAs and uptime guarantees** — needed before enterprise sales conversations
+
+
 1. **Help Center CTA** — Fixed "Need help?" widget bottom-left of dashboard.
 2. **SMS → Ticket** — Twilio inbound → AI parse → ticket (Enterprise).
 3. **Email → Ticket** — Inbound webhook → AI parse → ticket (Enterprise).
