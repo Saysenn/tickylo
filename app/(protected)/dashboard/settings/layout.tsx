@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 import { User, SlidersHorizontal, Building2, CreditCard, LayoutTemplate, FileText, ToggleLeft } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import { useAppSelector } from "@/store/hooks";
@@ -29,7 +30,9 @@ const orgItems: NavItem[] = [
 export default function SettingsLayout({ children }: { children: React.ReactNode }) {
 	const pathname = usePathname();
 	const role = useAppSelector((s) => s.auth.user?.role);
-	const isAdmin = role === ROLES.ADMIN;
+	const [mounted, setMounted] = useState(false);
+	useEffect(() => setMounted(true), []);
+	const isAdmin = mounted && role === ROLES.ADMIN;
 
 	const NavLink = ({ href, label, icon: Icon }: NavItem) => {
 		const active = pathname === href || pathname.startsWith(href + "/");

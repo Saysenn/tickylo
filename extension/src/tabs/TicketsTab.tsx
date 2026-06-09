@@ -45,11 +45,13 @@ export function TicketsTab({
   setActiveTimer,
   isAdmin,
   userId,
+  empCanSetClient,
 }: {
   activeTimer: ActiveTimer | null;
   setActiveTimer: (t: ActiveTimer | null) => void;
   isAdmin: boolean;
   userId: string;
+  empCanSetClient: boolean;
 }) {
   const [view, setView]             = useState<View>("mine");
   const [mineFilter, setMineFilter] = useState<"active" | "all" | "resolved">("active");
@@ -166,7 +168,7 @@ export function TicketsTab({
     } finally { setActing(null); }
   }
 
-  if (creating) return <CreateForm onClose={() => { setCreating(false); load(); }} />;
+  if (creating) return <CreateForm onClose={() => { setCreating(false); load(); }} showClientField={isAdmin || empCanSetClient} />;
   if (selected) return (
     <TicketDetail
       ticket={selected}
@@ -647,7 +649,7 @@ const BUILTIN_CLIENT_OPTIONS = [
   { value: "__back_office__",  label: "Back Office" },
 ];
 
-function CreateForm({ onClose }: { onClose: () => void }) {
+function CreateForm({ onClose, showClientField }: { onClose: () => void; showClientField: boolean }) {
   const [title, setTitle]           = useState("");
   const [description, setDesc]      = useState("");
   const [priority, setPriority]     = useState("medium");
@@ -659,8 +661,9 @@ function CreateForm({ onClose }: { onClose: () => void }) {
   const [error, setError]           = useState("");
 
   useEffect(() => {
+    if (!showClientField) return;
     getClients().then((res) => setClients(res.data.filter((c) => !c.deleted_at))).catch(() => {});
-  }, []);
+  }, [showClientField]);
 
   const prefix = TICKET_TYPES.find((t) => t.value === type)?.prefix ?? "TASK";
 
@@ -680,15 +683,14 @@ function CreateForm({ onClose }: { onClose: () => void }) {
     if (!title.trim()) { setError("Title is required"); return; }
     setLoading(true); setError("");
     try {
-      const { client_id, client_name } = resolveClient(clientValue);
+      const { client_id, client_name } = showClientField ? resolveClient(clientValue) : { client_id: null, client_name: null };
       await createTicket({
         title: `${prefix}: ${title.trim()}`,
         description: description.trim() || undefined,
         priority,
         ticket_type: type,
         due_date: dueDate || undefined,
-        client_id,
-        client_name,
+        ...(showClientField && { client_id, client_name }),
       });
       onClose();
     } catch { setError("Failed to create. Try again."); }
@@ -773,21 +775,23 @@ function CreateForm({ onClose }: { onClose: () => void }) {
           </div>
         </div>
 
-        {/* Client */}
-        <div>
-          <label className="text-[9px] font-semibold text-gray-400 uppercase tracking-wider block mb-1.5">
-            Client <span className="normal-case font-normal text-gray-300">(optional)</span>
-          </label>
-          <select
-            value={clientValue}
-            onChange={(e) => setClientVal(e.target.value)}
-            className="w-full px-3 py-2 rounded-xl border border-gray-200 text-xs text-ink focus:outline-none focus:border-mint focus:ring-1 focus:ring-mint/30 bg-white"
-          >
-            {clientOptions.map((opt) => (
-              <option key={opt.value} value={opt.value}>{opt.label}</option>
-            ))}
-          </select>
-        </div>
+        {/* Client — only shown when admin or org has enabled employee client selection */}
+        {showClientField && (
+          <div>
+            <label className="text-[9px] font-semibold text-gray-400 uppercase tracking-wider block mb-1.5">
+              Client <span className="normal-case font-normal text-gray-300">(optional)</span>
+            </label>
+            <select
+              value={clientValue}
+              onChange={(e) => setClientVal(e.target.value)}
+              className="w-full px-3 py-2 rounded-xl border border-gray-200 text-xs text-ink focus:outline-none focus:border-mint focus:ring-1 focus:ring-mint/30 bg-white"
+            >
+              {clientOptions.map((opt) => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
+            </select>
+          </div>
+        )}
 
         {/* Due date */}
         <div>

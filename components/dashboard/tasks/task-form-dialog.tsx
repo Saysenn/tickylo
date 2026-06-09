@@ -159,10 +159,19 @@ export function TaskFormDialog({
 	});
 	const employees: any[] = (employeesResult as any)?.data ?? [];
 
+	const { data: orgSettings } = useQuery({
+		queryKey: ["org-settings"],
+		queryFn: () => APIService.orgSettings.get(),
+		staleTime: 300_000,
+		enabled: open && !isAdmin,
+	});
+
+	const showClientField = isAdmin || (orgSettings?.employees_can_set_client_on_create ?? false);
+
 	const { data: clientsResult } = useQuery({
 		queryKey: ["clients"],
 		queryFn: () => APIService.clients.list(),
-		enabled: open,
+		enabled: open && showClientField,
 		staleTime: 60_000,
 	});
 	const clients: any[] = (clientsResult as any)?.data ?? [];
@@ -402,53 +411,57 @@ export function TaskFormDialog({
 					)}
 
 					{/* ── Billing ── */}
-					<SectionDivider label="Billing" />
+					{(isAdmin || showClientField) && <SectionDivider label="Billing" />}
 
-					<div className="grid grid-cols-2 gap-4">
-						<div className="space-y-1.5">
-							<Label><FieldOpt>Client</FieldOpt></Label>
-							<Combobox
-								options={[
-									{ value: "", label: "No client" },
-									{ value: "__front_office__", label: "Front Office" },
-									{ value: "__back_office__", label: "Back Office" },
-									...clients
-										.filter((c: any) => !c.deleted_at)
-										.map((c: any) => ({ value: c.id, label: c.name })),
-								]}
-								value={clientComboValue}
-								onChange={(v) => {
-									setClientComboValue(v);
-									if (v === "__front_office__") {
-										setClientId("");
-										setClientName("Front Office");
-									} else if (v === "__back_office__") {
-										setClientId("");
-										setClientName("Back Office");
-									} else {
-										setClientId(v);
-										const found = clients.find((c: any) => c.id === v);
-										setClientName(found?.name ?? "");
-									}
-								}}
-								placeholder="No client"
-								searchPlaceholder="Search clients…"
-								emptyText="No clients found."
-							/>
-						</div>
-						<div className="space-y-1.5">
-							<Label htmlFor="estimated-hours"><FieldOpt>Estimated hours</FieldOpt></Label>
-							<input
-								id="estimated-hours"
-								type="number"
-								min="0"
-								step="0.5"
-								value={estimatedHours}
-								onChange={(e) => setEstimatedHours(e.target.value)}
-								placeholder="e.g. 4"
-								className={inputCls}
-							/>
-						</div>
+					<div className={showClientField ? "grid grid-cols-2 gap-4" : "grid grid-cols-1 gap-4"}>
+						{showClientField && (
+							<div className="space-y-1.5">
+								<Label><FieldOpt>Client</FieldOpt></Label>
+								<Combobox
+									options={[
+										{ value: "", label: "No client" },
+										{ value: "__front_office__", label: "Front Office" },
+										{ value: "__back_office__", label: "Back Office" },
+										...clients
+											.filter((c: any) => !c.deleted_at)
+											.map((c: any) => ({ value: c.id, label: c.name })),
+									]}
+									value={clientComboValue}
+									onChange={(v) => {
+										setClientComboValue(v);
+										if (v === "__front_office__") {
+											setClientId("");
+											setClientName("Front Office");
+										} else if (v === "__back_office__") {
+											setClientId("");
+											setClientName("Back Office");
+										} else {
+											setClientId(v);
+											const found = clients.find((c: any) => c.id === v);
+											setClientName(found?.name ?? "");
+										}
+									}}
+									placeholder="No client"
+									searchPlaceholder="Search clients…"
+									emptyText="No clients found."
+								/>
+							</div>
+						)}
+						{isAdmin && (
+							<div className="space-y-1.5">
+								<Label htmlFor="estimated-hours"><FieldOpt>Estimated hours</FieldOpt></Label>
+								<input
+									id="estimated-hours"
+									type="number"
+									min="0"
+									step="0.5"
+									value={estimatedHours}
+									onChange={(e) => setEstimatedHours(e.target.value)}
+									placeholder="e.g. 4"
+									className={inputCls}
+								/>
+							</div>
+						)}
 					</div>
 
 					{/* ── Plans ── */}

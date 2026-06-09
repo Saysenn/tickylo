@@ -414,12 +414,20 @@ class APIService {
 			performance_enabled: boolean; invoices_enabled: boolean;
 			org_join_code: string; name: string; plan: string; is_internal: boolean;
 			logo_url: string | null; invoice_template: string; invoice_config: Record<string, unknown> | null;
+			employee_editable_fields: string[];
+			creator_can_edit_own_tickets: boolean;
+			employees_can_set_client_on_create: boolean;
+			employees_can_edit_client: boolean;
 		}>(`${apiVersion}/org/settings`),
 		update: (data: {
 			attachments_enabled?: boolean; departments_enabled?: boolean; extension_enabled?: boolean;
 			admins_can_work_on_tickets?: boolean; include_admins_in_summary?: boolean;
 			performance_enabled?: boolean; invoices_enabled?: boolean;
 			logo_url?: string | null; invoice_template?: string; invoice_config?: Record<string, unknown> | null;
+			employee_editable_fields?: string[];
+			creator_can_edit_own_tickets?: boolean;
+			employees_can_set_client_on_create?: boolean;
+			employees_can_edit_client?: boolean;
 		}) => axiosService.patch(`${apiVersion}/org/settings`, data),
 	};
 

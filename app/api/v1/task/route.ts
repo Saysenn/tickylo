@@ -3,6 +3,8 @@ import { errorResponse, ok } from "@/lib/utils/response";
 import z from "zod";
 import { requireUser } from "@/lib/auth/require-user";
 import * as TicketService from "@/services/ticket.service";
+import { prisma } from "@/lib/infra/prisma";
+import { ROLES } from "@/configs/rbac.config";
 
 const linkSchema = z.object({
 	url: z.string().url().max(2000),
@@ -65,7 +67,26 @@ export async function POST(request: NextRequest) {
 		if (!validated.success)
 			return errorResponse(validated.error.issues[0]?.message ?? "Invalid input", 400);
 
-		const entry = await TicketService.createTicket(user, validated.data);
+		const isAdmin = user.app_metadata?.role === ROLES.ADMIN;
+		const data = { ...validated.data };
+
+		// Strip client fields for employees unless the org explicitly allows it
+		if (!isAdmin) {
+			const orgId = user.app_metadata?.org_id as string | undefined;
+			if (orgId) {
+				const org = await prisma.organization.findUnique({
+					where: { id: orgId },
+					select: { employees_can_set_client_on_create: true },
+				});
+				if (!org?.employees_can_set_client_on_create) {
+					delete (data as any).client_id;
+					delete (data as any).client_name;
+					delete (data as any).client_email;
+				}
+			}
+		}
+
+		const entry = await TicketService.createTicket(user, data);
 		return ok(entry, 201);
 	} catch (err: any) {
 		console.error("[task:POST]", err);

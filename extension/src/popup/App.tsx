@@ -21,11 +21,12 @@ const TABS: { key: Tab; label: string; Icon: LucideIcon }[] = [
 ];
 
 export function App() {
-  const [screen, setScreen]           = useState<Screen>("loading");
-  const [tab, setTab]                 = useState<Tab>("timer");
-  const [activeTimer, setActiveTimer] = useState<ActiveTimer | null>(null);
-  const [me, setMe]                   = useState<Me | null>(null);
-  const [orgName, setOrgName]         = useState("");
+  const [screen, setScreen]                     = useState<Screen>("loading");
+  const [tab, setTab]                           = useState<Tab>("timer");
+  const [activeTimer, setActiveTimer]           = useState<ActiveTimer | null>(null);
+  const [me, setMe]                             = useState<Me | null>(null);
+  const [orgName, setOrgName]                   = useState("");
+  const [empCanSetClient, setEmpCanSetClient]   = useState(false);
 
   useEffect(() => {
     async function init() {
@@ -40,6 +41,7 @@ export function App() {
         setActiveTimer(timer);
         setMe(user);
         setOrgName(settings.name);
+        setEmpCanSetClient(settings.employees_can_set_client_on_create ?? false);
         if (timer) {
           await Storage.setSession({ entry_id: timer.id, start_time: timer.start_time, title: timer.title });
         } else {
@@ -80,7 +82,7 @@ export function App() {
       {/* Content */}
       <div className="flex-1 overflow-y-auto">
         {tab === "timer"   && <TimerTab activeTimer={activeTimer} setActiveTimer={setActiveTimer} userId={me?.id ?? ""} />}
-        {tab === "tickets" && <TicketsTab activeTimer={activeTimer} setActiveTimer={setActiveTimer} isAdmin={me?.role === "admin"} userId={me?.id ?? ""} />}
+        {tab === "tickets" && <TicketsTab activeTimer={activeTimer} setActiveTimer={setActiveTimer} isAdmin={me?.role === "admin"} userId={me?.id ?? ""} empCanSetClient={empCanSetClient} />}
         {tab === "logs"    && <LogsTab activeTimer={activeTimer} isAdmin={me?.role === "admin"} />}
         {tab === "me"      && <MeTab me={me} orgName={orgName} />}
       </div>

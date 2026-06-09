@@ -84,6 +84,7 @@ export interface OrgSettings {
   name: string;
   plan: string;
   is_internal: boolean;
+  employees_can_set_client_on_create: boolean;
 }
 
 export interface Me {

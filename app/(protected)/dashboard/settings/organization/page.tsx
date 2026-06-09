@@ -7,12 +7,14 @@ import { DeactivatedEmployeesSection } from "@/components/dashboard/settings/dea
 import { OrgDeletionSection } from "@/components/dashboard/settings/org-deletion-section";
 import { SettingsTabNav } from "@/components/dashboard/settings/settings-tab-nav";
 import { AdminPermissionsSection } from "@/components/dashboard/settings/admin-permissions-section";
+import { TicketPermissionsSection } from "@/components/dashboard/settings/ticket-permissions-section";
 export const metadata = { title: "Organization · Settings" };
 
 const TABS = [
 	{ key: "details",     label: "Details" },
 	{ key: "schedule",    label: "Schedule" },
 	{ key: "permissions", label: "Permissions" },
+	{ key: "tickets",     label: "Tickets" },
 	{ key: "members",     label: "Recover Accounts" },
 ];
 
@@ -37,6 +39,7 @@ export default async function OrganizationSettingsPage({
 				{tab === "details"     && <><OrgJoinQrSection /><OrgDeletionSection /></>}
 				{tab === "schedule"    && <WorkScheduleAdminSection />}
 				{tab === "permissions" && <AdminPermissionsSection />}
+				{tab === "tickets"     && <TicketPermissionsSection />}
 				{tab === "members"     && <DeactivatedEmployeesSection />}
 			</div>
 		</div>

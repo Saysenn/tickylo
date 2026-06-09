@@ -45,6 +45,12 @@ model Organization {
   invoice_template  String  @default("classic-xlsx")
   invoice_config    Json?
 
+  // Ticket permissions
+  employee_editable_fields       Json    @default("[\"title\",\"description\",\"priority\",\"ticket_type\",\"due_date\",\"billable_hours\",\"implementation_plan\",\"rollback_plan\",\"links\"]")
+  creator_can_edit_own_tickets   Boolean @default(false)
+  employees_can_set_client_on_create Boolean @default(false)
+  employees_can_edit_client      Boolean @default(false)
+
   users            User[]
   join_requests    UserJoinRequest[]
   work_schedule    WorkSchedule?

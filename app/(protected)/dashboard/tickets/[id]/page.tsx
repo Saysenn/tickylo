@@ -208,6 +208,18 @@ export default function TicketDetailPage() {
 	});
 	const hasPendingTransferRequest = !!transferRequest?.id;
 
+	const { data: orgSettings } = useQuery({
+		queryKey: ["org-settings"],
+		queryFn: () => APIService.orgSettings.get(),
+		staleTime: 300_000,
+		enabled: !isAdmin,
+	});
+
+	const empEditableFields: string[] = !isAdmin && Array.isArray(orgSettings?.employee_editable_fields)
+		? (orgSettings.employee_editable_fields as string[])
+		: [];
+	const canEditClientField = !isAdmin && (orgSettings?.employees_can_edit_client ?? false);
+
 	const { data: activeEntry, refetch: refetchTimer } = useQuery<TimeEntry | null>({
 		queryKey: ["time", "active"],
 		queryFn: () => APIService.time.active(),
@@ -1032,7 +1044,10 @@ export default function TicketDetailPage() {
 								)
 							)}
 
-							{!isStale && isAssignee && (ticket as any).assignee_permission === "editor" && !isDone && (
+							{!isStale && !isDone && (
+								(isAssignee && (ticket as any).assignee_permission === "editor") ||
+								(orgSettings?.creator_can_edit_own_tickets && ticket.creator?.id === user?.id)
+							) && (
 								<Button size="sm" variant="outline" className="w-full gap-2" onClick={() => setEditOpen(true)}>
 									<Pencil className="w-3.5 h-3.5" />
 									Edit ticket
@@ -1181,13 +1196,15 @@ export default function TicketDetailPage() {
 				</DialogContent>
 			</DialogRoot>
 
-			{/* Edit ticket — admin full edit, or employee with editor permission */}
-			{(isAdmin || (isAssignee && (ticket as any).assignee_permission === "editor")) && (
+			{/* Edit ticket — admin full edit, or employee with editor permission or creator */}
+			{(isAdmin || (isAssignee && (ticket as any).assignee_permission === "editor") || (!isAdmin && orgSettings?.creator_can_edit_own_tickets && ticket.creator?.id === user?.id)) && (
 				<EditTicketDialog
 					ticket={ticket}
 					open={editOpen}
 					onOpenChange={setEditOpen}
 					isEmployee={!isAdmin}
+					allowedFields={empEditableFields}
+					canEditClient={isAdmin || canEditClientField}
 					onSave={async (data) => { await updateTicket(data); setEditOpen(false); }}
 				/>
 			)}
@@ -1374,9 +1391,13 @@ interface EditTicketDialogProps {
 	onOpenChange: (v: boolean) => void;
 	onSave: (data: object) => Promise<void>;
 	isEmployee?: boolean;
+	allowedFields?: string[];
+	canEditClient?: boolean;
 }
 
-function EditTicketDialog({ ticket, open, onOpenChange, onSave, isEmployee = false }: EditTicketDialogProps) {
+function EditTicketDialog({ ticket, open, onOpenChange, onSave, isEmployee = false, allowedFields = [], canEditClient = false }: EditTicketDialogProps) {
+	// For admins (isEmployee=false) all fields are always shown; for employees, derive from allowedFields
+	const can = (field: string) => !isEmployee || allowedFields.includes(field);
 	const [title,              setTitle]              = useState(ticket.title);
 	const [description,        setDescription]        = useState(ticket.description ?? "");
 	const [ticketType,         setTicketType]         = useState<string>(ticket.ticket_type ?? "internal_task");
@@ -1406,7 +1427,7 @@ function EditTicketDialog({ ticket, open, onOpenChange, onSave, isEmployee = fal
 	const { data: clientsData } = useQuery({
 		queryKey: ["clients"],
 		queryFn: () => APIService.clients.list(),
-		enabled: open && !isEmployee,
+		enabled: open && (!isEmployee || canEditClient),
 		staleTime: 60_000,
 	});
 	const clientOptions: any[] = (clientsData as any)?.data ?? [];
@@ -1453,16 +1474,24 @@ function EditTicketDialog({ ticket, open, onOpenChange, onSave, isEmployee = fal
 			const linksPayload = links.filter((l) => l.url.trim()).map((l) => ({ url: l.url.trim(), label: l.label?.trim() || undefined }));
 
 			if (isEmployee) {
-				await onSave({
-					title: title.trim(),
-					description: description.trim() || null,
-					ticket_type: ticketType,
-					priority,
-					implementation_plan: implementationPlan.trim() || null,
-					rollback_plan:       rollbackPlan.trim()       || null,
-					billable_hours:      billableHours ? parseFloat(billableHours) : null,
-					links: linksPayload,
-				});
+				const payload: Record<string, unknown> = {};
+				if (can("title"))               payload.title               = title.trim();
+				if (can("description"))         payload.description         = description.trim() || null;
+				if (can("ticket_type"))         payload.ticket_type         = ticketType;
+				if (can("priority"))            payload.priority            = priority;
+				if (can("status"))              payload.status              = status;
+				if (can("due_date"))            payload.due_date            = dueDate ? new Date(dueDate).toISOString() : null;
+				if (can("estimated_hours"))     payload.estimated_hours     = estimatedHours ? parseFloat(estimatedHours) : null;
+				if (can("billable_hours"))      payload.billable_hours      = billableHours ? parseFloat(billableHours) : null;
+				if (can("implementation_plan")) payload.implementation_plan = implementationPlan.trim() || null;
+				if (can("rollback_plan"))       payload.rollback_plan       = rollbackPlan.trim() || null;
+				if (can("links"))               payload.links               = linksPayload;
+				if (canEditClient) {
+					payload.client_id    = clientId || null;
+					payload.client_name  = clientName.trim() || null;
+					payload.client_email = clientEmail.trim() || null;
+				}
+				await onSave(payload);
 			} else {
 				await onSave({
 					title: title.trim(),
@@ -1508,8 +1537,8 @@ function EditTicketDialog({ ticket, open, onOpenChange, onSave, isEmployee = fal
 						<span className="text-[10px] font-semibold uppercase tracking-widest text-ink-3/50 whitespace-nowrap">Classification</span>
 						<div className="flex-1 border-t border-border/40" />
 					</div>
-					{isEmployee ? (
-						<div className="grid grid-cols-2 gap-4">
+					<div className="grid grid-cols-2 gap-4" style={{ gridTemplateColumns: `repeat(${[can("ticket_type"), can("status") || !isEmployee, can("priority")].filter(Boolean).length || 1}, minmax(0,1fr))` }}>
+						{can("ticket_type") && (
 							<div className="space-y-1.5">
 								<Label htmlFor="edit-type">Type</Label>
 								<Combobox
@@ -1524,6 +1553,27 @@ function EditTicketDialog({ ticket, open, onOpenChange, onSave, isEmployee = fal
 									placeholder="Select type…"
 								/>
 							</div>
+						)}
+						{(!isEmployee || can("status")) && (
+							<div className="space-y-1.5">
+								<Label htmlFor="edit-status">Status</Label>
+								<Combobox
+									options={[
+										{ value: "pending", label: "Open" },
+										{ value: "assigned", label: "Assigned" },
+										{ value: "in_progress", label: "In Progress" },
+										{ value: "on_hold", label: "On Hold" },
+										{ value: "stale", label: "Stale" },
+										{ value: "completed", label: "Resolved" },
+										{ value: "closed", label: "Closed" },
+									]}
+									value={status}
+									onChange={setStatus}
+									placeholder="Select status…"
+								/>
+							</div>
+						)}
+						{can("priority") && (
 							<div className="space-y-1.5">
 								<Label htmlFor="edit-priority">Priority</Label>
 								<Combobox
@@ -1538,199 +1588,179 @@ function EditTicketDialog({ ticket, open, onOpenChange, onSave, isEmployee = fal
 									placeholder="Select priority…"
 								/>
 							</div>
-						</div>
-					) : (
-						<>
-							<div className="grid grid-cols-3 gap-4">
-								<div className="space-y-1.5">
-									<Label htmlFor="edit-type">Type</Label>
-									<Combobox
-										options={[
-											{ value: "internal_task", label: "Internal Task" },
-											{ value: "request", label: "Request" },
-											{ value: "incident", label: "Incident" },
-											{ value: "change", label: "Request for Change" },
-										]}
-										value={ticketType}
-										onChange={setTicketType}
-										placeholder="Select type…"
-									/>
-								</div>
-								<div className="space-y-1.5">
-									<Label htmlFor="edit-status">Status</Label>
-									<Combobox
-										options={[
-											{ value: "pending", label: "Open" },
-											{ value: "assigned", label: "Assigned" },
-											{ value: "in_progress", label: "In Progress" },
-											{ value: "on_hold", label: "On Hold" },
-											{ value: "stale", label: "Stale" },
-											{ value: "completed", label: "Resolved" },
-											{ value: "closed", label: "Closed" },
-										]}
-										value={status}
-										onChange={setStatus}
-										placeholder="Select status…"
-									/>
-								</div>
-								<div className="space-y-1.5">
-									<Label htmlFor="edit-priority">Priority</Label>
-									<Combobox
-										options={[
-											{ value: "low", label: "Low" },
-											{ value: "medium", label: "Medium" },
-											{ value: "high", label: "High" },
-											{ value: "critical", label: "Critical" },
-										]}
-										value={priority}
-										onChange={setPriority}
-										placeholder="Select priority…"
-									/>
-								</div>
-							</div>
-							<div className="grid grid-cols-2 gap-4">
-								<div className="space-y-1.5">
-									<Label htmlFor="edit-source">{optLabel("Source")}</Label>
-									<Combobox
-										options={[
-											{ value: "", label: "Not specified" },
-											{ value: "in_system", label: "In-system" },
-											{ value: "email", label: "Email" },
-											{ value: "sms", label: "SMS" },
-										]}
-										value={source}
-										onChange={setSource}
-										placeholder="Not specified"
-									/>
-								</div>
-								<div className="space-y-1.5">
-									<Label htmlFor="edit-permission">Assignee access</Label>
-									<Combobox
-										options={[
-											{ value: "editor", label: "Editor — can edit fields" },
-											{ value: "viewer", label: "Viewer — read-only" },
-										]}
-										value={assigneePermission}
-										onChange={setAssigneePermission}
-										placeholder="Select access…"
-									/>
-								</div>
-							</div>
-						</>
-					)}
-
-					{/* ── Title ── */}
-					<div className="flex items-center gap-3">
-						<span className="text-[10px] font-semibold uppercase tracking-widest text-ink-3/50 whitespace-nowrap">Title</span>
-						<div className="flex-1 border-t border-border/40" />
-					</div>
-					<div className="space-y-1.5">
-						<Label htmlFor="edit-title" className="sr-only">Title</Label>
-						<input id="edit-title" type="text" value={title} onChange={(e) => setTitle(e.target.value)} maxLength={200} className={`${inputCls} font-medium`} required />
-					</div>
-
-					{/* ── Scheduling & Billing ── */}
-					<div className="flex items-center gap-3">
-						<span className="text-[10px] font-semibold uppercase tracking-widest text-ink-3/50 whitespace-nowrap">Scheduling & Billing</span>
-						<div className="flex-1 border-t border-border/40" />
+						)}
 					</div>
 					{!isEmployee && (
 						<div className="grid grid-cols-2 gap-4">
 							<div className="space-y-1.5">
-								<Label htmlFor="edit-due">{optLabel("Due date & time")}</Label>
-								<input id="edit-due" type="datetime-local" value={dueDate} onChange={(e) => setDueDate(e.target.value)} className={inputCls} />
-							</div>
-							<div className="space-y-1.5">
-								<Label>{optLabel("Client")}</Label>
+								<Label htmlFor="edit-source">{optLabel("Source")}</Label>
 								<Combobox
 									options={[
-										{ value: "", label: "No client" },
-										{ value: "__front_office__", label: "Front Office" },
-										{ value: "__back_office__", label: "Back Office" },
-										...clientOptions
-											.filter((c: any) => !c.deleted_at)
-											.map((c: any) => ({ value: c.id, label: c.name })),
+										{ value: "", label: "Not specified" },
+										{ value: "in_system", label: "In-system" },
+										{ value: "email", label: "Email" },
+										{ value: "sms", label: "SMS" },
 									]}
-									value={clientComboValue}
-									onChange={(v) => {
-										setClientComboValue(v);
-										if (v === "__front_office__") {
-											setClientId("");
-											setClientName("Front Office");
-										} else if (v === "__back_office__") {
-											setClientId("");
-											setClientName("Back Office");
-										} else {
-											setClientId(v);
-											const found = clientOptions.find((c: any) => c.id === v);
-											setClientName(found?.name ?? "");
-										}
-									}}
-									placeholder="No client"
-									searchPlaceholder="Search clients…"
-									emptyText="No clients found."
+									value={source}
+									onChange={setSource}
+									placeholder="Not specified"
+								/>
+							</div>
+							<div className="space-y-1.5">
+								<Label htmlFor="edit-permission">Assignee access</Label>
+								<Combobox
+									options={[
+										{ value: "editor", label: "Editor — can edit fields" },
+										{ value: "viewer", label: "Viewer — read-only" },
+									]}
+									value={assigneePermission}
+									onChange={setAssigneePermission}
+									placeholder="Select access…"
 								/>
 							</div>
 						</div>
 					)}
-					{(!isEmployee || showBillableHours) && (
-						<div className="grid grid-cols-2 gap-4">
-							{!isEmployee && (
-								<div className="space-y-1.5">
-									<Label htmlFor="edit-est">{optLabel("Est. hours")}</Label>
-									<input id="edit-est" type="number" min="0" step="0.5" value={estimatedHours} onChange={(e) => setEstimatedHours(e.target.value)} placeholder="e.g. 4" className={inputCls} />
+
+					{/* ── Title ── */}
+					{can("title") && (
+						<>
+							<div className="flex items-center gap-3">
+								<span className="text-[10px] font-semibold uppercase tracking-widest text-ink-3/50 whitespace-nowrap">Title</span>
+								<div className="flex-1 border-t border-border/40" />
+							</div>
+							<div className="space-y-1.5">
+								<Label htmlFor="edit-title" className="sr-only">Title</Label>
+								<input id="edit-title" type="text" value={title} onChange={(e) => setTitle(e.target.value)} maxLength={200} className={`${inputCls} font-medium`} required />
+							</div>
+						</>
+					)}
+
+					{/* ── Scheduling & Billing ── */}
+					{(can("due_date") || canEditClient || can("estimated_hours") || (can("billable_hours") && showBillableHours)) && (
+						<>
+							<div className="flex items-center gap-3">
+								<span className="text-[10px] font-semibold uppercase tracking-widest text-ink-3/50 whitespace-nowrap">Scheduling & Billing</span>
+								<div className="flex-1 border-t border-border/40" />
+							</div>
+							{(can("due_date") || canEditClient) && (
+								<div className="grid grid-cols-2 gap-4">
+									{can("due_date") && (
+										<div className="space-y-1.5">
+											<Label htmlFor="edit-due">{optLabel("Due date & time")}</Label>
+											<input id="edit-due" type="datetime-local" value={dueDate} onChange={(e) => setDueDate(e.target.value)} className={inputCls} />
+										</div>
+									)}
+									{canEditClient && (
+										<div className="space-y-1.5">
+											<Label>{optLabel("Client")}</Label>
+											<Combobox
+												options={[
+													{ value: "", label: "No client" },
+													{ value: "__front_office__", label: "Front Office" },
+													{ value: "__back_office__", label: "Back Office" },
+													...clientOptions
+														.filter((c: any) => !c.deleted_at)
+														.map((c: any) => ({ value: c.id, label: c.name })),
+												]}
+												value={clientComboValue}
+												onChange={(v) => {
+													setClientComboValue(v);
+													if (v === "__front_office__") {
+														setClientId("");
+														setClientName("Front Office");
+													} else if (v === "__back_office__") {
+														setClientId("");
+														setClientName("Back Office");
+													} else {
+														setClientId(v);
+														const found = clientOptions.find((c: any) => c.id === v);
+														setClientName(found?.name ?? "");
+													}
+												}}
+												placeholder="No client"
+												searchPlaceholder="Search clients…"
+												emptyText="No clients found."
+											/>
+										</div>
+									)}
 								</div>
 							)}
-							{showBillableHours && (
-								<div className={cn("space-y-1.5", isEmployee && "col-span-2")}>
-									<Label htmlFor="edit-bill">{optLabel("Billable hours")}</Label>
-									<input id="edit-bill" type="number" min="0" step="0.5" value={billableHours} onChange={(e) => setBillableHours(e.target.value)} placeholder="e.g. 4" className={inputCls} />
+							{(can("estimated_hours") || (can("billable_hours") && showBillableHours)) && (
+								<div className="grid grid-cols-2 gap-4">
+									{can("estimated_hours") && (
+										<div className="space-y-1.5">
+											<Label htmlFor="edit-est">{optLabel("Est. hours")}</Label>
+											<input id="edit-est" type="number" min="0" step="0.5" value={estimatedHours} onChange={(e) => setEstimatedHours(e.target.value)} placeholder="e.g. 4" className={inputCls} />
+										</div>
+									)}
+									{can("billable_hours") && showBillableHours && (
+										<div className={cn("space-y-1.5", !can("estimated_hours") && "col-span-2")}>
+											<Label htmlFor="edit-bill">{optLabel("Billable hours")}</Label>
+											<input id="edit-bill" type="number" min="0" step="0.5" value={billableHours} onChange={(e) => setBillableHours(e.target.value)} placeholder="e.g. 4" className={inputCls} />
+										</div>
+									)}
 								</div>
 							)}
-						</div>
+						</>
 					)}
 
 					{/* ── Plans ── */}
-					<div className="flex items-center gap-3">
-						<span className="text-[10px] font-semibold uppercase tracking-widest text-ink-3/50 whitespace-nowrap">Plans</span>
-						<div className="flex-1 border-t border-border/40" />
-					</div>
-					<div className="space-y-4">
-						<div className="space-y-1.5">
-							<Label>{optLabel("Implementation plan")}</Label>
-							<RichTextEditor
-								value={implementationPlan}
-								onChange={setImplementationPlan}
-								placeholder="- Step 1: Deploy to staging&#10;- Step 2: Run migrations&#10;• Verify all endpoints respond"
-							/>
-						</div>
-						<div className="space-y-1.5">
-							<Label>{optLabel("Rollback plan")}</Label>
-							<RichTextEditor
-								value={rollbackPlan}
-								onChange={setRollbackPlan}
-								placeholder="- Step 1: Roll back deployment&#10;• Restore database snapshot if needed"
-							/>
-						</div>
-					</div>
+					{(can("implementation_plan") || can("rollback_plan")) && (
+						<>
+							<div className="flex items-center gap-3">
+								<span className="text-[10px] font-semibold uppercase tracking-widest text-ink-3/50 whitespace-nowrap">Plans</span>
+								<div className="flex-1 border-t border-border/40" />
+							</div>
+							<div className="space-y-4">
+								{can("implementation_plan") && (
+									<div className="space-y-1.5">
+										<Label>{optLabel("Implementation plan")}</Label>
+										<RichTextEditor
+											value={implementationPlan}
+											onChange={setImplementationPlan}
+											placeholder="- Step 1: Deploy to staging&#10;- Step 2: Run migrations&#10;• Verify all endpoints respond"
+										/>
+									</div>
+								)}
+								{can("rollback_plan") && (
+									<div className="space-y-1.5">
+										<Label>{optLabel("Rollback plan")}</Label>
+										<RichTextEditor
+											value={rollbackPlan}
+											onChange={setRollbackPlan}
+											placeholder="- Step 1: Roll back deployment&#10;• Restore database snapshot if needed"
+										/>
+									</div>
+								)}
+							</div>
+						</>
+					)}
 
 					{/* ── Links ── */}
-					<div className="flex items-center gap-3">
-						<span className="text-[10px] font-semibold uppercase tracking-widest text-ink-3/50 whitespace-nowrap">Links</span>
-						<div className="flex-1 border-t border-border/40" />
-					</div>
-					<LinksEditor links={links} onChange={setLinks} />
+					{can("links") && (
+						<>
+							<div className="flex items-center gap-3">
+								<span className="text-[10px] font-semibold uppercase tracking-widest text-ink-3/50 whitespace-nowrap">Links</span>
+								<div className="flex-1 border-t border-border/40" />
+							</div>
+							<LinksEditor links={links} onChange={setLinks} />
+						</>
+					)}
 
 					{/* ── Description ── */}
-					<div className="flex items-center gap-3">
-						<span className="text-[10px] font-semibold uppercase tracking-widest text-ink-3/50 whitespace-nowrap">Description</span>
-						<div className="flex-1 border-t border-border/40" />
-					</div>
-					<RichTextEditor
-						value={description}
-						onChange={setDescription}
-						placeholder="What needs to be done? Context, steps to reproduce, acceptance criteria…"
-					/>
+					{can("description") && (
+						<>
+							<div className="flex items-center gap-3">
+								<span className="text-[10px] font-semibold uppercase tracking-widest text-ink-3/50 whitespace-nowrap">Description</span>
+								<div className="flex-1 border-t border-border/40" />
+							</div>
+							<RichTextEditor
+								value={description}
+								onChange={setDescription}
+								placeholder="What needs to be done? Context, steps to reproduce, acceptance criteria…"
+							/>
+						</>
+					)}
 
 					{error && <p className="text-xs text-destructive">{error}</p>}
 
