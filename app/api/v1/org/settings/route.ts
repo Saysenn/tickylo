@@ -101,6 +101,34 @@ export async function PATCH(req: NextRequest) {
 			},
 		});
 
+		// Notify employees when any ticket-permission field changed
+		const changeLines: string[] = [];
+		if ("employee_editable_fields"           in updateData) changeLines.push("Editable ticket fields were updated");
+		if ("creator_can_edit_own_tickets"        in updateData) changeLines.push(`Creator editing: ${updateData.creator_can_edit_own_tickets ? "enabled" : "disabled"}`);
+		if ("employees_can_set_client_on_create"  in updateData) changeLines.push(`Client selection on creation: ${updateData.employees_can_set_client_on_create ? "enabled" : "disabled"}`);
+		if ("employees_can_edit_client"           in updateData) changeLines.push(`Client field editing: ${updateData.employees_can_edit_client ? "enabled" : "disabled"}`);
+		if ("employees_can_merge_tickets"         in updateData) changeLines.push(`Ticket merging: ${updateData.employees_can_merge_tickets ? "enabled" : "disabled"}`);
+
+		if (changeLines.length > 0) {
+			const employees = await prisma.user.findMany({
+				where: { org_id: orgId, role: "employee" },
+				select: { id: true },
+			});
+			if (employees.length > 0) {
+				const body = changeLines.join(" · ");
+				await prisma.notification.createMany({
+					data: employees.map((emp) => ({
+						org_id:  orgId,
+						user_id: emp.id,
+						type:    "ticket_permissions_updated",
+						title:   "Ticket permissions updated",
+						body,
+						link:    "/dashboard/tickets",
+					})),
+				});
+			}
+		}
+
 		return ok(org);
 	} catch (e) {
 		console.error("[PATCH /org/settings]", e);

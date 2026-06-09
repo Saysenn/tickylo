@@ -1,11 +1,12 @@
 "use client";
 
+import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Ticket } from "lucide-react";
+import { Ticket, Save, RotateCcw } from "lucide-react";
 import APIService from "@/lib/infra/api";
 import { cn } from "@/lib/utils/cn";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 
 // Single source of truth for configurable fields — mirrors CONFIGURABLE_FIELD_SCHEMAS in the API route
 const EDITABLE_FIELD_OPTIONS: { key: string; label: string; description: string; defaultOn: boolean }[] = [
@@ -65,11 +66,26 @@ function ToggleRow({ label, description, checked, disabled, onChange }: ToggleRo
 export function TicketPermissionsSection() {
 	const queryClient = useQueryClient();
 
+	// Draft state for the editable-fields checkboxes only
+	const [draftFields, setDraftFields] = useState<string[] | null>(null);
+	const savedFields = useRef<string[] | null>(null);
+
 	const { data: orgSettings, isLoading } = useQuery({
 		queryKey: ["org-settings"],
 		queryFn: () => APIService.orgSettings.get(),
 		staleTime: 300_000,
 	});
+
+	// Initialize draft once when server data loads
+	useEffect(() => {
+		if (orgSettings && !savedFields.current) {
+			const initial = Array.isArray(orgSettings.employee_editable_fields)
+				? [...(orgSettings.employee_editable_fields as string[])]
+				: [...DEFAULT_ENABLED_FIELDS];
+			setDraftFields(initial);
+			savedFields.current = initial;
+		}
+	}, [orgSettings]);
 
 	const { mutate: update, isPending } = useMutation({
 		mutationFn: (data: Parameters<typeof APIService.orgSettings.update>[0]) =>
@@ -77,22 +93,27 @@ export function TicketPermissionsSection() {
 		onSuccess: () => queryClient.invalidateQueries({ queryKey: ["org-settings"] }),
 	});
 
-	const enabledFields: string[] = Array.isArray(orgSettings?.employee_editable_fields)
-		? (orgSettings.employee_editable_fields as string[])
-		: DEFAULT_ENABLED_FIELDS;
+	const { mutate: saveFields, isPending: isSavingFields } = useMutation({
+		mutationFn: (fields: string[]) =>
+			APIService.orgSettings.update({ employee_editable_fields: fields }),
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["org-settings"] });
+			if (draftFields) savedFields.current = [...draftFields];
+		},
+	});
 
-	const disabled = isPending || isLoading;
+	const fieldsDirty = draftFields && savedFields.current
+		? [...draftFields].sort().join(",") !== [...savedFields.current].sort().join(",")
+		: false;
 
-	function toggleField(key: string, checked: boolean) {
-		const next = checked
-			? [...enabledFields, key]
-			: enabledFields.filter((f) => f !== key);
-		update({ employee_editable_fields: next });
-	}
+	const togglesDisabled = isPending || isLoading;
+	const fieldsDisabled  = isSavingFields || isLoading;
+
+	const enabledFields = draftFields ?? DEFAULT_ENABLED_FIELDS;
 
 	return (
 		<div className="space-y-5">
-			{/* Editable fields */}
+			{/* Editable fields — batched save */}
 			<section className="rounded-xl border bg-background p-6 space-y-4">
 				<div className="flex items-center gap-3">
 					<div className="w-7 h-7 rounded-lg bg-mint/15 flex items-center justify-center shrink-0">
@@ -115,14 +136,21 @@ export function TicketPermissionsSection() {
 								className={cn(
 									"flex items-start gap-3 rounded-lg border border-border px-4 py-3 cursor-pointer transition-colors",
 									checked ? "bg-mint/5 border-mint/30" : "hover:bg-accent/40",
-									disabled && "opacity-60 cursor-not-allowed",
+									fieldsDisabled && "opacity-60 cursor-not-allowed",
 								)}
 							>
 								<Checkbox
 									id={`field-${field.key}`}
 									checked={checked}
-									disabled={disabled}
-									onCheckedChange={(val) => toggleField(field.key, !!val)}
+									disabled={fieldsDisabled}
+									onCheckedChange={(val) =>
+										setDraftFields((prev) => {
+											const base = prev ?? DEFAULT_ENABLED_FIELDS;
+											return val
+												? [...base, field.key]
+												: base.filter((f) => f !== field.key);
+										})
+									}
 									className="mt-0.5 shrink-0"
 								/>
 								<div>
@@ -133,9 +161,42 @@ export function TicketPermissionsSection() {
 						);
 					})}
 				</div>
+
+				{/* Save / Discard — bottom right of this card */}
+				<div className="flex items-center justify-end gap-2 pt-2 border-t border-border/40">
+					{fieldsDirty && (
+						<>
+							<p className="text-xs text-ink-3 mr-auto">You have unsaved changes.</p>
+							<Button
+								type="button"
+								variant="outline"
+								size="sm"
+								className="gap-1.5"
+								disabled={isSavingFields}
+								onClick={() => {
+									if (savedFields.current) setDraftFields([...savedFields.current]);
+								}}
+							>
+								<RotateCcw className="w-3.5 h-3.5" />
+								Discard
+							</Button>
+						</>
+					)}
+					<Button
+						type="button"
+						size="sm"
+						className="gap-1.5"
+						isLoading={isSavingFields}
+						disabled={isSavingFields || !fieldsDirty}
+						onClick={() => draftFields && saveFields(draftFields)}
+					>
+						<Save className="w-3.5 h-3.5" />
+						Save changes
+					</Button>
+				</div>
 			</section>
 
-			{/* Creator editing */}
+			{/* Creator editing — immediate save */}
 			<section className="rounded-xl border bg-background p-6 space-y-4">
 				<div className="flex items-center gap-3">
 					<div className="w-7 h-7 rounded-lg bg-mint/15 flex items-center justify-center shrink-0">
@@ -153,12 +214,12 @@ export function TicketPermissionsSection() {
 					label="Allow ticket creators to edit their own tickets"
 					description="When enabled, the employee who created a ticket can edit it using the same fields configured above, even if they are not the assignee."
 					checked={orgSettings?.creator_can_edit_own_tickets ?? false}
-					disabled={disabled}
+					disabled={togglesDisabled}
 					onChange={(val) => update({ creator_can_edit_own_tickets: val })}
 				/>
 			</section>
 
-			{/* Client access */}
+			{/* Client access — immediate save */}
 			<section className="rounded-xl border bg-background p-6 space-y-4">
 				<div className="flex items-center gap-3">
 					<div className="w-7 h-7 rounded-lg bg-mint/15 flex items-center justify-center shrink-0">
@@ -176,7 +237,7 @@ export function TicketPermissionsSection() {
 					label="Allow employees to select a client when creating a ticket"
 					description="When enabled, employees see the client picker on the ticket creation form."
 					checked={orgSettings?.employees_can_set_client_on_create ?? false}
-					disabled={disabled}
+					disabled={togglesDisabled}
 					onChange={(val) => update({ employees_can_set_client_on_create: val })}
 				/>
 
@@ -184,12 +245,12 @@ export function TicketPermissionsSection() {
 					label="Allow employees to edit the client on a ticket"
 					description="When enabled, employees can change which client a ticket is associated with. Use with caution — this directly affects invoicing."
 					checked={orgSettings?.employees_can_edit_client ?? false}
-					disabled={disabled}
+					disabled={togglesDisabled}
 					onChange={(val) => update({ employees_can_edit_client: val })}
 				/>
 			</section>
 
-			{/* Merge tickets */}
+			{/* Merge tickets — immediate save */}
 			<section className="rounded-xl border bg-background p-6 space-y-4">
 				<div className="flex items-center gap-3">
 					<div className="w-7 h-7 rounded-lg bg-mint/15 flex items-center justify-center shrink-0">
@@ -207,7 +268,7 @@ export function TicketPermissionsSection() {
 					label="Allow employees to merge tickets"
 					description="When enabled, employees can select 2–5 tickets in the tickets table and merge them into one. All comments, time entries, subtasks, and watchers are consolidated."
 					checked={orgSettings?.employees_can_merge_tickets ?? false}
-					disabled={disabled}
+					disabled={togglesDisabled}
 					onChange={(val) => update({ employees_can_merge_tickets: val })}
 				/>
 			</section>

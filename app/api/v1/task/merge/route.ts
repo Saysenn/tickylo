@@ -59,13 +59,13 @@ export async function POST(request: NextRequest) {
 			return errorResponse("Cannot merge into a closed ticket.", 400);
 		}
 
-		const mergedTitles = tickets
-			.filter((t) => t.id !== primary_id)
-			.map((t) => `"${t.title}"`)
-			.join(", ");
+		const mergedTickets = tickets.filter((t) => t.id !== primary_id);
+		const mergedTitles = mergedTickets.map((t) => `"${t.title}"`).join(", ");
+		const actor = isAdmin ? "an administrator" : "a team member";
+		const actorId = user.id;
 
 		await prisma.$transaction(async (tx) => {
-			// Move comments, time entries, subtasks, watchers from merged tickets to primary
+			// Move comments, time entries, subtasks from merged tickets to primary
 			await tx.ticketComment.updateMany({
 				where: { task_id: { in: ticket_ids } },
 				data:  { task_id: primary_id },
@@ -79,7 +79,7 @@ export async function POST(request: NextRequest) {
 				data:  { task_id: primary_id },
 			});
 
-			// Merge watchers — add any watcher from merged tickets not already watching primary
+			// Merge watchers — carry over any not already watching primary
 			const existingWatcherIds = await tx.ticketWatcher.findMany({
 				where: { task_id: primary_id },
 				select: { user_id: true },
@@ -98,30 +98,13 @@ export async function POST(request: NextRequest) {
 				await tx.ticketWatcher.createMany({ data: newWatchers, skipDuplicates: true });
 			}
 
-			// Delete orphaned pending requests — no longer actionable once ticket is closed
+			// Clean up pending requests and remaining watchers on merged tickets
 			await tx.dueDateRequest.deleteMany({ where: { task_id: { in: ticket_ids } } });
 			await tx.reopenRequest.deleteMany({ where: { task_id: { in: ticket_ids } } });
 			await tx.transferRequest.deleteMany({ where: { task_id: { in: ticket_ids } } });
-
-			// Delete orphaned watchers from merged tickets (already migrated above)
 			await tx.ticketWatcher.deleteMany({ where: { task_id: { in: ticket_ids } } });
 
-			// Close merged tickets and leave a system comment on each
-			await tx.ticket.updateMany({
-				where: { id: { in: ticket_ids } },
-				data: { status: "closed" },
-			});
-			const actor = isAdmin ? "an administrator" : "a team member";
-			await tx.ticketComment.createMany({
-				data: ticket_ids.map((id) => ({
-					task_id:   id,
-					user_id:   null,
-					body:      `This ticket was merged into "${primary.title}" by ${actor}.`,
-					is_system: true,
-				})),
-			});
-
-			// System comment on the primary noting what was absorbed
+			// System comment on primary as the visible audit trail
 			await tx.ticketComment.create({
 				data: {
 					task_id:   primary_id,
@@ -130,6 +113,23 @@ export async function POST(request: NextRequest) {
 					is_system: true,
 				},
 			});
+
+			// Audit log — one entry per deleted ticket so history is preserved
+			await tx.auditLog.createMany({
+				data: mergedTickets.map((t) => ({
+					org_id:      orgId,
+					actor_id:    actorId,
+					actor_role:  role ?? ROLES.ADMIN,
+					action:      "MERGE",
+					entity_type: "ticket",
+					entity_id:   t.id,
+					before:      { id: t.id, title: t.title, status: t.status },
+					after:       { merged_into: primary_id, primary_title: primary.title },
+				})),
+			});
+
+			// Delete merged tickets — cascade removes any remaining child rows
+			await tx.ticket.deleteMany({ where: { id: { in: ticket_ids } } });
 		});
 
 		return ok({ success: true, primary_id });
