@@ -13,7 +13,7 @@
 
 1. **AI Ticket Assistance** — Plain text → auto-fill fields (Enterprise) and suggestions ai.
 2. own storage in supabase.
-3. **Client Portal** — Client logs in to view their own tickets and invoice history.
+3. **Client Portal** — Client logs in to view their own tickets and invoice history ( need ai assistance for this )
 4. enable RLS policies for all tables
 5. Add a comparison page showcasing our SaaS advantages, features, pricing, and key differentiators against competitors.
 6. hide / disable Enterprise plan from UI/UX for now; focus exclusively on the Business plan until product-market fit is achieved.
