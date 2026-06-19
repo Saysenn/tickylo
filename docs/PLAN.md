@@ -1,5 +1,19 @@
 # Tickylo — Remaining Work
 
+## Landing Page Positioning
+Complexity is the #1 complaint about Zendesk, Freshdesk, Jira — top reviews always say:
+"Too complex to set up", "Took weeks to onboard", "Too many features we don't need."
+
+**Our angle:** Simplicity as a strategy. Proven by Basecamp (beat complex PM tools), Linear (beat Jira), Notion (beat Confluence), Stripe (beat old payment processors). They didn't win on features — they won on "it just works."
+
+Suggested headline:
+> *"Tickylo — Helpdesk software your team will actually use."*
+> *"All the power of Zendesk. None of the complexity."*
+
+Push this message on the landing page, comparison page, and every marketing touchpoint.
+
+
+
 ## Enterprise Readiness Gap
 
 ( optional )
